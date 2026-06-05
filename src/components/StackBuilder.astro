@@ -1,0 +1,343 @@
+---
+import { FRONTENDS, BACKENDS, DATABASES, OPTIONALS, type Frontend, type Backend, type Database, type Optional } from "../lib/stack/presets";
+import { generateStackDockerfile, generateStackCompose, generateStackEnv, generateStackDockerignore, type StackConfig } from "../lib/stack/generator";
+
+const frontends = Object.values(FRONTENDS);
+const backends = Object.values(BACKENDS);
+const databases = Object.values(DATABASES);
+const optionals = Object.values(OPTIONALS);
+---
+
+<div id="stack-builder">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[440px_1fr]">
+    <!-- Left: Selections -->
+    <aside class="space-y-6">
+      <!-- Frontend -->
+      <section>
+        <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Frontend</h2>
+        <div class="grid grid-cols-2 gap-2" id="frontend-grid">
+          {frontends.map((f) => (
+            <button type="button" data-frontend={f.id} class="frontend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <span class="text-lg">{f.emoji}</span>
+              <span class="flex-1">
+                <span class="block t-body-sm-strong text-[var(--color-ink)]">{f.name}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <!-- Backend -->
+      <section>
+        <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Backend</h2>
+        <div class="grid grid-cols-2 gap-2" id="backend-grid">
+          {backends.map((b) => (
+            <button type="button" data-backend={b.id} class="backend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <span class="text-lg">{b.emoji}</span>
+              <span class="flex-1">
+                <span class="block t-body-sm-strong text-[var(--color-ink)]">{b.name}</span>
+                <span class="block t-caption text-[var(--color-body)]">{b.language}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <!-- Database -->
+      <section>
+        <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Database</h2>
+        <div class="grid grid-cols-3 gap-2" id="database-grid">
+          {databases.map((d) => (
+            <button type="button" data-database={d.id} class="database-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <span class="text-lg">{d.emoji}</span>
+              <span class="flex-1">
+                <span class="block t-body-sm-strong text-[var(--color-ink)]">{d.name}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <!-- Optional services -->
+      <section>
+        <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Optional services</h2>
+        <div class="grid grid-cols-2 gap-2" id="optional-grid">
+          {optionals.map((o) => (
+            <button type="button" data-optional={o.id} class="optional-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <span class="text-lg">{o.emoji}</span>
+              <span class="flex-1">
+                <span class="block t-body-sm-strong text-[var(--color-ink)]">{o.name}</span>
+              </span>
+              <span class="optional-check hidden text-[var(--color-primary-cta-fg)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </aside>
+
+    <!-- Right: Output tabs -->
+    <div class="space-y-6">
+      <!-- Project name -->
+      <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+        <label for="project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+        <input
+          type="text"
+          id="project-name"
+          value="my-app"
+          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+        />
+        <p class="t-caption mt-1 text-[var(--color-mute)]">Used for volume names and container prefixes.</p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit overflow-x-auto">
+        <button type="button" data-tab="compose" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)] whitespace-nowrap">docker-compose.yml</button>
+        <button type="button" data-tab="backend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">backend/Dockerfile</button>
+        <button type="button" data-tab="frontend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">frontend/Dockerfile</button>
+        <button type="button" data-tab="env" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">.env.example</button>
+        <button type="button" data-tab="dockerignore" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">.dockerignore</button>
+      </div>
+
+      <!-- Code panels -->
+      {[
+        { id: "stack-compose", tab: "compose", label: "docker-compose.yml" },
+        { id: "stack-backend-dockerfile", tab: "backend-dockerfile", label: "backend/Dockerfile" },
+        { id: "stack-frontend-dockerfile", tab: "frontend-dockerfile", label: "frontend/Dockerfile" },
+        { id: "stack-env", tab: "env", label: ".env.example" },
+        { id: "stack-dockerignore", tab: "dockerignore", label: ".dockerignore" },
+      ].map((p) => (
+        <div id={p.id} class="stack-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+          <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1.5">
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              </div>
+              <span class="t-code ml-2 text-[var(--color-body)]">{p.label}</span>
+            </div>
+            <button type="button" class="copy-btn t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target={p.id}>Copy</button>
+          </div>
+          <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)] min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
+        </div>
+      ))}
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button type="button" id="btn-stack-download-zip" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download ZIP
+        </button>
+        <button type="button" id="btn-stack-download-all" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download all files</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .frontend-btn[data-active="true"],
+  .backend-btn[data-active="true"],
+  .database-btn[data-active="true"] {
+    border-color: var(--color-primary-cta);
+    background: var(--color-primary-cta);
+    color: var(--color-primary-cta-fg);
+  }
+  .frontend-btn[data-active="true"] .text-\[var\(--color-ink\)\],
+  .backend-btn[data-active="true"] .text-\[var\(--color-ink\)\],
+  .database-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
+    color: var(--color-primary-cta-fg);
+  }
+  .frontend-btn[data-active="true"] .text-\[var\--color-body\)\],
+  .backend-btn[data-active="true"] .text-\[var\(--color-body\)\] {
+    color: var(--color-primary-cta-fg);
+    opacity: 0.8;
+  }
+  .optional-btn[data-active="true"] {
+    border-color: var(--color-primary-cta);
+    background: var(--color-primary-cta);
+    color: var(--color-primary-cta-fg);
+  }
+  .optional-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
+    color: var(--color-primary-cta-fg);
+  }
+</style>
+
+<script>
+  import { FRONTENDS, BACKENDS, DATABASES, OPTIONALS, type Frontend, type Backend, type Database, type Optional } from "../lib/stack/presets";
+  import { generateStackDockerfile, generateStackCompose, generateStackEnv, generateStackDockerignore, type StackConfig } from "../lib/stack/generator";
+
+  type Tab = "compose" | "backend-dockerfile" | "frontend-dockerfile" | "env" | "dockerignore";
+
+  const state = {
+    frontend: undefined as Frontend | undefined,
+    backend: undefined as Backend | undefined,
+    database: undefined as Database | undefined,
+    optional: [] as Optional[],
+    projectName: "my-app",
+    activeTab: "compose" as Tab,
+  };
+
+  function getConfig(): StackConfig {
+    return {
+      frontend: state.frontend,
+      backend: state.backend,
+      database: state.database,
+      optional: [...state.optional],
+      projectName: state.projectName,
+    };
+  }
+
+  function highlight(code: string) {
+    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
+      .replace(/^(\s*-?\s*)([a-zA-Z_][\w-]*)(:)/gm, '$1<span style="color:var(--color-link);font-weight:600">$2</span>$3')
+      .replace(/^(\s*)([\w-]+):(\s.*)$/gm, '$1<span style="color:var(--color-violet)">$2</span>:$3')
+      .replace(/(&quot;[^&]*?&quot;)/g, '<span style="color:var(--color-cyan)">$1</span>');
+  }
+
+  function dockerfileHighlight(code: string) {
+    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
+      .replace(/^(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME)\b/gm, '<span style="color:var(--color-link);font-weight:600">$1</span>');
+  }
+
+  function render() {
+    const cfg = getConfig();
+    const compose = generateStackCompose(cfg);
+    const env = generateStackEnv(cfg);
+    const dockerignore = generateStackDockerignore("backend");
+    const backendDockerfile = cfg.backend ? generateStackDockerfile(cfg, "backend") : "# Pick a backend to generate its Dockerfile";
+    const frontendDockerfile = cfg.frontend ? generateStackDockerfile(cfg, "frontend") : "# Pick a frontend to generate its Dockerfile";
+
+    document.getElementById("stack-compose-code")!.innerHTML = highlight(compose);
+    document.getElementById("stack-env-code")!.innerHTML = highlight(env);
+    document.getElementById("stack-dockerignore-code")!.innerHTML = dockerfileHighlight(dockerignore);
+    document.getElementById("stack-backend-dockerfile-code")!.innerHTML = dockerfileHighlight(backendDockerfile);
+    document.getElementById("stack-frontend-dockerfile-code")!.innerHTML = dockerfileHighlight(frontendDockerfile);
+  }
+
+  function setTab(tab: Tab) {
+    state.activeTab = tab;
+    document.querySelectorAll<HTMLButtonElement>(".stack-tab-btn").forEach((b) => {
+      const active = b.dataset.tab === tab;
+      b.classList.toggle("bg-[var(--color-canvas)]", active);
+      b.classList.toggle("text-[var(--color-ink)]", active);
+      b.classList.toggle("shadow-[var(--shadow-level-1)]", active);
+      b.classList.toggle("text-[var(--color-body)]", !active);
+    });
+    document.querySelectorAll<HTMLDivElement>(".stack-panel").forEach((p) => {
+      p.classList.add("hidden");
+    });
+    const map: Record<Tab, string> = {
+      compose: "stack-compose",
+      "backend-dockerfile": "stack-backend-dockerfile",
+      "frontend-dockerfile": "stack-frontend-dockerfile",
+      env: "stack-env",
+      dockerignore: "stack-dockerignore",
+    };
+    document.getElementById(map[tab])?.classList.remove("hidden");
+  }
+
+  // Wire up grids
+  document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.frontend as Frontend;
+      state.frontend = state.frontend === id ? undefined : id;
+      document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((b) => {
+        b.dataset.active = b.dataset.frontend === state.frontend ? "true" : "false";
+      });
+      render();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>(".backend-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.backend as Backend;
+      state.backend = state.backend === id ? undefined : id;
+      document.querySelectorAll<HTMLButtonElement>(".backend-btn").forEach((b) => {
+        b.dataset.active = b.dataset.backend === state.backend ? "true" : "false";
+      });
+      render();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.database as Database;
+      state.database = state.database === id ? undefined : id;
+      document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((b) => {
+        b.dataset.active = b.dataset.database === state.database ? "true" : "false";
+      });
+      render();
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.optional as Optional;
+      if (state.optional.includes(id)) {
+        state.optional = state.optional.filter((o) => o !== id);
+      } else {
+        state.optional = [...state.optional, id];
+      }
+      document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((b) => {
+        b.dataset.active = state.optional.includes(b.dataset.optional as Optional) ? "true" : "false";
+      });
+      render();
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll<HTMLButtonElement>(".stack-tab-btn").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.dataset.tab as Tab));
+  });
+
+  // Project name
+  document.getElementById("project-name")?.addEventListener("input", (e) => {
+    state.projectName = (e.target as HTMLInputElement).value || "my-app";
+    render();
+  });
+
+  // Copy buttons
+  document.querySelectorAll<HTMLButtonElement>(".copy-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const codeEl = document.getElementById(`${btn.dataset.target}-code`);
+      const text = codeEl?.textContent ?? "";
+      await navigator.clipboard.writeText(text);
+      const orig = btn.innerHTML;
+      btn.innerHTML = "✓ Copied";
+      setTimeout(() => (btn.innerHTML = orig), 1500);
+    });
+  });
+
+  // Download all
+  document.getElementById("btn-stack-download-all")?.addEventListener("click", () => {
+    const cfg = getConfig();
+    const files: Record<string, string> = {
+      "docker-compose.yml": generateStackCompose(cfg),
+      ".env.example": generateStackEnv(cfg),
+      ".dockerignore": generateStackDockerignore("backend"),
+    };
+    if (cfg.backend) files["backend/Dockerfile"] = generateStackDockerfile(cfg, "backend");
+    if (cfg.frontend) files["frontend/Dockerfile"] = generateStackDockerfile(cfg, "frontend");
+
+    Object.entries(files).forEach(([name, content], i) => {
+      setTimeout(() => {
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, i * 200);
+    });
+  });
+
+  // Download zip (sequential downloads as a stand-in for now)
+  document.getElementById("btn-stack-download-zip")?.addEventListener("click", () => {
+    document.getElementById("btn-stack-download-all")?.click();
+  });
+
+  render();
+</script>

@@ -1,0 +1,69 @@
+---
+/**
+ * Button — primary / secondary / ghost at two sizes.
+ * Mirrors DESIGN.md `button-primary`, `button-secondary`, etc.
+ */
+type Variant = "primary" | "secondary" | "ghost" | "outline";
+type Size = "sm" | "md" | "lg";
+
+interface Props {
+  variant?: Variant;
+  size?: Size;
+  href?: string;
+  type?: "button" | "submit" | "reset";
+  class?: string;
+  id?: string;
+  ariaLabel?: string;
+  target?: string;
+  rel?: string;
+  disabled?: boolean;
+}
+
+const {
+  variant = "primary",
+  size = "md",
+  href,
+  type = "button",
+  class: className = "",
+  id,
+  ariaLabel,
+  target,
+  rel,
+  disabled,
+} = Astro.props;
+
+const Tag = href ? "a" : "button";
+
+const base =
+  "inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none select-none";
+
+const variants: Record<Variant, string> = {
+  primary:
+    "bg-[var(--color-primary-cta)] text-[var(--color-primary-cta-fg)] hover:opacity-90 active:opacity-80",
+  secondary:
+    "bg-[var(--color-canvas)] text-[var(--color-ink)] border border-[var(--color-hairline)] hover:bg-[var(--color-canvas-soft-2)] active:bg-[var(--color-canvas-soft-2)]",
+  outline:
+    "bg-transparent text-[var(--color-ink)] border border-[var(--color-hairline)] hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]",
+  ghost:
+    "bg-transparent text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]",
+};
+
+const sizes: Record<Size, string> = {
+  sm: "h-8 px-3 text-[13px] rounded-md",
+  md: "h-10 px-4 text-sm rounded-full",
+  lg: "h-12 px-6 text-base rounded-full",
+};
+---
+
+<Tag
+  href={href}
+  type={!href ? type : undefined}
+  id={id}
+  aria-label={ariaLabel}
+  target={target}
+  rel={rel}
+  disabled={disabled}
+  class:list={[base, variants[variant], sizes[size], className]}
+>
+  <slot />
+</Tag>

@@ -1,0 +1,49 @@
+---
+/**
+ * Logo — Docker cube mark + wordmark.
+ * Original mark, not the official Docker logo.
+ */
+interface Props {
+  size?: number;
+  showWordmark?: boolean;
+  class?: string;
+}
+const { size = 24, showWordmark = true, class: className = "" } = Astro.props;
+---
+
+<a
+  href="/"
+  class:list={[
+    "inline-flex items-center gap-2 text-[var(--color-ink)] no-underline",
+    className,
+  ]}
+  aria-label="Dockerfile Generator home"
+>
+  <span
+    class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary-cta)] text-[var(--color-primary-cta-fg)]"
+    style={`width: ${size}px; height: ${size}px;`}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size * 0.6}
+      height={size * 0.6}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="3" y="9" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <rect x="7" y="9" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <rect x="11" y="9" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <rect x="7" y="5" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <rect x="11" y="5" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <rect x="11" y="1" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+      <path d="M2 14c0 4 3 6 6 6h6c4 0 7-2 8-5-1 .5-2 0-3-1-1 2-3 2-5 2H8c-3 0-6-1-6-2z"></path>
+    </svg>
+  </span>
+  {showWordmark && (
+    <span class="t-body-md-strong text-[var(--color-ink)]">Dockerfile Generator</span>
+  )}
+</a>

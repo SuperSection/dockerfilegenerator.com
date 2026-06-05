@@ -1,0 +1,32 @@
+---
+/**
+ * Badge — small inline pill (mono-cap label by default).
+ */
+type Variant = "default" | "new" | "beta" | "live" | "warning" | "error" | "success";
+
+interface Props {
+  variant?: Variant;
+  class?: string;
+}
+const { variant = "default", class: className = "" } = Astro.props;
+
+const variants: Record<Variant, string> = {
+  default: "bg-[var(--color-canvas-soft-2)] text-[var(--color-body)]",
+  new: "bg-[var(--color-link-bg-soft)] text-[var(--color-link)]",
+  beta: "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]",
+  live: "bg-[#dcfce7] text-[#166534] dark:bg-[#052e16] dark:text-[#86efac]",
+  warning: "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]",
+  error: "bg-[var(--color-error-soft)] text-[var(--color-error-deep)]",
+  success: "bg-[var(--color-link-bg-soft)] text-[var(--color-link)]",
+};
+---
+
+<span
+  class:list={[
+    "inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide rounded-full",
+    variants[variant],
+    className,
+  ]}
+>
+  <slot />
+</span>

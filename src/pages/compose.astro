@@ -1,0 +1,59 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import Container from "../components/ui/Container.astro";
+import Button from "../components/ui/Button.astro";
+import Badge from "../components/ui/Badge.astro";
+import Icon from "../components/ui/Icon.astro";
+import ComposeGenerator from "../components/ComposeGenerator.astro";
+---
+
+<Layout
+  title="Docker Compose Generator — Production-ready compose files"
+  description="Generate a production-ready docker-compose.yml with PostgreSQL, MySQL, MongoDB, Redis, Nginx, and more. Live preview, validation, dependency-aware defaults."
+>
+  <Nav />
+  <main id="main" class="relative">
+    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-12 md:py-16">
+      <div class="absolute inset-x-0 top-0 -z-10 h-[320px] mesh-gradient-sm"></div>
+      <Container>
+        <div class="text-center">
+          <Badge variant="new" class="mb-4">Production compose files</Badge>
+          <h1 class="t-display-xl mx-auto max-w-3xl text-[var(--color-ink)]">
+            Docker Compose, generated.
+          </h1>
+          <p class="t-body-lg mx-auto mt-4 max-w-2xl text-[var(--color-body)]">
+            Pick your services, tweak the configuration, and get a docker-compose.yml that's actually production-ready — with health checks, depends_on conditions, and named volumes.
+          </p>
+        </div>
+      </Container>
+    </section>
+
+    <section class="py-12 md:py-20">
+      <Container>
+        <ComposeGenerator />
+      </Container>
+    </section>
+
+    <section class="border-t border-[var(--color-hairline)] py-16">
+      <Container size="md">
+        <h2 class="t-display-md mb-6 text-[var(--color-ink)]">What you get</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {[
+            { t: "Live validation", d: "Catch port conflicts, default passwords, and missing volumes before you ship." },
+            { t: "Dependency-aware", d: "depends_on with service_healthy conditions. Apps wait for databases to be ready." },
+            { t: "Health checks", d: "Pre-configured healthchecks for every service — works with Docker, Swarm, and Kubernetes." },
+            { t: "Named volumes", d: "Data persists across container restarts. Easy to back up and migrate." },
+          ].map(f => (
+            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+              <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{f.t}</h3>
+              <p class="t-body-md text-[var(--color-body)]">{f.d}</p>
+            </div>
+          ))}
+        </div>
+      </Container>
+    </section>
+  </main>
+  <Footer />
+</Layout>

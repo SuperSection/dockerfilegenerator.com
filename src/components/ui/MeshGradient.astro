@@ -1,0 +1,22 @@
+---
+/**
+ * MeshGradient — atmospheric backdrop, used at hero scale ONLY.
+ * Per DESIGN.md: never miniaturize, never crop to single color.
+ */
+interface Props {
+  class?: string;
+  variant?: "default" | "subtle";
+}
+const { class: className = "", variant = "default" } = Astro.props;
+const klass = variant === "subtle" ? "mesh-gradient-sm" : "mesh-gradient";
+---
+
+<div
+  class:list={[
+    "pointer-events-none absolute inset-0 -z-10 overflow-hidden",
+    klass,
+    className,
+  ]}
+  aria-hidden="true"
+>
+</div>

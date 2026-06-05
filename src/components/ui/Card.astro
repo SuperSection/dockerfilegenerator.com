@@ -1,0 +1,56 @@
+---
+/**
+ * Card — feature/marketing surface.
+ * Mirrors `card-marketing`, `card-soft`, `card-marketing-large` from DESIGN.md.
+ */
+type Variant = "default" | "soft" | "large" | "outline";
+type Elevation = 0 | 1 | 2 | 3 | 4 | 5;
+
+interface Props {
+  variant?: Variant;
+  elevation?: Elevation;
+  class?: string;
+  href?: string;
+  id?: string;
+}
+
+const {
+  variant = "default",
+  elevation = 1,
+  class: className = "",
+  href,
+  id,
+} = Astro.props;
+
+const Tag = href ? "a" : "div";
+
+const variants: Record<Variant, string> = {
+  default: "bg-[var(--color-canvas)] p-6 rounded-md",
+  soft: "bg-[var(--color-canvas-soft-2)] p-6 rounded-md",
+  large: "bg-[var(--color-canvas)] p-8 rounded-lg",
+  outline: "bg-transparent border border-[var(--color-hairline)] p-6 rounded-md",
+};
+
+const elevations: Record<Elevation, string> = {
+  0: "",
+  1: "shadow-[var(--shadow-level-1)]",
+  2: "shadow-[var(--shadow-level-2)]",
+  3: "shadow-[var(--shadow-level-3)]",
+  4: "shadow-[var(--shadow-level-4)]",
+  5: "shadow-[var(--shadow-level-5)]",
+};
+---
+
+<Tag
+  href={href}
+  id={id}
+  class:list={[
+    "block text-[var(--color-ink)] no-underline transition-colors",
+    variants[variant],
+    elevations[elevation],
+    href && "hover:border-[var(--color-hairline-strong)] cursor-pointer",
+    className,
+  ]}
+>
+  <slot />
+</Tag>

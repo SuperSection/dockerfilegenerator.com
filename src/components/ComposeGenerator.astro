@@ -1,0 +1,314 @@
+---
+import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/services";
+---
+
+<div id="compose-generator">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[480px_1fr]">
+    <!-- Left: Service selector + selected config -->
+    <aside class="space-y-6">
+      <!-- Search -->
+      <div>
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input
+            type="text"
+            id="compose-search"
+            placeholder="Search services..."
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] pl-9 pr-3 py-2.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+          />
+        </div>
+      </div>
+
+      <!-- Service catalog -->
+      <div id="service-catalog" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+        {CATEGORY_ORDER.map((cat) => {
+          const items = SERVICE_LIST.filter((s) => s.category === cat);
+          if (!items.length) return null;
+          return (
+            <div class="service-category" data-category={cat}>
+              <h3 class="t-caption-mono mb-2 text-[var(--color-body)]">{CATEGORY_LABELS[cat]}</h3>
+              <div class="grid grid-cols-2 gap-2">
+                {items.map((svc) => (
+                  <button
+                    type="button"
+                    class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+                    data-service={svc.name}
+                  >
+                    <span class="text-base">{svc.emoji}</span>
+                    <span class="flex-1">
+                      <span class="block t-body-sm-strong text-[var(--color-ink)]">{svc.label}</span>
+                      <span class="block t-caption text-[var(--color-body)] line-clamp-1">{svc.image}</span>
+                    </span>
+                    <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <!-- Selected services config -->
+      <section id="selected-config" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        <h2 class="t-caption-mono mb-4 text-[var(--color-body)]">Selected services</h2>
+        <div id="selected-list" class="space-y-3"></div>
+      </section>
+    </aside>
+
+    <!-- Right: Output -->
+    <div class="space-y-6">
+      <!-- Validation -->
+      <div id="validation-panel" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"></div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit">
+        <button type="button" data-tab="compose" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]">docker-compose.yml</button>
+        <button type="button" data-tab="env" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">.env.example</button>
+      </div>
+
+      <!-- Code panels -->
+      <div id="compose-output" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <div class="flex items-center gap-2">
+            <div class="flex gap-1.5">
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+            </div>
+            <span class="t-code ml-2 text-[var(--color-body)]">docker-compose.yml</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+            <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
+            <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-1 text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
+          </div>
+        </div>
+        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)] min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services from the left to generate your docker-compose.yml</code></pre>
+      </div>
+
+      <div id="env-output" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="t-code text-[var(--color-body)]">.env.example</span>
+          <button type="button" id="btn-env-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+        </div>
+        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)] min-h-[200px] max-h-[500px]" id="env-code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .service-btn[data-active="true"] {
+    border-color: var(--color-primary-cta);
+    background: var(--color-primary-cta);
+    color: var(--color-primary-cta-fg);
+  }
+  .service-btn[data-active="true"] .text-\[var\(--color-body\)\] {
+    color: var(--color-primary-cta-fg);
+    opacity: 0.8;
+  }
+  .service-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
+    color: var(--color-primary-cta-fg);
+  }
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+  .port-row, .volume-row, .env-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+    align-items: center;
+  }
+  .port-row input, .volume-row input, .env-row input {
+    min-width: 0;
+  }
+</style>
+
+<script>
+  import { SERVICES, SERVICE_LIST } from "../lib/compose/services";
+  import { generateCompose, generateEnvExample, validateCompose, type ComposeConfig, type ServiceOverride } from "../lib/compose/generator";
+
+  type Tab = "compose" | "env";
+
+  const state = {
+    selected: new Set<string>(),
+    overrides: {} as Record<string, ServiceOverride>,
+    activeTab: "compose" as Tab,
+  };
+
+  function getConfig(): ComposeConfig {
+    return {
+      services: state.overrides,
+      projectName: "app",
+      useNetwork: true,
+      networkName: "appnet",
+    };
+  }
+
+  function highlight(code: string) {
+    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
+      .replace(/^(\s*-?\s*)([a-zA-Z_][\w-]*)(:)/gm, '$1<span style="color:var(--color-link);font-weight:600">$2</span>$3')
+      .replace(/^(\s*)([\w-]+):(\s.*)$/gm, '$1<span style="color:var(--color-violet)">$2</span>:$3')
+      .replace(/(&quot;[^&]*?&quot;)/g, '<span style="color:var(--color-cyan)">$1</span>')
+      .replace(/(&#39;[^&]*?&#39;)/g, '<span style="color:var(--color-cyan)">$1</span>');
+  }
+
+  function renderOutput() {
+    if (state.selected.size === 0) {
+      document.getElementById("compose-code")!.innerHTML = "Select services from the left to generate your docker-compose.yml";
+      document.getElementById("env-code")!.innerHTML = "";
+      document.getElementById("selected-config")!.classList.add("hidden");
+      document.getElementById("validation-panel")!.classList.add("hidden");
+      return;
+    }
+    const cfg = getConfig();
+    const compose = generateCompose(cfg);
+    const env = generateEnvExample(cfg);
+    document.getElementById("compose-code")!.innerHTML = highlight(compose);
+    document.getElementById("env-code")!.innerHTML = highlight(env);
+
+    // Validation
+    const issues = validateCompose(cfg);
+    const panel = document.getElementById("validation-panel")!;
+    if (issues.length) {
+      panel.classList.remove("hidden");
+      panel.innerHTML = `<div class="flex items-center gap-2 mb-2">
+          <span class="t-caption-mono px-2 py-0.5 rounded-full ${issues.some(i => i.level === "error") ? "bg-[var(--color-error-soft)] text-[var(--color-error-deep)]" : "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]"}">${issues.length} ${issues.some(i => i.level === "error") ? "errors" : "warnings"}</span>
+        </div>
+        <div class="space-y-2">
+          ${issues.map(f => {
+            const color = f.level === "error" ? "var(--color-error-deep)" : f.level === "warning" ? "var(--color-warning-deep)" : "var(--color-link)";
+            const bg = f.level === "error" ? "var(--color-error-soft)" : f.level === "warning" ? "var(--color-warning-soft)" : "var(--color-link-bg-soft)";
+            return `<div class="flex items-start gap-2 text-[13px]"><span class="t-caption-mono rounded-full px-1.5 py-0.5" style="background:${bg};color:${color}">${f.level}</span><div><p class="text-[var(--color-ink)] font-medium">${f.title}</p><p class="text-[var(--color-body)]">${f.message}</p></div></div>`;
+          }).join("")}
+        </div>`;
+    } else {
+      panel.classList.add("hidden");
+    }
+  }
+
+  function renderSelectedConfig() {
+    const list = document.getElementById("selected-list")!;
+    const container = document.getElementById("selected-config")!;
+    list.innerHTML = "";
+    if (state.selected.size === 0) {
+      container.classList.add("hidden");
+      return;
+    }
+    container.classList.remove("hidden");
+    state.selected.forEach((name) => {
+      const svc = SERVICES[name];
+      if (!svc) return;
+      const override = state.overrides[name] ?? {};
+      const ports = override.ports ?? svc.defaultPorts;
+      const volumes = override.volumes ?? svc.defaultVolumes;
+      const envs = override.envVars ?? svc.defaultEnv;
+
+      const div = document.createElement("div");
+      div.className = "rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-3";
+      div.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-base">${svc.emoji}</span>
+            <span class="t-body-sm-strong text-[var(--color-ink)]">${svc.label}</span>
+          </div>
+          <button type="button" class="remove-svc text-[var(--color-body)] hover:text-[var(--color-error-deep)]" data-name="${name}" aria-label="Remove">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="space-y-2 t-caption text-[var(--color-body)]">
+          <div class="flex flex-wrap gap-1">
+            ${ports.map((p, i) => `<span class="inline-flex items-center gap-1 rounded bg-[var(--color-canvas)] px-1.5 py-0.5">${p.host}:${p.container}</span>`).join("")}
+          </div>
+          <p>${envs.length} env var${envs.length === 1 ? "" : "s"}</p>
+        </div>
+      `;
+      list.appendChild(div);
+    });
+    list.querySelectorAll<HTMLButtonElement>(".remove-svc").forEach((btn) => {
+      btn.addEventListener("click", () => toggleService(btn.dataset.name!));
+    });
+  }
+
+  function toggleService(name: string) {
+    if (state.selected.has(name)) {
+      state.selected.delete(name);
+      delete state.overrides[name];
+    } else {
+      state.selected.add(name);
+      const base = SERVICES[name];
+      state.overrides[name] = {
+        ports: [...base.defaultPorts],
+        volumes: [...base.defaultVolumes],
+        envVars: [...base.defaultEnv],
+        restart: base.defaultRestart,
+        image: base.image,
+        tag: base.defaultTag,
+      };
+    }
+    document.querySelectorAll<HTMLButtonElement>(`.service-btn[data-service="${name}"]`).forEach((b) => {
+      b.dataset.active = state.selected.has(name) ? "true" : "false";
+    });
+    renderOutput();
+    renderSelectedConfig();
+  }
+
+  // Wire up service buttons
+  document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((btn) => {
+    btn.addEventListener("click", () => toggleService(btn.dataset.service!));
+  });
+
+  // Search
+  document.getElementById("compose-search")?.addEventListener("input", (e) => {
+    const q = (e.target as HTMLInputElement).value.toLowerCase();
+    document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((btn) => {
+      const label = btn.textContent?.toLowerCase() ?? "";
+      btn.style.display = label.includes(q) ? "" : "none";
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((b) => {
+    b.addEventListener("click", () => {
+      state.activeTab = b.dataset.tab as Tab;
+      document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((bb) => {
+        const active = bb.dataset.tab === state.activeTab;
+        bb.classList.toggle("bg-[var(--color-canvas)]", active);
+        bb.classList.toggle("text-[var(--color-ink)]", active);
+        bb.classList.toggle("shadow-[var(--shadow-level-1)]", active);
+        bb.classList.toggle("text-[var(--color-body)]", !active);
+      });
+      document.getElementById("compose-output")!.classList.toggle("hidden", state.activeTab !== "compose");
+      document.getElementById("env-output")!.classList.toggle("hidden", state.activeTab !== "env");
+    });
+  });
+
+  // Copy / download
+  const copy = async (text: string) => navigator.clipboard.writeText(text);
+  const download = (name: string, content: string) => {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  document.getElementById("btn-compose-copy")?.addEventListener("click", () => copy(generateCompose(getConfig())));
+  document.getElementById("btn-env-copy")?.addEventListener("click", () => copy(generateEnvExample(getConfig())));
+  document.getElementById("btn-compose-download")?.addEventListener("click", () => download("docker-compose.yml", generateCompose(getConfig())));
+  document.getElementById("btn-compose-zip")?.addEventListener("click", async () => {
+    // Simple ZIP via fetch + JSZip-free approach: package as multiple downloads, or compose
+    // For simplicity, download both files
+    download("docker-compose.yml", generateCompose(getConfig()));
+    setTimeout(() => download(".env.example", generateEnvExample(getConfig())), 200);
+  });
+</script>

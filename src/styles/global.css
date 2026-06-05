@@ -1,0 +1,430 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+ * Theme tokens — derived from DESIGN.md
+ * - Light: near-white canvas + ink text
+ * - Dark:  near-black canvas + light text (default / dark-first)
+ *   Dark mode is the default. Light mode is a polarity-flip.
+ * ──────────────────────────────────────────────────────────── */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Base (light) */
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #fafafa;
+  --color-canvas-soft-2: #f5f5f5;
+  --color-ink: #171717;
+  --color-body: #4d4d4d;
+  --color-mute: #888888;
+  --color-hairline: #ebebeb;
+  --color-hairline-strong: #a1a1a1;
+  --color-on-primary: #ffffff;
+
+  /* Brand */
+  --color-cyan: #50e3c2;
+  --color-violet: #7928ca;
+  --color-pink: #ff0080;
+  --color-magenta: #eb367f;
+
+  /* Link */
+  --color-link: #0070f3;
+  --color-link-deep: #0761d1;
+  --color-link-bg-soft: #d3e5ff;
+
+  /* Semantic */
+  --color-success: #0070f3;
+  --color-error: #ee0000;
+  --color-error-soft: #f7d4d6;
+  --color-error-deep: #c50000;
+  --color-warning: #f5a623;
+  --color-warning-soft: #ffefcf;
+  --color-warning-deep: #ab570a;
+
+  /* Gradient stops (atmospheric) */
+  --grad-develop-start: #007cf0;
+  --grad-develop-end: #00dfd8;
+  --grad-preview-start: #7928ca;
+  --grad-preview-end: #ff0080;
+  --grad-ship-start: #ff4d4d;
+  --grad-ship-end: #f9cb28;
+
+  /* Selection */
+  --color-selection-bg: #171717;
+  --color-selection-fg: #f2f2f2;
+
+  /* Radius */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill-sm: 64px;
+  --radius-pill: 100px;
+  --radius-full: 9999px;
+
+  /* Spacing (4px base, from DESIGN.md) */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 40px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+  --space-5xl: 96px;
+  --space-6xl: 128px;
+  --space-section: 192px;
+
+  /* Shadows (stacked, low-opacity) */
+  --shadow-level-1: inset 0 0 0 1px #00000014;
+  --shadow-level-2:
+    0px 1px 1px #00000005, 0px 2px 2px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-level-3:
+    0px 2px 2px #0000000a, 0px 8px 8px -8px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-level-4:
+    0px 2px 2px #0000000a, 0px 8px 16px -4px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-level-5:
+    0px 1px 1px #00000005, 0px 8px 16px -4px #0000000a,
+    0px 24px 32px -8px #0000000f, inset 0 0 0 1px #00000014;
+
+  color-scheme: light;
+}
+
+/* Dark mode = DEFAULT per user requirement */
+html.dark,
+html {
+  --color-canvas: #0a0a0a;
+  --color-canvas-soft: #000000;
+  --color-canvas-soft-2: #171717;
+  --color-ink: #fafafa;
+  --color-body: #a1a1a1;
+  --color-mute: #707070;
+  --color-hairline: #262626;
+  --color-hairline-strong: #404040;
+  --color-on-primary: #0a0a0a;
+
+  /* In dark, primary is light-on-dark for polarity-flip */
+  --color-primary-cta: #fafafa;
+  --color-primary-cta-fg: #0a0a0a;
+
+  --color-link: #3291ff;
+  --color-link-deep: #0070f3;
+  --color-link-bg-soft: #0d2949;
+
+  --color-error-soft: #2a0e10;
+  --color-error-deep: #ff4d4d;
+  --color-warning-soft: #2a1e08;
+  --color-warning-deep: #f5a623;
+
+  --color-selection-bg: #fafafa;
+  --color-selection-fg: #0a0a0a;
+
+  --shadow-level-1: inset 0 0 0 1px #ffffff14;
+  --shadow-level-2:
+    0px 1px 1px #00000080, 0px 2px 2px #00000066,
+    inset 0 0 0 1px #ffffff14;
+  --shadow-level-3:
+    0px 2px 2px #00000080, 0px 8px 8px -8px #00000066,
+    inset 0 0 0 1px #ffffff14;
+  --shadow-level-4:
+    0px 2px 2px #00000080, 0px 8px 16px -4px #00000066,
+    inset 0 0 0 1px #ffffff14;
+  --shadow-level-5:
+    0px 1px 1px #00000080, 0px 8px 16px -4px #00000066,
+    0px 24px 32px -8px #00000080, inset 0 0 0 1px #ffffff14;
+
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  --color-primary-cta: #171717;
+  --color-primary-cta-fg: #ffffff;
+}
+
+@theme inline {
+  --font-sans: "Geist", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-canvas: var(--color-canvas);
+  --color-canvas-soft: var(--color-canvas-soft);
+  --color-canvas-soft-2: var(--color-canvas-soft-2);
+  --color-ink: var(--color-ink);
+  --color-body: var(--color-body);
+  --color-mute: var(--color-mute);
+  --color-hairline: var(--color-hairline);
+  --color-hairline-strong: var(--color-hairline-strong);
+  --color-on-primary: var(--color-on-primary);
+  --color-primary: var(--color-primary-cta);
+  --color-link: var(--color-link);
+  --color-link-deep: var(--color-link-deep);
+  --color-link-bg-soft: var(--color-link-bg-soft);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --color-error-soft: var(--color-error-soft);
+  --color-error-deep: var(--color-error-deep);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-warning-deep: var(--color-warning-deep);
+  --color-cyan: var(--color-cyan);
+  --color-violet: var(--color-violet);
+  --color-pink: var(--color-pink);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill-sm: var(--radius-pill-sm);
+  --radius-pill: var(--radius-pill);
+  --radius-full: var(--radius-full);
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Base typography — match DESIGN.md scale
+ * ──────────────────────────────────────────────────────────── */
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "ss02", "cv11";
+}
+
+body {
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  margin: 0;
+  min-height: 100dvh;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-selection-fg);
+}
+
+/* Headline scale (from DESIGN.md) */
+.t-display-xl {
+  font-size: 48px;
+  line-height: 48px;
+  font-weight: 600;
+  letter-spacing: -2.4px;
+}
+.t-display-lg {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 600;
+  letter-spacing: -1.28px;
+}
+.t-display-md {
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  letter-spacing: -0.96px;
+}
+.t-display-sm {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+}
+.t-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+}
+.t-body-md {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+.t-body-md-strong {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+.t-body-sm {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: -0.28px;
+}
+.t-body-sm-strong {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: -0.28px;
+}
+.t-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+.t-caption-mono {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.t-code {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  font-family: var(--font-mono);
+}
+.t-button-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+.t-button-lg {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+}
+
+/* Responsive headline scaling (Tailwind doesn't ship type tokens by default) */
+@media (max-width: 768px) {
+  .t-display-xl {
+    font-size: 36px;
+    line-height: 40px;
+    letter-spacing: -1.8px;
+  }
+  .t-display-lg {
+    font-size: 26px;
+    line-height: 32px;
+    letter-spacing: -1.04px;
+  }
+  .t-display-md {
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: -0.6px;
+  }
+}
+
+/* Focus ring — universal accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: var(--radius-full);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-hairline-strong);
+}
+
+/* Mesh gradient — atmospheric backdrop only */
+.mesh-gradient {
+  background:
+    radial-gradient(at 20% 20%, var(--grad-develop-start) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, var(--grad-preview-end) 0px, transparent 50%),
+    radial-gradient(at 70% 80%, var(--grad-preview-start) 0px, transparent 50%),
+    radial-gradient(at 20% 90%, var(--grad-ship-end) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, var(--grad-develop-end) 0px, transparent 60%);
+  filter: blur(80px) saturate(140%);
+  opacity: 0.35;
+}
+html.dark .mesh-gradient {
+  opacity: 0.45;
+}
+
+/* Subtle inline mesh (smaller, lower opacity) */
+.mesh-gradient-sm {
+  background:
+    radial-gradient(at 30% 30%, var(--grad-develop-start) 0px, transparent 50%),
+    radial-gradient(at 70% 70%, var(--grad-preview-end) 0px, transparent 50%);
+  filter: blur(40px) saturate(140%);
+  opacity: 0.25;
+}
+
+/* Grid pattern overlay (very subtle texture) */
+.grid-pattern {
+  background-image:
+    linear-gradient(to right, var(--color-hairline) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-hairline) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 80%);
+}
+
+/* Code block base */
+.code-block {
+  background: var(--color-canvas-soft-2);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-ink);
+}
+
+/* Shiki token theming — adapts to light/dark */
+:root {
+  --astro-code-color-text: var(--color-ink);
+  --astro-code-color-background: var(--color-canvas-soft-2);
+  --astro-code-token-constant: #0070f3;
+  --astro-code-token-string: #008000;
+  --astro-code-token-comment: var(--color-mute);
+  --astro-code-token-keyword: #7928ca;
+  --astro-code-token-parameter: #171717;
+  --astro-code-token-function: #0070f3;
+  --astro-code-token-string-expression: #008000;
+  --astro-code-token-punctuation: var(--color-body);
+  --astro-code-token-link: #0070f3;
+}
+html.dark {
+  --astro-code-color-text: #fafafa;
+  --astro-code-color-background: #0a0a0a;
+  --astro-code-token-constant: #50e3c2;
+  --astro-code-token-string: #79c08a;
+  --astro-code-token-comment: #707070;
+  --astro-code-token-keyword: #eb367f;
+  --astro-code-token-parameter: #fafafa;
+  --astro-code-token-function: #79b8ff;
+  --astro-code-token-string-expression: #79c08a;
+  --astro-code-token-punctuation: #a1a1a1;
+  --astro-code-token-link: #79b8ff;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth transitions for theme swap */
+html {
+  transition: background-color 200ms ease, color 200ms ease;
+}

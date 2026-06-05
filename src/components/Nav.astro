@@ -1,0 +1,53 @@
+---
+import Logo from "./Logo.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import Button from "./ui/Button.astro";
+import Icon from "./ui/Icon.astro";
+---
+
+<header
+  class="sticky top-0 z-40 w-full border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft)]/80 backdrop-blur-md"
+>
+  <nav
+    class="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between px-4 md:px-6"
+    aria-label="Primary"
+  >
+    <Logo />
+
+    <div class="hidden items-center gap-1 md:flex">
+      <a
+        href="/"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        >Dockerfile</a
+      >
+      <a
+        href="/compose"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        >Compose</a
+      >
+      <a
+        href="/stack-builder"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        >Stack Builder</a
+      >
+      <a
+        href="/docs"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        >Docs</a
+      >
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a
+        href="https://github.com"
+        target="_blank"
+        rel="noopener"
+        class="hidden h-9 items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 t-body-sm-strong text-[var(--color-ink)] transition-colors hover:bg-[var(--color-canvas-soft-2)] sm:inline-flex"
+      >
+        <Icon name="github" size={14} />
+        <span>Star</span>
+      </a>
+      <ThemeToggle />
+    </div>
+  </nav>
+</header>

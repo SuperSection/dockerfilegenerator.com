@@ -1,0 +1,517 @@
+---
+/**
+ * Dockerfile Generator — interactive client island.
+ * Renders the form + live preview.
+ */
+import { FRAMEWORK_LIST, getFramework, type FrameworkId, type PackageManager } from "../lib/dockerfile/frameworks";
+import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPractices, estimateImageSize, type DockerfileConfig } from "../lib/dockerfile/generator";
+---
+
+<div
+  id="dockerfile-generator"
+  data-framework-list={JSON.stringify(FRAMEWORK_LIST.map(f => ({ id: f.id, name: f.name, emoji: f.emoji, language: f.language, description: f.description, defaultPort: f.defaultPort, defaultWorkdir: f.defaultWorkdir, defaultPackageManager: f.defaultPackageManager, supportsMultiStage: f.supportsMultiStage, supportsStandalone: f.supportsStandalone, defaultBaseImage: f.defaultBaseImage, recommendedBaseImage: f.recommendedBaseImage, startCommand: f.startCommand, buildOptimizations: f.buildOptimizations })))}
+>
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
+    <!-- Left: Configuration -->
+    <aside class="space-y-6">
+      <!-- Framework selector -->
+      <section>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="t-caption-mono text-[var(--color-body)]">Framework</h2>
+        </div>
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3" id="framework-grid">
+          {FRAMEWORK_LIST.map((fw) => (
+            <button
+              type="button"
+              data-framework={fw.id}
+              class="framework-btn group flex flex-col items-start gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+            >
+              <span class="text-base">{fw.emoji}</span>
+              <span class="t-body-sm-strong text-[var(--color-ink)]">{fw.name}</span>
+              <span class="t-caption text-[var(--color-body)]">{fw.language}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <!-- Configuration -->
+      <section class="space-y-4 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+        <h2 class="t-caption-mono text-[var(--color-body)]">Configuration</h2>
+
+        <div>
+          <label for="base-image" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Base image</label>
+          <input
+            type="text"
+            id="base-image"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            placeholder="node:20-alpine"
+          />
+          <p class="t-caption mt-1 text-[var(--color-mute)]" id="base-image-hint">Recommended: use a slim or alpine variant</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="port" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Port</label>
+            <input
+              type="number"
+              id="port"
+              min="1"
+              max="65535"
+              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label for="workdir" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Workdir</label>
+            <input
+              type="text"
+              id="workdir"
+              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label for="package-manager" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Package manager</label>
+          <select
+            id="package-manager"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+          >
+            <option value="npm">npm</option>
+            <option value="yarn">yarn</option>
+            <option value="pnpm">pnpm</option>
+            <option value="bun">bun</option>
+            <option value="pip">pip</option>
+            <option value="poetry">poetry</option>
+            <option value="uv">uv</option>
+            <option value="maven">maven</option>
+            <option value="gradle">gradle</option>
+            <option value="go">go modules</option>
+            <option value="cargo">cargo</option>
+            <option value="composer">composer</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="start-command" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Start command <span class="text-[var(--color-mute)]">(optional)</span></label>
+          <input
+            type="text"
+            id="start-command"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            placeholder="node server.js"
+          />
+        </div>
+
+        <!-- Toggles -->
+        <div class="space-y-2 pt-2">
+          <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <div>
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Multi-stage build</span>
+              <p class="t-caption text-[var(--color-body)]">Smaller final image, build deps in builder stage</p>
+            </div>
+            <input type="checkbox" id="multi-stage" class="toggle" checked />
+          </label>
+          <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <div>
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Production mode</span>
+              <p class="t-caption text-[var(--color-body)]">NODE_ENV=production, no devDependencies</p>
+            </div>
+            <input type="checkbox" id="production" class="toggle" checked />
+          </label>
+          <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <div>
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Non-root user</span>
+              <p class="t-caption text-[var(--color-body)]">Run as UID 1001 for security</p>
+            </div>
+            <input type="checkbox" id="non-root" class="toggle" checked />
+          </label>
+          <label class="flex cursor-pointer items-center justify-between gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <div>
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Health check</span>
+              <p class="t-caption text-[var(--color-body)]">HTTP probe for orchestrators</p>
+            </div>
+            <input type="checkbox" id="health-check" class="toggle" checked />
+          </label>
+        </div>
+
+        <!-- Framework-specific optimizations -->
+        <div id="optimizations-section" class="hidden border-t border-[var(--color-hairline)] pt-4">
+          <h3 class="t-caption-mono mb-2 text-[var(--color-body)]">Optimizations</h3>
+          <div id="optimizations-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Environment variables -->
+        <div class="border-t border-[var(--color-hairline)] pt-4">
+          <div class="mb-2 flex items-center justify-between">
+            <h3 class="t-caption-mono text-[var(--color-body)]">Environment</h3>
+            <button type="button" id="add-env" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add</button>
+          </div>
+          <div id="env-list" class="space-y-2"></div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Right: Output -->
+    <div class="space-y-6">
+      <!-- Stats row -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+          <p class="t-caption-mono mb-1 text-[var(--color-body)]">Est. Size</p>
+          <p class="t-display-sm text-[var(--color-ink)]" id="stat-size">—</p>
+        </div>
+        <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+          <p class="t-caption-mono mb-1 text-[var(--color-body)]">Score</p>
+          <p class="t-display-sm text-[var(--color-ink)]" id="stat-score">—</p>
+        </div>
+        <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+          <p class="t-caption-mono mb-1 text-[var(--color-body)]">Build</p>
+          <p class="t-display-sm text-[var(--color-ink)]" id="stat-complexity">—</p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit">
+        <button type="button" data-tab="dockerfile" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]">Dockerfile</button>
+        <button type="button" data-tab="dockerignore" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">.dockerignore</button>
+        <button type="button" data-tab="explain" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">Explain</button>
+        <button type="button" data-tab="scanner" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">Scanner</button>
+      </div>
+
+      <!-- Code panel -->
+      <div id="output-dockerfile" class="output-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <div class="flex items-center gap-2">
+            <div class="flex gap-1.5">
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+            </div>
+            <span class="t-code ml-2 text-[var(--color-body)]">Dockerfile</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              Copy
+            </button>
+            <button type="button" id="btn-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+          </div>
+        </div>
+        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)]" id="code-output"><code id="code-content">Select a framework to start</code></pre>
+      </div>
+
+      <div id="output-dockerignore" class="output-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="t-code text-[var(--color-body)]">.dockerignore</span>
+          <button type="button" id="btn-copy-ignore" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+        </div>
+        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)]" id="code-ignore"></pre>
+      </div>
+
+      <div id="output-explain" class="output-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="t-code text-[var(--color-body)]">Instruction-by-instruction explanation</span>
+        </div>
+        <div class="divide-y divide-[var(--color-hairline)]" id="explain-content"></div>
+      </div>
+
+      <div id="output-scanner" class="output-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+        <div class="border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="t-code text-[var(--color-body)]">Best practice scanner</span>
+        </div>
+        <div class="divide-y divide-[var(--color-hairline)]" id="scanner-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .toggle {
+    appearance: none;
+    width: 36px;
+    height: 20px;
+    background: var(--color-hairline-strong);
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 9999px;
+    transition: transform 150ms ease;
+  }
+  .toggle:checked {
+    background: var(--color-primary-cta);
+  }
+  .toggle:checked::after {
+    transform: translateX(16px);
+  }
+  .framework-btn[data-active="true"] {
+    border-color: var(--color-primary-cta);
+    background: var(--color-canvas-soft-2);
+    box-shadow: var(--shadow-level-2);
+  }
+  .env-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+  }
+  .env-row input {
+    min-width: 0;
+  }
+</style>
+
+<script>
+  import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPractices, estimateImageSize, type DockerfileConfig } from "../lib/dockerfile/generator";
+  import { FRAMEWORKS, type FrameworkId, type PackageManager } from "../lib/dockerfile/frameworks";
+
+  type Tab = "dockerfile" | "dockerignore" | "explain" | "scanner";
+
+  const root = document.getElementById("dockerfile-generator");
+  if (!root) throw new Error("generator root not found");
+
+  const state = {
+    framework: "nextjs" as FrameworkId,
+    config: {} as DockerfileConfig,
+    activeTab: "dockerfile" as Tab,
+  };
+
+  function readConfig(): DockerfileConfig {
+    return {
+      framework: state.framework,
+      baseImage: (document.getElementById("base-image") as HTMLInputElement).value.trim() || FRAMEWORKS[state.framework].defaultBaseImage,
+      port: parseInt((document.getElementById("port") as HTMLInputElement).value, 10) || FRAMEWORKS[state.framework].defaultPort,
+      workdir: (document.getElementById("workdir") as HTMLInputElement).value.trim() || FRAMEWORKS[state.framework].defaultWorkdir,
+      packageManager: (document.getElementById("package-manager") as HTMLSelectElement).value as PackageManager,
+      multiStage: (document.getElementById("multi-stage") as HTMLInputElement).checked,
+      production: (document.getElementById("production") as HTMLInputElement).checked,
+      nonRootUser: (document.getElementById("non-root") as HTMLInputElement).checked,
+      healthCheck: (document.getElementById("health-check") as HTMLInputElement).checked,
+      envVars: readEnvVars(),
+      buildOptimizations: readOptimizations(),
+      customStartCommand: (document.getElementById("start-command") as HTMLInputElement).value.trim() || undefined,
+    };
+  }
+
+  function readEnvVars() {
+    const rows = document.querySelectorAll<HTMLInputElement>(".env-row");
+    const vars: { key: string; value: string }[] = [];
+    rows.forEach((row) => {
+      const inputs = row.querySelectorAll<HTMLInputElement>("input");
+      const key = inputs[0].value.trim();
+      const value = inputs[1].value.trim();
+      if (key) vars.push({ key, value });
+    });
+    return vars;
+  }
+
+  function readOptimizations(): string[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>("#optimizations-list input[type=checkbox]:checked")).map(
+      (el) => el.dataset.opt ?? ""
+    ).filter(Boolean);
+  }
+
+  function setFramework(id: FrameworkId) {
+    state.framework = id;
+    const fw = FRAMEWORKS[id];
+    (document.getElementById("base-image") as HTMLInputElement).value = fw.defaultBaseImage;
+    (document.getElementById("port") as HTMLInputElement).value = String(fw.defaultPort);
+    (document.getElementById("workdir") as HTMLInputElement).value = fw.defaultWorkdir;
+    (document.getElementById("package-manager") as HTMLSelectElement).value = fw.defaultPackageManager;
+    (document.getElementById("start-command") as HTMLInputElement).value = fw.startCommand ?? "";
+
+    document.querySelectorAll<HTMLButtonElement>(".framework-btn").forEach((b) => {
+      b.dataset.active = b.dataset.framework === id ? "true" : "false";
+    });
+
+    // Render framework-specific optimizations
+    const optsSection = document.getElementById("optimizations-section")!;
+    const optsList = document.getElementById("optimizations-list")!;
+    optsList.innerHTML = "";
+    const opts = fw.buildOptimizations ?? [];
+    if (opts.length) {
+      optsSection.classList.remove("hidden");
+      opts.forEach((opt) => {
+        const label = document.createElement("label");
+        label.className = "flex cursor-pointer items-center gap-2 t-body-sm text-[var(--color-ink)]";
+        label.innerHTML = `<input type="checkbox" data-opt="${opt}" class="h-4 w-4 rounded border-[var(--color-hairline-strong)]" /> ${opt.replace(/-/g, " ")}`;
+        optsList.appendChild(label);
+      });
+    } else {
+      optsSection.classList.add("hidden");
+    }
+
+    render();
+  }
+
+  function highlight(code: string) {
+    // Lightweight Dockerfile syntax highlighting
+    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
+      .replace(/^(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME)\b/gm, '<span style="color:var(--color-link);font-weight:600">$1</span>')
+      .replace(/(\$\{[^}]+\})/g, '<span style="color:var(--color-cyan)">$1</span>')
+      .replace(/(--\w[\w-]*)/g, '<span style="color:var(--color-violet)">$1</span>');
+  }
+
+  function render() {
+    const config = readConfig();
+    state.config = config;
+    const dockerfile = generateDockerfile(config);
+    const dockerignore = generateDockerignore(config.framework);
+    const explanations = explainDockerfile(dockerfile);
+    const findings = scanBestPractices(config, dockerfile);
+    const size = estimateImageSize(config);
+
+    // Output code
+    const codeEl = document.getElementById("code-content")!;
+    codeEl.innerHTML = highlight(dockerfile);
+    const ignoreEl = document.getElementById("code-ignore")!;
+    ignoreEl.innerHTML = highlight(dockerignore);
+
+    // Stats
+    document.getElementById("stat-size")!.textContent = `${size.min}–${size.max} MB`;
+    document.getElementById("stat-score")!.textContent = `${size.score}/100`;
+    document.getElementById("stat-complexity")!.textContent = config.multiStage ? "Multi-stage" : "Single-stage";
+
+    // Explanations
+    const explainEl = document.getElementById("explain-content")!;
+    explainEl.innerHTML = explanations
+      .map(
+        (e) => `
+        <div class="p-4">
+          <div class="flex items-start gap-3">
+            <code class="t-code rounded bg-[var(--color-canvas-soft-2)] px-2 py-0.5 text-[var(--color-link)]" style="font-size:12px">${e.instruction}</code>
+          </div>
+          <p class="t-body-sm mt-2 text-[var(--color-body)]">${e.description}</p>
+        </div>`
+      )
+      .join("");
+
+    // Scanner
+    const scannerEl = document.getElementById("scanner-content")!;
+    if (findings.length === 0) {
+      scannerEl.innerHTML = `<div class="p-6 text-center"><p class="t-body-sm text-[var(--color-body)]">✓ No issues found. Looks production-ready.</p></div>`;
+    } else {
+      scannerEl.innerHTML = findings
+        .map((f) => {
+          const color = f.level === "error" ? "var(--color-error-deep)" : f.level === "warning" ? "var(--color-warning-deep)" : "var(--color-link)";
+          const bg = f.level === "error" ? "var(--color-error-soft)" : f.level === "warning" ? "var(--color-warning-soft)" : "var(--color-link-bg-soft)";
+          return `<div class="flex items-start gap-3 p-4">
+              <span class="t-caption-mono rounded-full px-2 py-0.5" style="background:${bg};color:${color}">${f.level}</span>
+              <div>
+                <p class="t-body-sm-strong text-[var(--color-ink)]">${f.title}</p>
+                <p class="t-body-sm mt-1 text-[var(--color-body)]">${f.message}</p>
+              </div>
+            </div>`;
+        })
+        .join("");
+    }
+  }
+
+  function setTab(tab: Tab) {
+    state.activeTab = tab;
+    document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((b) => {
+      const active = b.dataset.tab === tab;
+      b.classList.toggle("bg-[var(--color-canvas)]", active);
+      b.classList.toggle("text-[var(--color-ink)]", active);
+      b.classList.toggle("shadow-[var(--shadow-level-1)]", active);
+      b.classList.toggle("text-[var(--color-body)]", !active);
+    });
+    document.querySelectorAll<HTMLDivElement>(".output-panel").forEach((p) => {
+      p.classList.add("hidden");
+    });
+    const map: Record<Tab, string> = {
+      dockerfile: "output-dockerfile",
+      dockerignore: "output-dockerignore",
+      explain: "output-explain",
+      scanner: "output-scanner",
+    };
+    document.getElementById(map[tab])?.classList.remove("hidden");
+  }
+
+  function addEnvRow(key = "", value = "") {
+    const list = document.getElementById("env-list")!;
+    const row = document.createElement("div");
+    row.className = "env-row";
+    row.innerHTML = `
+      <input type="text" placeholder="KEY" value="${key}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+      <input type="text" placeholder="value" value="${value}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+      <button type="button" class="env-remove rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    `;
+    list.appendChild(row);
+    row.querySelector(".env-remove")?.addEventListener("click", () => {
+      row.remove();
+      render();
+    });
+    row.querySelectorAll("input").forEach((i) =>
+      i.addEventListener("input", () => render())
+    );
+  }
+
+  function downloadFile(name: string, content: string) {
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function copyToClipboard(text: string) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  // Wire up framework buttons
+  document.querySelectorAll<HTMLButtonElement>(".framework-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setFramework(btn.dataset.framework as FrameworkId));
+  });
+
+  // Wire up inputs
+  ["base-image", "port", "workdir", "package-manager", "start-command", "multi-stage", "production", "non-root", "health-check"].forEach(
+    (id) => {
+      document.getElementById(id)?.addEventListener("input", () => render());
+      document.getElementById(id)?.addEventListener("change", () => render());
+    }
+  );
+
+  // Add env
+  document.getElementById("add-env")?.addEventListener("click", () => addEnvRow());
+
+  // Tabs
+  document.querySelectorAll<HTMLButtonElement>(".tab-btn").forEach((b) => {
+    b.addEventListener("click", () => setTab(b.dataset.tab as Tab));
+  });
+
+  // Copy / Download
+  document.getElementById("btn-copy")?.addEventListener("click", async () => {
+    const dockerfile = generateDockerfile(readConfig());
+    await copyToClipboard(dockerfile);
+    const btn = document.getElementById("btn-copy")!;
+    const orig = btn.innerHTML;
+    btn.innerHTML = "✓ Copied";
+    setTimeout(() => (btn.innerHTML = orig), 1500);
+  });
+  document.getElementById("btn-copy-ignore")?.addEventListener("click", async () => {
+    await copyToClipboard(generateDockerignore(state.framework));
+  });
+  document.getElementById("btn-download")?.addEventListener("click", () => {
+    const config = readConfig();
+    downloadFile("Dockerfile", generateDockerfile(config));
+  });
+
+  // Init
+  setFramework("nextjs");
+</script>
