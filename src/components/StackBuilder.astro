@@ -120,7 +120,7 @@ const optionals = Object.values(OPTIONALS);
             </div>
             <button type="button" class="copy-btn t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target={p.id}>Copy</button>
           </div>
-          <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)] min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
+          <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
         </div>
       ))}
 
@@ -189,19 +189,44 @@ const optionals = Object.values(OPTIONALS);
   }
 
   function highlight(code: string) {
-    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     return escape(code)
-      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
-      .replace(/^(\s*-?\s*)([a-zA-Z_][\w-]*)(:)/gm, '$1<span style="color:var(--color-link);font-weight:600">$2</span>$3')
-      .replace(/^(\s*)([\w-]+):(\s.*)$/gm, '$1<span style="color:var(--color-violet)">$2</span>:$3')
-      .replace(/(&quot;[^&]*?&quot;)/g, '<span style="color:var(--color-cyan)">$1</span>');
+      // comments
+      .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
+      // top-level keys (no leading whitespace): key:
+      .replace(/^([A-Za-z_][\w-]*)(:)/gm, '<span class="tok-keyword">$1</span>$2')
+      // nested keys (indented): key: value  → color the key
+      .replace(/^(\s+)(-?\s*)([A-Za-z_][\w-]*)(:)/gm, '$1$2<span class="tok-image">$3</span>$4')
+      // list items under a key (e.g. "  - something")
+      .replace(/^(\s+)(-\s)/gm, '$1<span class="tok-punct">$2</span>')
+      // boolean / null / number values
+      .replace(/(:\s)(true|false|yes|no|null|~)\b/g, '$1<span class="tok-number">$2</span>')
+      .replace(/(:\s)(-?\d+(?:\.\d+)?)\b/g, '$1<span class="tok-number">$2</span>')
+      // unquoted scalar values that look like image refs / env names
+      .replace(/(:\s)([a-zA-Z0-9._\-/:${}]+)$/gm, '$1<span class="tok-string">$2</span>')
+      // shell-style ${VAR} or $VAR
+      .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
+      .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
   }
 
   function dockerfileHighlight(code: string) {
-    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     return escape(code)
-      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
-      .replace(/^(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME)\b/gm, '<span style="color:var(--color-link);font-weight:600">$1</span>');
+      // comments
+      .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
+      // FROM <image>[:<tag>] — color image and tag distinctly
+      .replace(/^(FROM)(\s+)([A-Za-z0-9.\-_]+)(?::([A-Za-z0-9.\-_]+))?/gm,
+        '<span class="tok-keyword">$1</span>$2<span class="tok-image">$3</span><span class="tok-tag">:$4</span>')
+      // other Dockerfile instructions
+      .replace(/^(RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME|STOPSIGNAL|SHELL)\b/gm,
+        '<span class="tok-keyword">$1</span>')
+      // flags like --from=builder
+      .replace(/(--[a-zA-Z][\w-]*(?:=[^\s\\]*)?)/g, '<span class="tok-flag">$1</span>')
+      // ${VAR} / $VAR
+      .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
+      .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
   }
 
   function render() {

@@ -198,7 +198,7 @@ import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPr
             </button>
           </div>
         </div>
-        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)]" id="code-output"><code id="code-content">Select a framework to start</code></pre>
+        <pre class="code-panel overflow-x-auto" id="code-output"><code id="code-content">Select a framework to start</code></pre>
       </div>
 
       <div id="output-dockerignore" class="output-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
@@ -206,7 +206,7 @@ import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPr
           <span class="t-code text-[var(--color-body)]">.dockerignore</span>
           <button type="button" id="btn-copy-ignore" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
         </div>
-        <pre class="overflow-x-auto p-4 t-code text-[var(--color-ink)]" id="code-ignore"></pre>
+        <pre class="code-panel overflow-x-auto" id="code-ignore"></pre>
       </div>
 
       <div id="output-explain" class="output-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
@@ -245,16 +245,18 @@ import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPr
     left: 2px;
     width: 16px;
     height: 16px;
-    background: white;
+    background: var(--color-canvas);
     border-radius: 9999px;
-    transition: transform 150ms ease;
+    transition: transform 150ms ease, background 150ms ease;
   }
   .toggle:checked {
     background: var(--color-primary-cta);
   }
   .toggle:checked::after {
     transform: translateX(16px);
+    background: var(--color-primary-cta-fg);
   }
+
   .framework-btn[data-active="true"] {
     border-color: var(--color-primary-cta);
     background: var(--color-canvas-soft-2);
@@ -353,14 +355,156 @@ import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPr
     render();
   }
 
+  // Dockerfile keywords
+  const KEYWORDS = new Set([
+    "FROM", "RUN", "CMD", "LABEL", "MAINTAINER", "EXPOSE", "ENV", "ADD", "COPY",
+    "ENTRYPOINT", "VOLUME", "USER", "WORKDIR", "ARG", "ONBUILD", "STOPSIGNAL",
+    "HEALTHCHECK", "SHELL", "AS",
+  ]);
+
+  function esc(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function tokenizeLine(line: string): string {
+    // Pure comment line
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith("#")) {
+      return `<span class="tok-comment">${esc(line)}</span>`;
+    }
+
+    const out: string[] = [];
+    let i = 0;
+    const n = line.length;
+
+    // 1. Leading whitespace
+    while (i < n && line[i] === " ") { out.push(" "); i++; }
+    while (i < n && line[i] === "\t") { out.push("\t"); i++; }
+
+    // 2. Instruction keyword
+    const kwMatch = /^([A-Z]+)/.exec(line.slice(i));
+    if (kwMatch) {
+      const kw = kwMatch[1];
+      if (KEYWORDS.has(kw)) {
+        out.push(`<span class="tok-keyword">${kw}</span>`);
+        i += kw.length;
+      }
+    }
+
+    // 3. Walk the rest, marking up tokens
+    // We treat the remainder as a sequence of: strings, flags, numbers,
+    // variables, stage names (after AS), ENV KEY=VALUE pairs, image refs.
+
+
+    // ENV / LABEL / ARG: KEY=VALUE form — color the KEY distinctly
+    const isEnvLike = kwMatch && (kwMatch[1] === "ENV" || kwMatch[1] === "LABEL" || kwMatch[1] === "ARG");
+
+    while (i < n) {
+      const ch = line[i];
+
+      // Quoted strings (single or double) — greedy, escape-aware
+      if (ch === '"' || ch === "'") {
+        const quote = ch;
+        let j = i + 1;
+        while (j < n) {
+          if (line[j] === "\\" && j + 1 < n) { j += 2; continue; }
+          if (line[j] === quote) { j++; break; }
+          j++;
+        }
+        out.push(`<span class="tok-string">${esc(line.slice(i, j))}</span>`);
+        i = j;
+        continue;
+      }
+
+      // JSON array bracket (CMD/ENTRYPOINT exec form)
+      if (ch === "[" || ch === "]") {
+        out.push(`<span class="tok-punct">${ch}</span>`);
+        i++;
+        continue;
+      }
+
+      // Shell variable / build-arg variable ${...} or $NAME
+      if (ch === "$") {
+        const m = /^(\$\{[^}]+\})|(\$[A-Za-z_][A-Za-z0-9_]*)/.exec(line.slice(i));
+        if (m) {
+          out.push(`<span class="tok-var">${esc(m[0])}</span>`);
+          i += m[0].length;
+          continue;
+        }
+      }
+
+      // Flag: --name or --name=value
+      const flagM = /^(--[a-zA-Z][\w-]*(?:=[^\s\\]*)?)/.exec(line.slice(i));
+      if (flagM) {
+        out.push(`<span class="tok-flag">${esc(flagM[0])}</span>`);
+        i += flagM[0].length;
+        continue;
+      }
+
+      // Number (ports, timeouts)
+      const numM = /^\d+(\.\d+)?/.exec(line.slice(i));
+      if (numM && (i === 0 || /[\s=]/.test(line[i - 1]))) {
+        out.push(`<span class="tok-number">${numM[0]}</span>`);
+        i += numM[0].length;
+        continue;
+      }
+
+      // Image reference: name[:tag] or name/name[:tag] (only meaningful right after FROM/COPY --from=)
+      const imgM = /^([a-zA-Z0-9.\-_]+(?::[a-zA-Z0-9.\-_]+)?(?:@[a-zA-Z0-9.\-_]+)?)/.exec(line.slice(i));
+      if (imgM && (kwMatch && (kwMatch[1] === "FROM" || kwMatch[1] === "COPY"))) {
+        const ref = imgM[0];
+        const colon = ref.indexOf(":");
+        const at = ref.indexOf("@");
+        if (colon > 0) {
+          out.push(`<span class="tok-image">${esc(ref.slice(0, colon))}</span>`);
+          out.push(`<span class="tok-punct">${esc(ref.slice(colon, at > 0 ? at : colon + 1))}</span>`);
+          const tagPart = at > 0 ? ref.slice(colon + 1, at) : ref.slice(colon + 1);
+          const digestPart = at > 0 ? ref.slice(at) : "";
+          if (tagPart) out.push(`<span class="tok-tag">${esc(tagPart)}</span>`);
+          if (digestPart) out.push(`<span class="tok-punct">${esc(digestPart)}</span>`);
+        } else {
+          out.push(`<span class="tok-image">${esc(ref)}</span>`);
+        }
+        i += ref.length;
+        continue;
+      }
+
+      // ENV/ARG/LABEL KEY (uppercase identifier followed by = or whitespace)
+      if (isEnvLike) {
+        const envKeyM = /^([A-Z_][A-Z0-9_]*)(?==)/.exec(line.slice(i));
+        if (envKeyM) {
+          out.push(`<span class="tok-keyword">${envKeyM[1]}</span>`);
+          i += envKeyM[1].length;
+          // skip the "=" (rendered in --punct color)
+          if (line[i] === "=") {
+            out.push(`<span class="tok-punct">=</span>`);
+            i++;
+          }
+          continue;
+        }
+      }
+
+      // AS <stage-name>
+      if (kwMatch && kwMatch[1] === "FROM") {
+        const asM = /^\b(AS)\s+([A-Za-z_][\w-]*)/i.exec(line.slice(i));
+        if (asM) {
+          out.push(` <span class="tok-punct">${asM[1]}</span> `);
+          out.push(`<span class="tok-stage">${asM[2]}</span>`);
+          i += asM[0].length;
+          continue;
+        }
+      }
+
+      // Default — copy one char
+      out.push(esc(ch));
+      i++;
+    }
+
+    return out.join("");
+  }
+
   function highlight(code: string) {
-    // Lightweight Dockerfile syntax highlighting
-    const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return escape(code)
-      .replace(/^(#.*$)/gm, '<span style="color:var(--color-mute);font-style:italic">$1</span>')
-      .replace(/^(FROM|RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME)\b/gm, '<span style="color:var(--color-link);font-weight:600">$1</span>')
-      .replace(/(\$\{[^}]+\})/g, '<span style="color:var(--color-cyan)">$1</span>')
-      .replace(/(--\w[\w-]*)/g, '<span style="color:var(--color-violet)">$1</span>');
+    return code.split("\n").map(tokenizeLine).join("\n");
   }
 
   function render() {
@@ -390,7 +534,7 @@ import { generateDockerfile, generateDockerignore, explainDockerfile, scanBestPr
         (e) => `
         <div class="p-4">
           <div class="flex items-start gap-3">
-            <code class="t-code rounded bg-[var(--color-canvas-soft-2)] px-2 py-0.5 text-[var(--color-link)]" style="font-size:12px">${e.instruction}</code>
+            <code class="t-code rounded bg-[var(--color-canvas-soft-2)] px-2 py-0.5 text-[var(--color-link)]" style="font-size:12px;font-family:var(--font-mono)">${e.instruction}</code>
           </div>
           <p class="t-body-sm mt-2 text-[var(--color-body)]">${e.description}</p>
         </div>`

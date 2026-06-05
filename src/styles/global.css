@@ -149,7 +149,7 @@ html:not(.dark) {
 
 @theme inline {
   --font-sans: "Geist", "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   --color-canvas: var(--color-canvas);
   --color-canvas-soft: var(--color-canvas-soft);
@@ -280,9 +280,11 @@ body {
 }
 .t-code {
   font-size: 13px;
-  line-height: 20px;
+  line-height: 22px;
   font-weight: 400;
   font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+  font-variant-ligatures: contextual;
 }
 .t-button-md {
   font-size: 14px;
@@ -386,6 +388,41 @@ html.dark .mesh-gradient {
   color: var(--color-ink);
 }
 
+/* Code panel (displayed code output) */
+.code-panel {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+  font-variant-ligatures: contextual;
+  font-feature-settings: "calt" 1, "liga" 1;
+  color: var(--color-ink);
+  padding: 20px 22px;
+  margin: 0;
+  white-space: pre;
+  tab-size: 2;
+}
+.code-panel code {
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+  padding: 0;
+  display: block;
+}
+
+/* Dockerfile / config syntax tokens (global so they apply to innerHTML) */
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-keyword { color: var(--tok-keyword); font-weight: 600; }
+.tok-image   { color: var(--tok-image); }
+.tok-tag     { color: var(--tok-tag); }
+.tok-flag    { color: var(--tok-flag); }
+.tok-string  { color: var(--tok-string); }
+.tok-number  { color: var(--tok-number); }
+.tok-var     { color: var(--tok-var); }
+.tok-equal   { color: var(--tok-punct); }
+.tok-stage   { color: var(--tok-stage); font-weight: 500; }
+.tok-punct   { color: var(--tok-punct); }
+
 /* Shiki token theming — adapts to light/dark */
 :root {
   --astro-code-color-text: var(--color-ink);
@@ -399,6 +436,18 @@ html.dark .mesh-gradient {
   --astro-code-token-string-expression: #008000;
   --astro-code-token-punctuation: var(--color-body);
   --astro-code-token-link: #0070f3;
+
+  /* Dockerfile syntax tokens (light) */
+  --tok-comment: #8a8a8a;
+  --tok-keyword: #7928ca;
+  --tok-image:   #0070f3;
+  --tok-tag:     #008000;
+  --tok-flag:    #c2410c;
+  --tok-string:  #008000;
+  --tok-number:  #b45309;
+  --tok-var:     #50e3c2;
+  --tok-stage:   #eb367f;
+  --tok-punct:   #6b6b6b;
 }
 html.dark {
   --astro-code-color-text: #fafafa;
@@ -412,6 +461,18 @@ html.dark {
   --astro-code-token-string-expression: #79c08a;
   --astro-code-token-punctuation: #a1a1a1;
   --astro-code-token-link: #79b8ff;
+
+  /* Dockerfile syntax tokens (dark) */
+  --tok-comment: #707070;
+  --tok-keyword: #eb367f;
+  --tok-image:   #79b8ff;
+  --tok-tag:     #79c08a;
+  --tok-flag:    #f5a623;
+  --tok-string:  #79c08a;
+  --tok-number:  #f5c084;
+  --tok-var:     #50e3c2;
+  --tok-stage:   #ff7eb6;
+  --tok-punct:   #a1a1a1;
 }
 
 /* Reduce motion */
