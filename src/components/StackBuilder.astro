@@ -79,16 +79,25 @@ const optionals = Object.values(OPTIONALS);
 
     <!-- Right: Output tabs -->
     <div class="space-y-6">
-      <!-- Project name -->
-      <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
-        <label for="project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
-        <input
-          type="text"
-          id="project-name"
-          value="my-app"
-          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
-        />
-        <p class="t-caption mt-1 text-[var(--color-mute)]">Used for volume names and container prefixes.</p>
+      <!-- Project name + .env toggle -->
+      <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 space-y-3">
+        <div>
+          <label for="project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+          <input
+            type="text"
+            id="project-name"
+            value="my-app"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+          />
+          <p class="t-caption mt-1 text-[var(--color-mute)]">Used for volume names and container prefixes.</p>
+        </div>
+        <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+          <input type="checkbox" id="stack-use-env" class="toggle shrink-0" />
+          <div class="flex-1">
+            <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file for variables</span>
+            <p class="t-caption text-[var(--color-body)]">Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.</p>
+          </div>
+        </label>
       </div>
 
       <!-- Tabs -->
@@ -136,6 +145,36 @@ const optionals = Object.values(OPTIONALS);
 </div>
 
 <style>
+  .toggle {
+    appearance: none;
+    width: 36px;
+    height: 20px;
+    background: var(--color-hairline-strong);
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--color-canvas);
+    border-radius: 9999px;
+    transition: transform 150ms ease, background 150ms ease;
+  }
+  .toggle:checked {
+    background: var(--color-primary-cta);
+  }
+  .toggle:checked::after {
+    transform: translateX(16px);
+    background: var(--color-primary-cta-fg);
+  }
+
   .frontend-btn[data-active="true"],
   .backend-btn[data-active="true"],
   .database-btn[data-active="true"] {
@@ -161,6 +200,31 @@ const optionals = Object.values(OPTIONALS);
   .optional-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
     color: var(--color-primary-cta-fg);
   }
+
+  /* Subtle 1px lift on hover, and a soft code fade-in on each
+   * regeneration so the user notices the change. transform+opacity
+   * only — keeps the compositor happy and the page responsive. */
+  .frontend-btn, .backend-btn, .database-btn, .optional-btn {
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+  }
+  .frontend-btn:hover, .backend-btn:hover, .database-btn:hover, .optional-btn:hover {
+    transform: translateY(-1px);
+  }
+  @keyframes codeFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  [id$="-code"] { animation: codeFadeIn 180ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .frontend-btn:hover, .backend-btn:hover, .database-btn:hover, .optional-btn:hover { transform: none; }
+    [id$="-code"] { animation: none; }
+  }
+
+  @keyframes copyPulse {
+    0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
+    100% { background-color: var(--color-canvas); color: var(--color-ink); }
+  }
+  .copy-pulse { animation: copyPulse 600ms ease-out; }
 </style>
 
 <script>
@@ -169,13 +233,56 @@ const optionals = Object.values(OPTIONALS);
 
   type Tab = "compose" | "backend-dockerfile" | "frontend-dockerfile" | "env" | "dockerignore";
 
-  const state = {
-    frontend: undefined as Frontend | undefined,
-    backend: undefined as Backend | undefined,
-    database: undefined as Database | undefined,
-    optional: [] as Optional[],
+  /* ─────────────────────────────────────────────────────────
+   * State + localStorage persistence. Survives reloads and
+   * page-to-page navigation within the site.
+   * ─────────────────────────────────────────────────────── */
+  const STORAGE_KEY = "stack-builder-state-v1";
+
+  type PersistedState = {
+    frontend?: Frontend;
+    backend?: Backend;
+    database?: Database;
+    optional: Optional[];
+    projectName: string;
+    useEnvFile: boolean;
+    activeTab: Tab;
+  };
+
+  const defaultState = (): PersistedState => ({
+    frontend: undefined,
+    backend: undefined,
+    database: undefined,
+    optional: [],
     projectName: "my-app",
-    activeTab: "compose" as Tab,
+    useEnvFile: false,
+    activeTab: "compose",
+  });
+
+  function loadState(): PersistedState {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      return { ...defaultState(), ...JSON.parse(raw) };
+    } catch {
+      return defaultState();
+    }
+  }
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {}
+  }
+
+  const initial = loadState();
+  const state = {
+    frontend: initial.frontend,
+    backend: initial.backend,
+    database: initial.database,
+    optional: initial.optional,
+    projectName: initial.projectName,
+    useEnvFile: initial.useEnvFile,
+    activeTab: initial.activeTab,
   };
 
   function getConfig(): StackConfig {
@@ -185,6 +292,7 @@ const optionals = Object.values(OPTIONALS);
       database: state.database,
       optional: [...state.optional],
       projectName: state.projectName,
+      useEnvFile: state.useEnvFile,
     };
   }
 
@@ -229,6 +337,24 @@ const optionals = Object.values(OPTIONALS);
       .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
   }
 
+  /** .env syntax highlighter — distinct colors for KEY vs value (see ComposeGenerator). */
+  function highlightEnv(code: string) {
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .split("\n")
+      .map((line) => {
+        if (/^\s*#/.test(line)) return `<span class="tok-comment">${line}</span>`;
+        if (/^\s*$/.test(line)) return line;
+        const m = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*(=)\s*(.*)$/.exec(line);
+        if (!m) return line;
+        const [, lead, key, eq, rawValue] = m;
+        const valueHtml = rawValue.replace(/(\$\{[^}]+\})/g, '<span class="tok-env-varref">$1</span>');
+        return `<span class="tok-env-key">${lead}${key}</span><span class="tok-env-equals">${eq}</span><span class="tok-env-value">${valueHtml}</span>`;
+      })
+      .join("\n");
+  }
+
   function render() {
     const cfg = getConfig();
     const compose = generateStackCompose(cfg);
@@ -238,7 +364,7 @@ const optionals = Object.values(OPTIONALS);
     const frontendDockerfile = cfg.frontend ? generateStackDockerfile(cfg, "frontend") : "# Pick a frontend to generate its Dockerfile";
 
     document.getElementById("stack-compose-code")!.innerHTML = highlight(compose);
-    document.getElementById("stack-env-code")!.innerHTML = highlight(env);
+    document.getElementById("stack-env-code")!.innerHTML = highlightEnv(env);
     document.getElementById("stack-dockerignore-code")!.innerHTML = dockerfileHighlight(dockerignore);
     document.getElementById("stack-backend-dockerfile-code")!.innerHTML = dockerfileHighlight(backendDockerfile);
     document.getElementById("stack-frontend-dockerfile-code")!.innerHTML = dockerfileHighlight(frontendDockerfile);
@@ -246,6 +372,7 @@ const optionals = Object.values(OPTIONALS);
 
   function setTab(tab: Tab) {
     state.activeTab = tab;
+    saveState();
     document.querySelectorAll<HTMLButtonElement>(".stack-tab-btn").forEach((b) => {
       const active = b.dataset.tab === tab;
       b.classList.toggle("bg-[var(--color-canvas)]", active);
@@ -266,14 +393,28 @@ const optionals = Object.values(OPTIONALS);
     document.getElementById(map[tab])?.classList.remove("hidden");
   }
 
+  function applyActiveStates() {
+    document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((b) => {
+      b.dataset.active = b.dataset.frontend === state.frontend ? "true" : "false";
+    });
+    document.querySelectorAll<HTMLButtonElement>(".backend-btn").forEach((b) => {
+      b.dataset.active = b.dataset.backend === state.backend ? "true" : "false";
+    });
+    document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((b) => {
+      b.dataset.active = b.dataset.database === state.database ? "true" : "false";
+    });
+    document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((b) => {
+      b.dataset.active = state.optional.includes(b.dataset.optional as Optional) ? "true" : "false";
+    });
+  }
+
   // Wire up grids
   document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.frontend as Frontend;
       state.frontend = state.frontend === id ? undefined : id;
-      document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((b) => {
-        b.dataset.active = b.dataset.frontend === state.frontend ? "true" : "false";
-      });
+      applyActiveStates();
+      saveState();
       render();
     });
   });
@@ -281,9 +422,8 @@ const optionals = Object.values(OPTIONALS);
     btn.addEventListener("click", () => {
       const id = btn.dataset.backend as Backend;
       state.backend = state.backend === id ? undefined : id;
-      document.querySelectorAll<HTMLButtonElement>(".backend-btn").forEach((b) => {
-        b.dataset.active = b.dataset.backend === state.backend ? "true" : "false";
-      });
+      applyActiveStates();
+      saveState();
       render();
     });
   });
@@ -291,9 +431,8 @@ const optionals = Object.values(OPTIONALS);
     btn.addEventListener("click", () => {
       const id = btn.dataset.database as Database;
       state.database = state.database === id ? undefined : id;
-      document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((b) => {
-        b.dataset.active = b.dataset.database === state.database ? "true" : "false";
-      });
+      applyActiveStates();
+      saveState();
       render();
     });
   });
@@ -305,9 +444,8 @@ const optionals = Object.values(OPTIONALS);
       } else {
         state.optional = [...state.optional, id];
       }
-      document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((b) => {
-        b.dataset.active = state.optional.includes(b.dataset.optional as Optional) ? "true" : "false";
-      });
+      applyActiveStates();
+      saveState();
       render();
     });
   });
@@ -320,6 +458,14 @@ const optionals = Object.values(OPTIONALS);
   // Project name
   document.getElementById("project-name")?.addEventListener("input", (e) => {
     state.projectName = (e.target as HTMLInputElement).value || "my-app";
+    saveState();
+    render();
+  });
+
+  // .env toggle — switch between inline env values and ${KEY} references
+  document.getElementById("stack-use-env")?.addEventListener("change", (e) => {
+    state.useEnvFile = (e.target as HTMLInputElement).checked;
+    saveState();
     render();
   });
 
@@ -331,7 +477,11 @@ const optionals = Object.values(OPTIONALS);
       await navigator.clipboard.writeText(text);
       const orig = btn.innerHTML;
       btn.innerHTML = "✓ Copied";
-      setTimeout(() => (btn.innerHTML = orig), 1500);
+      btn.classList.add("copy-pulse");
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.classList.remove("copy-pulse");
+      }, 1500);
     });
   });
 
@@ -364,5 +514,14 @@ const optionals = Object.values(OPTIONALS);
     document.getElementById("btn-stack-download-all")?.click();
   });
 
-  render();
+  // Restore from persisted state
+  (function restore() {
+    const pn = document.getElementById("project-name") as HTMLInputElement | null;
+    if (pn) pn.value = state.projectName;
+    const useEnv = document.getElementById("stack-use-env") as HTMLInputElement | null;
+    if (useEnv) useEnv.checked = state.useEnvFile;
+    applyActiveStates();
+    if (state.activeTab !== "compose") setTab(state.activeTab);
+    render();
+  })();
 </script>

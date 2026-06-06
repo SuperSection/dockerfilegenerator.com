@@ -230,21 +230,42 @@ export const SERVICES: Record<string, ServiceConfig> = {
     category: "queue",
     description: "Distributed event streaming platform.",
     emoji: "🟧",
-    image: "bitnami/kafka",
-    defaultTag: "3.7",
+    // The official Apache image (apache/kafka) replaced the deprecated
+    // bitnami/kafka image (no longer free on Docker Hub). The official image
+    // uses the KAFKA_* env convention (underscores in env names become dots
+    // in the property — e.g. KAFKA_NODE_ID → node.id) and ships with KRaft
+    // as the default mode. Bitnami's KAFKA_CFG_* prefix is gone.
+    // 3.9.2 is the latest 3.9.x patch (Feb 2026); 3.9.0 is also valid.
+    image: "apache/kafka",
+    defaultTag: "3.9.2",
     defaultPorts: [{ host: 9092, container: 9092 }],
-    defaultVolumes: [{ host: "kafka_data", container: "/bitnami/kafka" }],
+    defaultVolumes: [{ host: "kafka_data", container: "/var/lib/kafka/data" }],
     defaultEnv: [
-      { key: "KAFKA_CFG_NODE_ID", value: "0" },
-      { key: "KAFKA_CFG_PROCESS_ROLES", value: "controller,broker" },
-      { key: "KAFKA_CFG_LISTENERS", value: "PLAINTEXT://:9092,CONTROLLER://:9093" },
-      { key: "KAFKA_CFG_ADVERTISED_LISTENERS", value: "PLAINTEXT://kafka:9092" },
-      { key: "KAFKA_CFG_CONTROLLER_LISTENER_NAMES", value: "CONTROLLER" },
-      { key: "KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP", value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT" },
-      { key: "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS", value: "0@kafka:9093" },
-      { key: "ALLOW_PLAINTEXT_LISTENER", value: "yes" },
+      // Single-node KRaft (combined broker+controller) configuration.
+      // IMPORTANT: The official image's wrapper script throws on startup
+      // if CLUSTER_ID is not set — it does NOT auto-generate one. We pin a
+      // stable 22-char base64 id so the broker rejoins the same cluster on
+      // restart (the formatted metadata is persisted in /var/lib/kafka/data).
+      // Note: KAFKA_KRAFT_CLUSTER_ID is NOT a thing in this image — only
+      // the bare CLUSTER_ID env var is read.
+      { key: "KAFKA_NODE_ID", value: "1" },
+      { key: "KAFKA_PROCESS_ROLES", value: "broker,controller" },
+      { key: "KAFKA_LISTENERS", value: "PLAINTEXT://:9092,CONTROLLER://:9093" },
+      { key: "KAFKA_ADVERTISED_LISTENERS", value: "PLAINTEXT://kafka:9092" },
+      { key: "KAFKA_CONTROLLER_LISTENER_NAMES", value: "CONTROLLER" },
+      { key: "KAFKA_LISTENER_SECURITY_PROTOCOL_MAP", value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT" },
+      { key: "KAFKA_INTER_BROKER_LISTENER_NAME", value: "PLAINTEXT" },
+      { key: "KAFKA_CONTROLLER_QUORUM_VOTERS", value: "1@kafka:9093" },
+      // Single-node cluster — internal topics must have replication factor 1,
+      // otherwise the broker hangs waiting for a second replica forever.
+      { key: "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR", value: "1" },
+      { key: "KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR", value: "1" },
+      { key: "KAFKA_TRANSACTION_STATE_LOG_MIN_ISR", value: "1" },
+      { key: "KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", value: "0" },
+      { key: "CLUSTER_ID", value: "MkU3OEVBNTcwNTJENDM2Qk" },
     ],
-    hasHealthcheck: false,
+    hasHealthcheck: true,
+    healthcheckCmd: ["CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"],
     defaultRestart: "unless-stopped",
     createsVolumes: ["kafka_data"],
   },

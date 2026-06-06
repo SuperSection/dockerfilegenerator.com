@@ -195,6 +195,10 @@ html {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-feature-settings: "ss01", "ss02", "cv11";
+  /* Smooth transitions for theme swap. Defined ONCE on html — defining this
+   * on both html and body (as the rule below used to) made Firefox flicker
+   * the canvas color twice on first paint. */
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 body {
@@ -205,7 +209,6 @@ body {
   font-weight: 400;
   margin: 0;
   min-height: 100dvh;
-  transition: background-color 200ms ease, color 200ms ease;
 }
 
 ::selection {
@@ -423,6 +426,12 @@ html.dark .mesh-gradient {
 .tok-stage   { color: var(--tok-stage); font-weight: 500; }
 .tok-punct   { color: var(--tok-punct); }
 
+/* .env file tokens — distinct colors for KEY vs value so the structure pops */
+.tok-env-key     { color: var(--tok-env-key); font-weight: 600; }
+.tok-env-equals  { color: var(--tok-punct); }
+.tok-env-value   { color: var(--tok-env-value); }
+.tok-env-varref  { color: var(--tok-var); }
+
 /* Shiki token theming — adapts to light/dark */
 :root {
   --astro-code-color-text: var(--color-ink);
@@ -448,6 +457,9 @@ html.dark .mesh-gradient {
   --tok-var:     #50e3c2;
   --tok-stage:   #eb367f;
   --tok-punct:   #6b6b6b;
+  /* .env tokens (light) — KEY is a violet keyword, value is a calm blue-green */
+  --tok-env-key:   #7928ca;
+  --tok-env-value: #0a7a5b;
 }
 html.dark {
   --astro-code-color-text: #fafafa;
@@ -473,6 +485,9 @@ html.dark {
   --tok-var:     #50e3c2;
   --tok-stage:   #ff7eb6;
   --tok-punct:   #a1a1a1;
+  /* .env tokens (dark) */
+  --tok-env-key:   #eb367f;
+  --tok-env-value: #79c08a;
 }
 
 /* Reduce motion */
@@ -485,7 +500,24 @@ html.dark {
   }
 }
 
-/* Smooth transitions for theme swap */
-html {
-  transition: background-color 200ms ease, color 200ms ease;
+/* ─────────────────────────────────────────────────────────────
+ * Firefox-friendly nav background
+ *
+ * `bg-[var(--color-canvas-soft)]/80` in Tailwind v4 compiles to
+ *   background-color: color-mix(in oklab, var(--color-canvas-soft) 80%, transparent);
+ *
+ * That works in current Chrome/Safari, but Firefox (especially ESR
+ * builds behind corporate rollouts) sometimes falls back to a
+ * fully transparent header — i.e. sticky nav becomes invisible. We
+ * give it a hand-written, portable fallback. `rgb(... / 0.8)` uses
+ * the resolved HSL/RGB values that the browser has at computed-
+ * style time, so it works in every engine.
+ * ─────────────────────────────────────────────────────────── */
+.nav-bg {
+  background-color: var(--color-canvas-soft);
+}
+@supports (background: color-mix(in oklab, white, black)) {
+  .nav-bg {
+    background-color: color-mix(in oklab, var(--color-canvas-soft) 80%, transparent);
+  }
 }

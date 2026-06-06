@@ -22,6 +22,14 @@ export interface StackConfig {
   database?: Database;
   optional: Optional[];
   projectName: string;
+  /**
+   * If true, env values in the generated compose are emitted as
+   * `${KEY}` references — Compose auto-resolves them from the
+   * project-level `.env` file at startup. If false, values are
+   * inlined directly. Mirrors `ComposeConfig.useEnvFile` so the two
+   * generators stay consistent.
+   */
+  useEnvFile?: boolean;
 }
 
 const dockerfileForNode = (cfg: StackConfig, which: "frontend" | "backend"): string => {
@@ -232,12 +240,17 @@ export const generateStackCompose = (cfg: StackConfig): string => {
       : cfg.database === "mysql"
       ? `["mysqladmin", "ping", "-h", "localhost"]`
       : `["mongosh", "--eval", "db.adminCommand('ping')"]`;
+    const dbEnvLines = db.env.map(e => {
+      if (cfg.useEnvFile) return `    ${e.key}: "\${${e.key}}"`;
+      return `    ${e.key}: ${JSON.stringify(e.value)}`;
+    });
+    lines.push("");
     lines.push(renderService(serviceName, [
       `  image: ${db.image}:${db.tag}`,
       `  container_name: ${serviceName}`,
       `  restart: unless-stopped`,
       `  environment:`,
-      ...db.env.map(e => `    ${e.key}: ${JSON.stringify(e.value)}`),
+      ...dbEnvLines,
       `  volumes:`,
       `    - ${db.volume}`,
       `  ports:`,
@@ -256,7 +269,13 @@ export const generateStackCompose = (cfg: StackConfig): string => {
   // Backend
   if (cfg.backend) {
     const be = BACKENDS[cfg.backend];
-    const envLines: string[] = be.env.map(e => `      ${e.key}: ${JSON.stringify(e.value)}`);
+    const envLines: string[] = be.env.map(e => {
+      if (cfg.useEnvFile) {
+        // Reference the .env variable so secrets stay out of compose.
+        return `      ${e.key}: "\${${e.key}}"`;
+      }
+      return `      ${e.key}: ${JSON.stringify(e.value)}`;
+    });
     if (cfg.database) {
       const db = DATABASES[cfg.database];
       const urlKey = db.dependsOnEnvVar;
@@ -275,6 +294,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
     if (cfg.optional.includes("rabbitmq")) deps.push("rabbitmq");
     if (cfg.optional.includes("kafka")) deps.push("kafka");
 
+    lines.push("");
     lines.push(renderService("backend", [
       `  build:`,
       `    context: ./backend`,
@@ -307,6 +327,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
     if (cfg.backend && !isSPA) deps.push("backend");
     if (cfg.optional.includes("nginx") && isSPA) deps.push("nginx");
 
+    lines.push("");
     lines.push(renderService("frontend", [
       `  build:`,
       `    context: ./frontend`,
@@ -331,6 +352,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
   // Optional services
   cfg.optional.forEach((o) => {
     if (o === "redis") {
+      lines.push("");
       lines.push(renderService("redis", [
         `  image: redis:7-alpine`,
         `  container_name: redis`,
@@ -348,6 +370,10 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - appnet`,
       ]));
     } else if (o === "rabbitmq") {
+      const env = cfg.useEnvFile
+        ? `    RABBITMQ_DEFAULT_USER: "\${RABBITMQ_USER}"\n    RABBITMQ_DEFAULT_PASS: "\${RABBITMQ_PASSWORD}"`
+        : `    RABBITMQ_DEFAULT_USER: guest\n    RABBITMQ_DEFAULT_PASS: guest`;
+      lines.push("");
       lines.push(renderService("rabbitmq", [
         `  image: rabbitmq:3.13-management-alpine`,
         `  container_name: rabbitmq`,
@@ -356,8 +382,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - "5672:5672"`,
         `    - "15672:15672"`,
         `  environment:`,
-        `    RABBITMQ_DEFAULT_USER: guest`,
-        `    RABBITMQ_DEFAULT_PASS: guest`,
+        env,
         `  volumes:`,
         `    - rabbitmq_data:/var/lib/rabbitmq`,
         `  healthcheck:`,
@@ -369,6 +394,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - appnet`,
       ]));
     } else if (o === "kafka") {
+      lines.push("");
       lines.push(renderService("kafka", [
         `  image: bitnami/kafka:3.7`,
         `  container_name: kafka`,
@@ -390,6 +416,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - appnet`,
       ]));
     } else if (o === "nginx") {
+      lines.push("");
       lines.push(renderService("nginx", [
         `  image: nginx:1.27-alpine`,
         `  container_name: nginx`,

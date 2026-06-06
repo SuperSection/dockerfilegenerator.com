@@ -50,6 +50,40 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
         })}
       </div>
 
+      <!-- Global project configuration -->
+      <section class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-4">
+        <h2 class="t-caption-mono text-[var(--color-body)]">Project configuration</h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="compose-project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+            <input
+              type="text"
+              id="compose-project-name"
+              value="app"
+              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label for="compose-network-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Network name</label>
+            <input
+              type="text"
+              id="compose-network-name"
+              value="appnet"
+              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+          <input type="checkbox" id="compose-use-env" class="toggle shrink-0" />
+          <div class="flex-1">
+            <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file for variables</span>
+            <p class="t-caption text-[var(--color-body)]">Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.</p>
+          </div>
+        </label>
+      </section>
+
       <!-- Selected services config -->
       <section id="selected-config" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
         <h2 class="t-caption-mono mb-4 text-[var(--color-body)]">Selected services</h2>
@@ -127,6 +161,55 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
   .port-row input, .volume-row input, .env-row input {
     min-width: 0;
   }
+
+  /* Subtle micro-interactions. The service button lifts slightly on
+   * hover (1px translate), and the code panel fades its inner content
+   * on each regeneration so the change feels "delivered". */
+  .service-btn {
+    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
+  }
+  .service-btn:hover {
+    transform: translateY(-1px);
+  }
+  @keyframes codeFadeIn {
+    from { opacity: 0; transform: translateY(2px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #compose-code, #env-code {
+    animation: codeFadeIn 180ms ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .service-btn:hover { transform: none; }
+    #compose-code, #env-code { animation: none; }
+  }
+
+  /* Copy-button pulse feedback. We add .copy-pulse briefly, the
+   * keyframes paint a soft accent, then we strip the class. */
+  @keyframes copyPulse {
+    0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
+    100% { background-color: var(--color-canvas); color: var(--color-ink); }
+  }
+  .copy-pulse { animation: copyPulse 600ms ease-out; }
+
+  /* Soft entrance for the validation panel when it appears */
+  @keyframes panelFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #validation-panel:not(.hidden) { animation: panelFadeIn 200ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    #validation-panel:not(.hidden) { animation: none; }
+  }
+
+  /* Selected service cards: gentle slide-down on first appearance */
+  @keyframes svcFadeIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #selected-list > div { animation: svcFadeIn 180ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    #selected-list > div { animation: none; }
+  }
 </style>
 
 <script>
@@ -135,18 +218,72 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
 
   type Tab = "compose" | "env";
 
+  /* ─────────────────────────────────────────────────────────
+   * State — all mutable state lives in this object, persisted to
+   * localStorage so reloads and page-to-page navigation don't
+   * wipe the user's configuration.
+   * ─────────────────────────────────────────────────────── */
+  const STORAGE_KEY = "compose-generator-state-v1";
+
+  type PersistedState = {
+    selected: string[];
+    overrides: Record<string, ServiceOverride>;
+    projectName: string;
+    networkName: string;
+    useEnvFile: boolean;
+    activeTab: Tab;
+  };
+
+  const defaultState = (): PersistedState => ({
+    selected: [],
+    overrides: {},
+    projectName: "app",
+    networkName: "appnet",
+    useEnvFile: false,
+    activeTab: "compose",
+  });
+
+  function loadState(): PersistedState {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return { ...defaultState(), ...parsed };
+    } catch {
+      return defaultState();
+    }
+  }
+  function saveState() {
+    try {
+      const snap: PersistedState = {
+        selected: [...state.selected],
+        overrides: state.overrides,
+        projectName: state.projectName,
+        networkName: state.networkName,
+        useEnvFile: state.useEnvFile,
+        activeTab: state.activeTab,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
+    } catch {}
+  }
+
+  const initial = loadState();
   const state = {
-    selected: new Set<string>(),
-    overrides: {} as Record<string, ServiceOverride>,
-    activeTab: "compose" as Tab,
+    selected: new Set<string>(initial.selected),
+    overrides: initial.overrides,
+    projectName: initial.projectName,
+    networkName: initial.networkName,
+    useEnvFile: initial.useEnvFile,
+    activeTab: initial.activeTab,
   };
 
   function getConfig(): ComposeConfig {
     return {
       services: state.overrides,
-      projectName: "app",
+      projectName: state.projectName || "app",
       useNetwork: true,
-      networkName: "appnet",
+      networkName: state.networkName || "appnet",
+      useEnvFile: state.useEnvFile,
     };
   }
 
@@ -172,6 +309,40 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
       .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
   }
 
+  /**
+   * .env syntax highlighter.
+   *  - # comments in italic grey
+   *  - KEY on the left in keyword violet (bold for emphasis)
+   *  - = in punct grey
+   *  - value (after the first =) in a distinct calm blue-green
+   *  - ${OTHER_VAR} interpolations stand out via tok-var
+   *  - empty lines preserved
+   */
+  function highlightEnv(code: string) {
+    const escape = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return escape(code)
+      .split("\n")
+      .map((line) => {
+        // Full-line comment
+        if (/^\s*#/.test(line)) {
+          return `<span class="tok-comment">${line}</span>`;
+        }
+        // Empty line
+        if (/^\s*$/.test(line)) {
+          return line;
+        }
+        // KEY=VALUE (with optional export prefix)
+        const m = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*(=)\s*(.*)$/.exec(line);
+        if (!m) return line;
+        const [, lead, key, eq, rawValue] = m;
+        // Color ${INTERPOLATIONS} inside the value, escape the rest
+        const valueHtml = rawValue.replace(/(\$\{[^}]+\})/g, '<span class="tok-env-varref">$1</span>');
+        return `<span class="tok-env-key">${lead}${key}</span><span class="tok-env-equals">${eq}</span><span class="tok-env-value">${valueHtml}</span>`;
+      })
+      .join("\n");
+  }
+
   function renderOutput() {
     if (state.selected.size === 0) {
       document.getElementById("compose-code")!.innerHTML = "Select services from the left to generate your docker-compose.yml";
@@ -184,7 +355,7 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     const compose = generateCompose(cfg);
     const env = generateEnvExample(cfg);
     document.getElementById("compose-code")!.innerHTML = highlight(compose);
-    document.getElementById("env-code")!.innerHTML = highlight(env);
+    document.getElementById("env-code")!.innerHTML = highlightEnv(env);
 
     // Validation
     const issues = validateCompose(cfg);
@@ -222,32 +393,257 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
       const ports = override.ports ?? svc.defaultPorts;
       const volumes = override.volumes ?? svc.defaultVolumes;
       const envs = override.envVars ?? svc.defaultEnv;
+      const containerName = override.containerName ?? name;
+      const restart = override.restart ?? svc.defaultRestart;
+      const image = override.image ?? svc.image;
+      const tag = override.tag ?? svc.defaultTag;
+      const healthCheck = override.healthCheck ?? svc.hasHealthcheck;
+      const cpuLimit = override.cpuLimit ?? "";
+      const memoryLimit = override.memoryLimit ?? "";
 
       const div = document.createElement("div");
-      div.className = "rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-3";
+      div.className = "rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)]";
       div.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <span class="text-base">${svc.emoji}</span>
-            <span class="t-body-sm-strong text-[var(--color-ink)]">${svc.label}</span>
+        <button type="button" class="svc-header w-full flex items-center justify-between gap-2 p-3 text-left" data-name="${name}">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-base shrink-0">${svc.emoji}</span>
+            <div class="min-w-0">
+              <span class="t-body-sm-strong text-[var(--color-ink)] block">${svc.label}</span>
+              <span class="t-caption text-[var(--color-body)] block truncate">${containerName} · ${restart} · ${ports.length} port${ports.length === 1 ? "" : "s"} · ${envs.length} env</span>
+            </div>
           </div>
-          <button type="button" class="remove-svc text-[var(--color-body)] hover:text-[var(--color-error-deep)]" data-name="${name}" aria-label="Remove">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-        </div>
-        <div class="space-y-2 t-caption text-[var(--color-body)]">
-          <div class="flex flex-wrap gap-1">
-            ${ports.map((p, i) => `<span class="inline-flex items-center gap-1 rounded bg-[var(--color-canvas)] px-1.5 py-0.5">${p.host}:${p.container}</span>`).join("")}
+          <div class="flex items-center gap-1 shrink-0">
+            <span class="remove-svc inline-flex rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-error-deep)] cursor-pointer" data-name="${name}" role="button" aria-label="Remove service">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </span>
+            <span class="svc-chevron inline-flex text-[var(--color-body)] transition-transform" data-chevron>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
           </div>
-          <p>${envs.length} env var${envs.length === 1 ? "" : "s"}</p>
+        </button>
+        <div class="svc-body hidden border-t border-[var(--color-hairline)] p-3 space-y-4" data-body>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">Container name</label>
+              <input type="text" data-field="containerName" value="${containerName}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+            </div>
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">Restart policy</label>
+              <select data-field="restart" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm">
+                ${RESTART_OPTIONS.map(o => `<option value="${o}" ${o === restart ? "selected" : ""}>${o}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-[1fr_120px] gap-3">
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">Image${svc.isApp ? " (ignored for app — uses build)" : ""}</label>
+              <input type="text" data-field="image" value="${image}" ${svc.isApp ? "disabled" : ""} class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm ${svc.isApp ? "opacity-50" : ""}" />
+            </div>
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">Tag</label>
+              <input type="text" data-field="tag" value="${tag}" ${svc.isApp ? "disabled" : ""} class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm ${svc.isApp ? "opacity-50" : ""}" />
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="t-caption text-[var(--color-body)]">Ports (host:container)</label>
+              <button type="button" data-action="add-port" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add port</button>
+            </div>
+            <div class="space-y-1.5" data-ports>
+              ${ports.map((p, i) => `
+                <div class="port-row">
+                  <input type="number" data-port-field="host" data-port-i="${i}" value="${p.host}" placeholder="host" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <input type="number" data-port-field="container" data-port-i="${i}" value="${p.container}" placeholder="container" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <button type="button" data-action="remove-port" data-port-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove port">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="t-caption text-[var(--color-body)]">Volumes (host:container[:ro])</label>
+              <button type="button" data-action="add-volume" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add volume</button>
+            </div>
+            <div class="space-y-1.5" data-volumes>
+              ${volumes.map((v, i) => `
+                <div class="volume-row">
+                  <input type="text" data-vol-field="host" data-vol-i="${i}" value="${v.host}" placeholder="host path or volume name" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <input type="text" data-vol-field="container" data-vol-i="${i}" value="${v.container}" placeholder="container path" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <button type="button" data-action="remove-volume" data-vol-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove volume">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="t-caption text-[var(--color-body)]">Environment variables</label>
+              <button type="button" data-action="add-env" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add env var</button>
+            </div>
+            <div class="space-y-1.5" data-envs>
+              ${envs.map((e, i) => `
+                <div class="env-row">
+                  <input type="text" data-env-field="key" data-env-i="${i}" value="${e.key}" placeholder="KEY" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <input type="text" data-env-field="value" data-env-i="${i}" value="${e.value}" placeholder="value" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+                  <button type="button" data-action="remove-env" data-env-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove env">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                  </button>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-3 items-end">
+            <label class="flex items-center gap-2 t-body-sm text-[var(--color-ink)]">
+              <input type="checkbox" data-field="healthCheck" ${healthCheck ? "checked" : ""} class="h-4 w-4 rounded border-[var(--color-hairline-strong)]" />
+              Healthcheck
+            </label>
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">CPU limit</label>
+              <input type="text" data-field="cpuLimit" value="${cpuLimit}" placeholder="0.5" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+            </div>
+            <div>
+              <label class="t-caption text-[var(--color-body)] block mb-1">Memory limit</label>
+              <input type="text" data-field="memoryLimit" value="${memoryLimit}" placeholder="512M" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+            </div>
+          </div>
         </div>
       `;
       list.appendChild(div);
     });
-    list.querySelectorAll<HTMLButtonElement>(".remove-svc").forEach((btn) => {
-      btn.addEventListener("click", () => toggleService(btn.dataset.name!));
+
+    // Remove buttons (in header)
+    list.querySelectorAll<HTMLElement>(".remove-svc").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleService(btn.dataset.name!);
+      });
+    });
+
+    // Header click toggles the body
+    list.querySelectorAll<HTMLButtonElement>(".svc-header").forEach((hdr) => {
+      hdr.addEventListener("click", (e) => {
+        // Ignore if click was on the remove button
+        if ((e.target as HTMLElement).closest(".remove-svc")) return;
+        const body = hdr.parentElement?.querySelector<HTMLElement>("[data-body]");
+        const chev = hdr.querySelector<HTMLElement>("[data-chevron]");
+        if (!body) return;
+        const willOpen = body.classList.contains("hidden");
+        body.classList.toggle("hidden");
+        chev?.classList.toggle("rotate-180", willOpen);
+      });
+    });
+
+    // Wire per-field changes
+    list.querySelectorAll<HTMLElement>("[data-body]").forEach((body) => {
+      const name = (body.parentElement?.querySelector("[data-name]") as HTMLElement | null)?.dataset.name;
+      if (!name) return;
+      body.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-field]").forEach((el) => {
+        el.addEventListener("input", () => updateServiceField(name, el));
+        el.addEventListener("change", () => updateServiceField(name, el));
+      });
+      body.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleServiceAction(name, btn);
+        });
+      });
+      body.querySelectorAll<HTMLInputElement>("[data-port-field], [data-vol-field], [data-env-field]").forEach((el) => {
+        el.addEventListener("input", () => updateServiceList(name, body));
+        el.addEventListener("change", () => updateServiceList(name, body));
+      });
     });
   }
+
+  function updateServiceField(name: string, el: HTMLInputElement | HTMLSelectElement) {
+    const field = (el as HTMLElement).dataset.field!;
+    const ov = state.overrides[name] ?? {};
+    if (el.type === "checkbox") {
+      (ov as any)[field] = (el as HTMLInputElement).checked;
+    } else {
+      const v = (el as HTMLInputElement).value.trim();
+      (ov as any)[field] = v === "" ? undefined : v;
+    }
+    state.overrides[name] = ov;
+    saveState();
+    renderOutput();
+    // Update the header summary line in place
+    const header = document.querySelector(`#selected-list [data-name="${name}"]`)?.parentElement?.querySelector("span.t-caption");
+    if (header) {
+      const svc = SERVICES[name];
+      const ports = ov.ports ?? svc.defaultPorts;
+      const envs = ov.envVars ?? svc.defaultEnv;
+      const containerName = ov.containerName ?? name;
+      const restart = ov.restart ?? svc.defaultRestart;
+      header.textContent = `${containerName} · ${restart} · ${ports.length} port${ports.length === 1 ? "" : "s"} · ${envs.length} env`;
+    }
+  }
+
+  function updateServiceList(name: string, body: HTMLElement) {
+    const ov = state.overrides[name] ?? {};
+    const ports: { host: number; container: number }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-ports] > div").forEach((row) => {
+      const host = parseInt((row.querySelector('[data-port-field="host"]') as HTMLInputElement).value, 10);
+      const container = parseInt((row.querySelector('[data-port-field="container"]') as HTMLInputElement).value, 10);
+      if (!isNaN(host) && !isNaN(container)) ports.push({ host, container });
+    });
+    const volumes: { host: string; container: string }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-volumes] > div").forEach((row) => {
+      const host = (row.querySelector('[data-vol-field="host"]') as HTMLInputElement).value.trim();
+      const container = (row.querySelector('[data-vol-field="container"]') as HTMLInputElement).value.trim();
+      if (host && container) volumes.push({ host, container });
+    });
+    const envVars: { key: string; value: string }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-envs] > div").forEach((row) => {
+      const key = (row.querySelector('[data-env-field="key"]') as HTMLInputElement).value.trim();
+      const value = (row.querySelector('[data-env-field="value"]') as HTMLInputElement).value.trim();
+      if (key) envVars.push({ key, value });
+    });
+    state.overrides[name] = { ...ov, ports, volumes, envVars };
+    saveState();
+    renderOutput();
+  }
+
+  function handleServiceAction(name: string, btn: HTMLButtonElement) {
+    const action = btn.dataset.action!;
+    const ov = state.overrides[name] ?? {};
+    const svc = SERVICES[name];
+    if (action === "add-port") {
+      const ports = [...(ov.ports ?? [...svc.defaultPorts])];
+      ports.push({ host: 8080, container: 8080 });
+      state.overrides[name] = { ...ov, ports };
+    } else if (action === "remove-port") {
+      const i = parseInt(btn.dataset.portI!, 10);
+      const ports = [...(ov.ports ?? svc.defaultPorts)];
+      ports.splice(i, 1);
+      state.overrides[name] = { ...ov, ports };
+    } else if (action === "add-volume") {
+      const volumes = [...(ov.volumes ?? [...svc.defaultVolumes])];
+      volumes.push({ host: "./data", container: "/data" });
+      state.overrides[name] = { ...ov, volumes };
+    } else if (action === "remove-volume") {
+      const i = parseInt(btn.dataset.volI!, 10);
+      const volumes = [...(ov.volumes ?? svc.defaultVolumes)];
+      volumes.splice(i, 1);
+      state.overrides[name] = { ...ov, volumes };
+    } else if (action === "add-env") {
+      const envVars = [...(ov.envVars ?? [...svc.defaultEnv])];
+      envVars.push({ key: "", value: "" });
+      state.overrides[name] = { ...ov, envVars };
+    } else if (action === "remove-env") {
+      const i = parseInt(btn.dataset.envI!, 10);
+      const envVars = [...(ov.envVars ?? svc.defaultEnv)];
+      envVars.splice(i, 1);
+      state.overrides[name] = { ...ov, envVars };
+    }
+    saveState();
+    renderSelectedConfig();
+    renderOutput();
+  }
+
+  const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as const;
 
   function toggleService(name: string) {
     if (state.selected.has(name)) {
@@ -263,13 +659,21 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
         restart: base.defaultRestart,
         image: base.image,
         tag: base.defaultTag,
+        healthCheck: base.hasHealthcheck,
       };
     }
     document.querySelectorAll<HTMLButtonElement>(`.service-btn[data-service="${name}"]`).forEach((b) => {
       b.dataset.active = state.selected.has(name) ? "true" : "false";
     });
+    saveState();
     renderOutput();
     renderSelectedConfig();
+  }
+
+  function applyServiceActiveStates() {
+    document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((b) => {
+      b.dataset.active = state.selected.has(b.dataset.service!) ? "true" : "false";
+    });
   }
 
   // Wire up service buttons
@@ -298,6 +702,7 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
   document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((b) => {
     b.addEventListener("click", () => {
       state.activeTab = b.dataset.tab as Tab;
+      saveState();
       document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((bb) => {
         const active = bb.dataset.tab === state.activeTab;
         bb.classList.toggle("bg-[var(--color-canvas)]", active);
@@ -308,6 +713,23 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
       document.getElementById("compose-output")!.classList.toggle("hidden", state.activeTab !== "compose");
       document.getElementById("env-output")!.classList.toggle("hidden", state.activeTab !== "env");
     });
+  });
+
+  // Project name, network name, .env toggle — wire to state + save
+  document.getElementById("compose-project-name")?.addEventListener("input", (e) => {
+    state.projectName = (e.target as HTMLInputElement).value || "app";
+    saveState();
+    renderOutput();
+  });
+  document.getElementById("compose-network-name")?.addEventListener("input", (e) => {
+    state.networkName = (e.target as HTMLInputElement).value || "appnet";
+    saveState();
+    renderOutput();
+  });
+  document.getElementById("compose-use-env")?.addEventListener("change", (e) => {
+    state.useEnvFile = (e.target as HTMLInputElement).checked;
+    saveState();
+    renderOutput();
   });
 
   // Copy / download
@@ -322,8 +744,25 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     URL.revokeObjectURL(url);
   };
 
-  document.getElementById("btn-compose-copy")?.addEventListener("click", () => copy(generateCompose(getConfig())));
-  document.getElementById("btn-env-copy")?.addEventListener("click", () => copy(generateEnvExample(getConfig())));
+  document.getElementById("btn-compose-copy")?.addEventListener("click", async () => {
+    await copy(generateCompose(getConfig()));
+    flashCopy("btn-compose-copy");
+  });
+  document.getElementById("btn-env-copy")?.addEventListener("click", async () => {
+    await copy(generateEnvExample(getConfig()));
+    flashCopy("btn-env-copy");
+  });
+  function flashCopy(id: string) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = "✓ Copied";
+    btn.classList.add("copy-pulse");
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove("copy-pulse");
+    }, 1500);
+  }
   document.getElementById("btn-compose-download")?.addEventListener("click", () => download("docker-compose.yml", generateCompose(getConfig())));
   document.getElementById("btn-compose-zip")?.addEventListener("click", async () => {
     // Simple ZIP via fetch + JSZip-free approach: package as multiple downloads, or compose
@@ -331,4 +770,21 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     download("docker-compose.yml", generateCompose(getConfig()));
     setTimeout(() => download(".env.example", generateEnvExample(getConfig())), 200);
   });
+
+  // Restore from persisted state on initial load
+  (function restore() {
+    const projectInput = document.getElementById("compose-project-name") as HTMLInputElement | null;
+    const networkInput = document.getElementById("compose-network-name") as HTMLInputElement | null;
+    const useEnvInput = document.getElementById("compose-use-env") as HTMLInputElement | null;
+    if (projectInput) projectInput.value = state.projectName;
+    if (networkInput) networkInput.value = state.networkName;
+    if (useEnvInput) useEnvInput.checked = state.useEnvFile;
+    applyServiceActiveStates();
+    if (state.activeTab !== "compose") {
+      const tab = document.querySelector<HTMLButtonElement>(`.compose-tab-btn[data-tab="${state.activeTab}"]`);
+      tab?.click();
+    }
+    renderSelectedConfig();
+    renderOutput();
+  })();
 </script>

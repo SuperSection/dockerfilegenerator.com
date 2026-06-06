@@ -36,7 +36,7 @@ export interface FrameworkMeta {
   supportsStandalone: boolean;
   defaultBaseImage: string;
   recommendedBaseImage: string;
-  defaultStartCommand?: string;
+  startCommand?: string;
   baseImageAlternatives?: string[];
   buildOptimizations?: string[];
 }
