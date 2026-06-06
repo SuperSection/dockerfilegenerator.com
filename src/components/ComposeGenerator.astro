@@ -31,13 +31,13 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
                 {items.map((svc) => (
                   <button
                     type="button"
-                    class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+                    class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)] min-w-0"
                     data-service={svc.name}
                   >
-                    <span class="text-base">{svc.emoji}</span>
-                    <span class="flex-1">
-                      <span class="block t-body-sm-strong text-[var(--color-ink)]">{svc.label}</span>
-                      <span class="block t-caption text-[var(--color-body)] line-clamp-1">{svc.image}</span>
+                    <span class="text-base shrink-0">{svc.emoji}</span>
+                    <span class="flex-1 min-w-0">
+                      <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{svc.label}</span>
+                      <span class="block t-caption text-[var(--color-body)] truncate" title={svc.image}>{svc.image}</span>
                     </span>
                     <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -277,12 +277,20 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     btn.addEventListener("click", () => toggleService(btn.dataset.service!));
   });
 
-  // Search
+  // Search — normalize whitespace so "elastic search" matches "Elasticsearch"
   document.getElementById("compose-search")?.addEventListener("input", (e) => {
-    const q = (e.target as HTMLInputElement).value.toLowerCase();
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+    const q = normalize((e.target as HTMLInputElement).value);
     document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((btn) => {
-      const label = btn.textContent?.toLowerCase() ?? "";
-      btn.style.display = label.includes(q) ? "" : "none";
+      const text = normalize(btn.textContent ?? "");
+      btn.style.display = text.includes(q) ? "" : "none";
+    });
+    // Hide category sections that have no visible items
+    document.querySelectorAll<HTMLElement>(".service-category").forEach((cat) => {
+      const hasVisible = Array.from(
+        cat.querySelectorAll<HTMLButtonElement>(".service-btn")
+      ).some((b) => b.style.display !== "none");
+      cat.style.display = hasVisible ? "" : "none";
     });
   });
 
