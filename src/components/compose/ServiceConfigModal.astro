@@ -1,0 +1,633 @@
+---
+/**
+ * ServiceConfigModal.astro
+ *
+ * A pop-up dialog for editing a single service's full configuration
+ * (image, version, ports, volumes, env, healthcheck, resource limits,
+ * restart, container name).
+ *
+ * The modal is rendered once at the page root and *addressed by name*
+ * — opening it is just a matter of setting the `data-service` attribute
+ * and removing the `hidden` class. The body content is rebuilt on open
+ * to reflect the current override state. Closing it (Esc / backdrop /
+ * close button) preserves the in-memory edits; the user clicks "Apply"
+ * to commit them, "Cancel" to discard.
+ *
+ * The modal is the same component used by ComposeGenerator and
+ * StackBuilder, so behavior stays consistent across the app.
+ */
+import type { ServiceConfig } from "~/lib/compose/services";
+import { availableTags } from "~/registry";
+import type { VersionSelection } from "~/registry";
+
+interface Props {
+  /** The set of services this modal can edit. */
+  services: ReadonlyArray<ServiceConfig>;
+}
+
+const { services } = Astro.props;
+const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as const;
+---
+
+<!--
+  The modal lives once at the page level. We do not pre-render the body
+  content because the form needs the user's current override state
+  (which is per-service and per-session) — it gets built dynamically
+  when `openFor(name)` is called.
+-->
+<div
+  id="service-config-modal"
+  class="fixed inset-0 z-[60] hidden items-center justify-center p-4"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="service-config-modal-title"
+>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" data-modal-backdrop></div>
+
+  <div class="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-[var(--shadow-level-3)] modal-panel">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[var(--color-hairline)] px-5 py-3">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-xl shrink-0" id="service-config-modal-emoji">⚙️</span>
+        <h2 id="service-config-modal-title" class="t-body-sm-strong text-[var(--color-ink)] truncate">Service configuration</h2>
+      </div>
+      <button
+        type="button"
+        data-modal-close
+        aria-label="Close"
+        class="rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Body: built dynamically when the modal opens. The container is
+         the only element that needs to exist up front. -->
+    <div id="service-config-modal-body" class="flex-1 overflow-y-auto p-5 space-y-4">
+      <p class="t-caption text-[var(--color-body)]">Loading…</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center justify-end gap-2 border-t border-[var(--color-hairline)] px-5 py-3">
+      <button
+        type="button"
+        data-modal-cancel
+        class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-1.5 t-body-sm-strong text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
+      >Cancel</button>
+      <button
+        type="button"
+        data-modal-apply
+        class="rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-3 py-1.5 t-body-sm-strong text-[var(--color-primary-cta-fg)] hover:opacity-90"
+      >Apply</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  #service-config-modal:not(.hidden) .modal-panel { animation: modalFadeIn 140ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    #service-config-modal:not(.hidden) .modal-panel { animation: none; }
+  }
+  .cfg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 640px) {
+    .cfg-grid { grid-template-columns: 1fr; }
+  }
+  .cfg-mode-card {
+    /* Subtle entrance + lift on hover. We only animate transform /
+     * shadow so the compositor can keep this off the main thread. */
+    transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background-color 120ms ease;
+  }
+  .cfg-mode-card:hover {
+    transform: translateY(-1px);
+  }
+  .cfg-mode-card[aria-selected="true"] {
+    box-shadow: var(--shadow-level-1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cfg-mode-card { transition: none; }
+    .cfg-mode-card:hover { transform: none; }
+  }
+  .cfg-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+  }
+  .cfg-row input { min-width: 0; width: 100%; }
+  .cfg-section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-body);
+  }
+</style>
+
+<script>
+  /**
+   * ServiceConfigModal — client controller.
+   *
+   * Open/close API exposed on `window.ServiceConfigModal`:
+   *   openFor(serviceName) — populate body from current overrides and show
+   *   close()              — hide (no commit)
+   *   setOverrides(map)    — install the parent's `state.overrides`
+   *   onApply(callback)    — register a callback fired on Apply
+   *
+   * The modal talks to the parent through these hooks only — it does
+   * not import the parent's state directly. That keeps the modal
+   * decoupled and reusable across Compose + Stack Builder.
+   */
+  import { availableTags, resolveVersion, validateTag } from "~/registry";
+  import type { VersionSelection } from "~/registry";
+  import { SERVICES, type ServiceConfig } from "~/lib/compose/services";
+
+  type Override = {
+    containerName?: string;
+    image?: string;
+    tag?: string;
+    tagSelection?: VersionSelection;
+    ports?: { host: number; container: number }[];
+    volumes?: { host: string; container: string; readOnly?: boolean }[];
+    envVars?: { key: string; value: string }[];
+    restart?: "no" | "always" | "on-failure" | "unless-stopped";
+    healthCheck?: boolean;
+    cpuLimit?: string;
+    memoryLimit?: string;
+  };
+
+  const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as const;
+
+  const modal = document.getElementById("service-config-modal");
+  const body = document.getElementById("service-config-modal-body");
+  const titleEl = document.getElementById("service-config-modal-title");
+  const emojiEl = document.getElementById("service-config-modal-emoji");
+  if (!modal || !body || !titleEl || !emojiEl) {
+    console.warn("[ServiceConfigModal] required elements missing");
+  }
+
+  // Local edit buffer — what the user is currently typing. We don't
+  // touch the parent's state until they click Apply. This way Cancel
+  // really does discard, and the live preview keeps working without
+  // re-rendering on every keystroke.
+  let editing: Override = {};
+  let currentService: ServiceConfig | null = null;
+  let overridesRef: Record<string, Override> = {};
+  let applyCb: ((name: string, ov: Override) => void) | null = null;
+  let beforeOpen: { active: HTMLElement | null } = { active: null };
+
+  const escapeHtml = (s: string): string =>
+    String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  function deriveSelection(svc: ServiceConfig, ov: Override): VersionSelection {
+    if (ov.tagSelection) return ov.tagSelection;
+    if (!ov.tag || !svc) return { kind: "recommended" };
+    if (ov.tag === svc.defaultTag) return { kind: "recommended" };
+    if (ov.tag === svc.latestTag) return { kind: "latest" };
+    if (svc.availableTags?.some((t) => t.tag === ov.tag)) {
+      return { kind: "pinned", tag: ov.tag };
+    }
+    return { kind: "custom", tag: ov.tag };
+  }
+
+  function buildVersionControlHtml(svc: ServiceConfig, currentTag: string, ov: Override): string {
+    const sel = deriveSelection(svc, ov);
+    const tags = (svc.availableTags ?? []).slice(0, 12);
+    const kind = sel.kind;
+    const pinnedTag = (sel as any).tag && (kind === "pinned" || kind === "custom")
+      ? (sel as any).tag
+      : currentTag;
+
+    // Four mode cards. Each is a clickable tile with a label, value chip,
+    // and short helper text. The selected one is highlighted.
+    const card = (
+      mode: "recommended" | "latest" | "pinned" | "custom",
+      title: string,
+      valueChip: string,
+      helper: string,
+    ) => `
+      <button
+        type="button"
+        class="cfg-version-mode-btn cfg-mode-card text-left rounded-md border p-2.5 transition-colors ${
+          kind === mode
+            ? "border-[var(--color-primary-cta)] bg-[var(--color-link-bg-soft)]"
+            : "border-[var(--color-hairline)] bg-[var(--color-canvas)] hover:border-[var(--color-hairline-strong)]"
+        }"
+        data-cfg-mode="${mode}"
+        aria-selected="${kind === mode}"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <span class="t-body-sm-strong text-[var(--color-ink)]">${title}</span>
+          ${valueChip
+            ? `<code class="t-code text-[var(--color-body)] truncate max-w-[10rem]" title="${escapeHtml(valueChip)}">${escapeHtml(valueChip)}</code>`
+            : ""}
+        </div>
+        <p class="t-caption text-[var(--color-body)] mt-0.5">${helper}</p>
+      </button>
+    `;
+
+    // Sub-control shown beneath the mode cards. For "pinned" we show a
+    // dropdown of the registry's known tags. For "custom" we show a free
+    // text input. For the other two, we show a one-liner summary so
+    // the user can confirm what they're about to commit.
+    let subControl = "";
+    if (kind === "pinned") {
+      subControl = tags.length === 0
+        ? `<p class="t-caption text-[var(--color-body)]">No other versions cached yet. Use Custom to type one, or run <code class="t-code">npm run sync:registry</code> to refresh.</p>`
+        : `<label class="t-caption block text-[var(--color-body)] mb-1" for="cfg-pinned-tag">Pick a known tag</label>
+           <select id="cfg-pinned-tag" data-cfg-field="pinned-tag" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm">
+             ${tags.map((t) => `<option value="${escapeHtml(t.tag)}" ${t.tag === pinnedTag ? "selected" : ""}>${escapeHtml(t.tag)}${t.publishedAt ? ` — ${t.publishedAt.slice(0, 10)}` : ""}${t.isFloating ? " (floating)" : ""}</option>`).join("")}
+           </select>`;
+    } else if (kind === "custom") {
+      subControl = `<label class="t-caption block text-[var(--color-body)] mb-1" for="cfg-custom-tag">Type any Docker tag</label>
+                    <input id="cfg-custom-tag" type="text" data-cfg-field="custom-tag" value="${escapeHtml(pinnedTag)}" placeholder="e.g. 16.3-bookworm" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />`;
+    } else if (kind === "recommended") {
+      subControl = `<p class="t-caption text-[var(--color-body)]">Pinned to <code class="t-code text-[var(--color-ink)]">${escapeHtml(svc.defaultTag)}</code> — never bumps automatically. Safe for production.</p>`;
+    } else {
+      subControl = `<p class="t-caption text-[var(--color-body)]">Highest stable as of last sync (<code class="t-code text-[var(--color-ink)]">${escapeHtml(svc.latestTag)}</code>). Pinned in the generated output — only changes when the registry refreshes.</p>`;
+    }
+
+    return `
+      <div class="grid grid-cols-2 gap-2" data-service="${svc.name}">
+        ${card("recommended", "Recommended", svc.defaultTag, "Stable pinned default. Safe for production.")}
+        ${card("latest", "Latest", svc.latestTag, "Highest stable release from the last sync.")}
+        ${card("pinned", "Specific", tags[0]?.tag ?? svc.defaultTag, "Pick from registry-known tags.")}
+        ${card("custom", "Custom", "—", "Type any tag you want to use.")}
+      </div>
+      <div class="mt-2.5">${subControl}</div>
+      <input type="hidden" data-cfg-field="tagSelection-kind" value="${kind}" />
+    `;
+  }
+
+  function renderBody(svc: ServiceConfig, ov: Override) {
+    const ports = ov.ports ?? svc.defaultPorts;
+    const volumes = ov.volumes ?? svc.defaultVolumes;
+    const envs = ov.envVars ?? svc.defaultEnv;
+    const containerName = ov.containerName ?? svc.name;
+    const restart = ov.restart ?? svc.defaultRestart;
+    const image = ov.image ?? svc.image;
+    const tag = ov.tag ?? svc.defaultTag;
+    const healthCheck = ov.healthCheck ?? svc.hasHealthcheck;
+    const cpuLimit = ov.cpuLimit ?? "";
+    const memoryLimit = ov.memoryLimit ?? "";
+
+    titleEl!.textContent = `${svc.label} configuration`;
+    emojiEl!.textContent = svc.emoji;
+
+    body!.innerHTML = `
+      <div class="cfg-grid">
+        <div>
+          <label class="cfg-section-label block mb-1">Container name</label>
+          <input type="text" data-cfg-field="containerName" value="${escapeHtml(containerName)}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+        </div>
+        <div>
+          <label class="cfg-section-label block mb-1">Restart policy</label>
+          <select data-cfg-field="restart" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm">
+            ${RESTART_OPTIONS.map((o) => `<option value="${o}" ${o === restart ? "selected" : ""}>${o}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+
+      ${svc.isApp ? `
+        <div>
+          <label class="cfg-section-label block mb-1">Image (build context)</label>
+          <input type="text" data-cfg-field="image" value="${escapeHtml(image)}" disabled class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2.5 py-1.5 t-body-sm opacity-60" />
+          <p class="t-caption mt-1 text-[var(--color-body)]">Build context — version is controlled by the Dockerfile.</p>
+        </div>
+      ` : `
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="cfg-section-label" for="cfg-image-input">Image reference</label>
+            ${image !== svc.image
+              ? `<button type="button" data-cfg-action="reset-image" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline" title="Reset to ${escapeHtml(svc.image)}">↺ Use registry default</button>`
+              : ""}
+          </div>
+          <div class="flex items-stretch gap-0 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden focus-within:border-[var(--color-ink)]">
+            <span class="inline-flex items-center px-2.5 t-caption text-[var(--color-body)] bg-[var(--color-canvas-soft-2)] border-r border-[var(--color-hairline)]" title="Image">image</span>
+            <input id="cfg-image-input" type="text" data-cfg-field="image" value="${escapeHtml(image)}" placeholder="${escapeHtml(svc.image)}" class="flex-1 min-w-0 bg-transparent px-2.5 py-1.5 t-body-sm t-code text-[var(--color-ink)] focus:outline-none" />
+          </div>
+          <p class="t-caption mt-1 text-[var(--color-body)]">Default: <code class="t-code">${escapeHtml(svc.image)}</code>${svc.externalRegistry ? ` · ${svc.externalRegistry} registry` : " · Docker Hub official"}</p>
+        </div>
+        <div>
+          <label class="cfg-section-label block mb-2">Image version</label>
+          ${buildVersionControlHtml(svc, tag, ov)}
+        </div>
+      `}
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="cfg-section-label">Ports (host:container)</label>
+          <button type="button" data-cfg-action="add-port" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add port</button>
+        </div>
+        <div class="space-y-1.5" data-cfg-ports>
+          ${ports.map((p, i) => `
+            <div class="cfg-row">
+              <input type="number" data-cfg-port-field="host" data-cfg-port-i="${i}" value="${p.host}" placeholder="host" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <input type="number" data-cfg-port-field="container" data-cfg-port-i="${i}" value="${p.container}" placeholder="container" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <button type="button" data-cfg-action="remove-port" data-cfg-port-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove port">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="cfg-section-label">Volumes (host:container[:ro])</label>
+          <button type="button" data-cfg-action="add-volume" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add volume</button>
+        </div>
+        <div class="space-y-1.5" data-cfg-volumes>
+          ${volumes.map((v, i) => `
+            <div class="cfg-row">
+              <input type="text" data-cfg-vol-field="host" data-cfg-vol-i="${i}" value="${escapeHtml(v.host)}" placeholder="host path or volume name" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <input type="text" data-cfg-vol-field="container" data-cfg-vol-i="${i}" value="${escapeHtml(v.container)}" placeholder="container path" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <button type="button" data-cfg-action="remove-volume" data-cfg-vol-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove volume">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="cfg-section-label">Environment variables</label>
+          <button type="button" data-cfg-action="add-env" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add env var</button>
+        </div>
+        <div class="space-y-1.5" data-cfg-envs>
+          ${envs.map((e, i) => `
+            <div class="cfg-row">
+              <input type="text" data-cfg-env-field="key" data-cfg-env-i="${i}" value="${escapeHtml(e.key)}" placeholder="KEY" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <input type="text" data-cfg-env-field="value" data-cfg-env-i="${i}" value="${escapeHtml(e.value)}" placeholder="value" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+              <button type="button" data-cfg-action="remove-env" data-cfg-env-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove env">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 items-end">
+        <label class="flex items-center gap-2 t-body-sm text-[var(--color-ink)]">
+          <input type="checkbox" data-cfg-field="healthCheck" ${healthCheck ? "checked" : ""} class="h-4 w-4 rounded border-[var(--color-hairline-strong)]" />
+          Healthcheck
+        </label>
+        <div>
+          <label class="cfg-section-label block mb-1">CPU limit</label>
+          <input type="text" data-cfg-field="cpuLimit" value="${escapeHtml(cpuLimit)}" placeholder="0.5" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+        </div>
+        <div>
+          <label class="cfg-section-label block mb-1">Memory limit</label>
+          <input type="text" data-cfg-field="memoryLimit" value="${escapeHtml(memoryLimit)}" placeholder="512M" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
+        </div>
+      </div>
+
+      <p class="t-caption text-[var(--color-mute)]" id="service-config-modal-image-preview">
+        Final image reference: <code class="t-code">${escapeHtml(image)}:${escapeHtml(tag)}</code>
+      </p>
+    `;
+
+    wireBody();
+  }
+
+  function readBodyIntoEdit() {
+    if (!body) return;
+    const fields = body.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-cfg-field]");
+    fields.forEach((el) => {
+      const field = (el as HTMLElement).dataset.cfgField!;
+      if (field === "tagSelection-kind") return;
+      if (el.type === "checkbox") {
+        (editing as any)[field] = (el as HTMLInputElement).checked;
+      } else {
+        (editing as any)[field] = (el as HTMLInputElement).value.trim();
+      }
+    });
+    // List-of-row fields
+    const ports: { host: number; container: number }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-cfg-ports] > div").forEach((row) => {
+      const host = parseInt((row.querySelector('[data-cfg-port-field="host"]') as HTMLInputElement).value, 10);
+      const container = parseInt((row.querySelector('[data-cfg-port-field="container"]') as HTMLInputElement).value, 10);
+      if (!isNaN(host) && !isNaN(container)) ports.push({ host, container });
+    });
+    if (ports.length) editing.ports = ports;
+    const volumes: { host: string; container: string }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-cfg-volumes] > div").forEach((row) => {
+      const host = (row.querySelector('[data-cfg-vol-field="host"]') as HTMLInputElement).value.trim();
+      const container = (row.querySelector('[data-cfg-vol-field="container"]') as HTMLInputElement).value.trim();
+      if (host && container) volumes.push({ host, container });
+    });
+    if (volumes.length) editing.volumes = volumes;
+    const envVars: { key: string; value: string }[] = [];
+    body.querySelectorAll<HTMLDivElement>("[data-cfg-envs] > div").forEach((row) => {
+      const key = (row.querySelector('[data-cfg-env-field="key"]') as HTMLInputElement).value.trim();
+      const value = (row.querySelector('[data-cfg-env-field="value"]') as HTMLInputElement).value.trim();
+      if (key) envVars.push({ key, value });
+    });
+    if (envVars.length) editing.envVars = envVars;
+  }
+
+  function wireBody() {
+    if (!body || !currentService) return;
+    const svc = currentService;
+
+    // Live preview of the resolved image:tag at the bottom.
+    const updatePreview = () => {
+      const preview = document.getElementById("service-config-modal-image-preview");
+      if (!preview) return;
+      const imgEl = body.querySelector<HTMLInputElement>('[data-cfg-field="image"]');
+      const tagKindEl = body.querySelector<HTMLInputElement>('[data-cfg-field="tagSelection-kind"]');
+      const image = imgEl?.value.trim() || svc.image;
+      let tag = svc.defaultTag;
+      if (tagKindEl?.value === "pinned") {
+        const sel = body.querySelector<HTMLSelectElement>('[data-cfg-field="pinned-tag"]');
+        tag = sel?.value ?? tag;
+      } else if (tagKindEl?.value === "custom") {
+        const inp = body.querySelector<HTMLInputElement>('[data-cfg-field="custom-tag"]');
+        tag = inp?.value.trim() ?? tag;
+      } else if (tagKindEl?.value === "latest") {
+        tag = svc.latestTag;
+      } else {
+        tag = svc.defaultTag;
+      }
+      preview.innerHTML = `Final image reference: <code class="t-code">${escapeHtml(image)}:${escapeHtml(tag)}</code>`;
+    };
+
+    body.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-cfg-field]").forEach((el) => {
+      el.addEventListener("input", updatePreview);
+      el.addEventListener("change", updatePreview);
+    });
+
+    // Version mode buttons
+    body.querySelectorAll<HTMLButtonElement>(".cfg-version-mode-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const mode = btn.dataset.cfgMode as VersionSelection["kind"];
+        let newSel: VersionSelection;
+        if (mode === "recommended") newSel = { kind: "recommended" };
+        else if (mode === "latest") newSel = { kind: "latest" };
+        else if (mode === "pinned") {
+          const first = (svc.availableTags ?? [])[0]?.tag ?? editing.tag ?? svc.defaultTag ?? "latest";
+          newSel = { kind: "pinned", tag: first };
+        } else {
+          const cur = (editing.tagSelection as any)?.tag ?? editing.tag ?? svc.defaultTag ?? "";
+          newSel = { kind: "custom", tag: cur };
+        }
+        editing.tagSelection = newSel;
+        try {
+          const r = resolveVersion(svc.name, newSel);
+          editing.tag = r.tag;
+        } catch {}
+        // Rebuild the version control portion only
+        const vc = body.querySelector(".cfg-version-modes")?.parentElement;
+        if (vc) {
+          const wrap = document.createElement("div");
+          wrap.innerHTML = buildVersionControlHtml(svc, editing.tag ?? svc.defaultTag, editing);
+          vc.innerHTML = wrap.innerHTML;
+          wireBody(); // rebind mode buttons
+          updatePreview();
+        }
+      });
+    });
+
+    // Pinned/Custom sub-inputs
+    const pinnedSel = body.querySelector<HTMLSelectElement>('[data-cfg-field="pinned-tag"]');
+    pinnedSel?.addEventListener("change", () => {
+      editing.tag = pinnedSel.value;
+      editing.tagSelection = { kind: "pinned", tag: pinnedSel.value };
+      updatePreview();
+    });
+    const customInput = body.querySelector<HTMLInputElement>('[data-cfg-field="custom-tag"]');
+    customInput?.addEventListener("input", () => {
+      const v = validateTag(customInput.value);
+      customInput.setCustomValidity(v.valid ? "" : (v.reason ?? "Invalid tag"));
+      editing.tag = customInput.value;
+      editing.tagSelection = { kind: "custom", tag: customInput.value };
+      updatePreview();
+    });
+
+    // Add/remove row actions
+    body.querySelectorAll<HTMLButtonElement>("[data-cfg-action]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const action = btn.dataset.cfgAction!;
+        readBodyIntoEdit();
+        if (action === "reset-image") {
+          // Snap the image field back to the registry default for this
+          // service and re-render so the preview reflects the change.
+          editing.image = svc.image;
+          renderBody(svc, editing);
+          return;
+        }
+        if (action === "add-port") {
+          const ports = [...(editing.ports ?? [...svc.defaultPorts])];
+          ports.push({ host: 8080, container: 8080 });
+          editing.ports = ports;
+        } else if (action === "remove-port") {
+          const i = parseInt(btn.dataset.cfgPortI!, 10);
+          const ports = [...(editing.ports ?? svc.defaultPorts)];
+          ports.splice(i, 1);
+          editing.ports = ports;
+        } else if (action === "add-volume") {
+          const hasUserOverride = Array.isArray(editing.volumes);
+          const base = hasUserOverride ? (editing.volumes as any[]) : [...svc.defaultVolumes];
+          const empty = base.length === 0;
+          const next = empty && svc.defaultVolumes.length > 0
+            ? [...svc.defaultVolumes.map((v) => ({ ...v }))]
+            : [...base, { host: "./data", container: "/data" }];
+          editing.volumes = next;
+        } else if (action === "remove-volume") {
+          const i = parseInt(btn.dataset.cfgVolI!, 10);
+          const volumes = [...(editing.volumes ?? svc.defaultVolumes)];
+          volumes.splice(i, 1);
+          editing.volumes = volumes;
+        } else if (action === "add-env") {
+          const hasUserOverride = Array.isArray(editing.envVars);
+          const base = hasUserOverride ? (editing.envVars as any[]) : [...svc.defaultEnv];
+          const empty = base.length === 0;
+          const next = empty && svc.defaultEnv.length > 0
+            ? [...svc.defaultEnv.map((e) => ({ ...e }))]
+            : [...base, { key: "", value: "" }];
+          editing.envVars = next;
+        } else if (action === "remove-env") {
+          const i = parseInt(btn.dataset.cfgEnvI!, 10);
+          const envVars = [...(editing.envVars ?? svc.defaultEnv)];
+          envVars.splice(i, 1);
+          editing.envVars = envVars;
+        }
+        renderBody(svc, editing);
+      });
+    });
+  }
+
+  function openFor(serviceName: string) {
+    if (!modal) return;
+    const svc = SERVICES[serviceName];
+    if (!svc) return;
+    currentService = svc;
+    // Snapshot the current override so Cancel actually discards
+    const src = overridesRef[serviceName] ?? {};
+    editing = JSON.parse(JSON.stringify(src));
+    // Ensure tagSelection is derived if missing
+    if (!editing.tagSelection && !editing.tag) {
+      editing.tagSelection = { kind: "recommended" };
+    }
+    renderBody(svc, editing);
+    beforeOpen.active = document.activeElement as HTMLElement | null;
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+    // Move focus to the first input for keyboard users
+    setTimeout(() => {
+      const firstInput = body?.querySelector<HTMLInputElement>("input");
+      firstInput?.focus();
+      firstInput?.select();
+    }, 0);
+    document.addEventListener("keydown", onKeydown);
+  }
+
+  function close() {
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+    document.removeEventListener("keydown", onKeydown);
+    beforeOpen.active?.focus?.();
+  }
+
+  function apply() {
+    if (!currentService) return;
+    readBodyIntoEdit();
+    if (applyCb) applyCb(currentService.name, editing);
+    close();
+  }
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      close();
+    }
+  }
+
+  // Wire footer + backdrop
+  modal?.querySelector<HTMLElement>("[data-modal-backdrop]")?.addEventListener("click", close);
+  modal?.querySelector<HTMLElement>("[data-modal-close]")?.addEventListener("click", close);
+  modal?.querySelector<HTMLElement>("[data-modal-cancel]")?.addEventListener("click", close);
+  modal?.querySelector<HTMLElement>("[data-modal-apply]")?.addEventListener("click", apply);
+
+  // Expose API
+  (window as any).ServiceConfigModal = {
+    openFor,
+    close,
+    setOverrides: (m: Record<string, Override>) => { overridesRef = m; },
+    onApply: (cb: (name: string, ov: Override) => void) => { applyCb = cb; },
+  };
+</script>

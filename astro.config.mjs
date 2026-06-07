@@ -7,6 +7,14 @@ export default defineConfig({
   site: 'https://dockerfilegenerator.com',
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        // Map the ~/* import alias to the src/ directory. We compute
+        // the absolute path at config-load time so editors (and the
+        // Vite dev server) resolve it without any Node-only imports.
+        '~': new URL('./src/', import.meta.url).pathname,
+      },
+    },
   },
   markdown: {
     shikiConfig: {

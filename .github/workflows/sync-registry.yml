@@ -1,0 +1,59 @@
+name: Sync service registry
+
+on:
+  schedule:
+    # Mondays 06:00 UTC — pulls latest Docker Hub / GitHub tags and
+    # opens a PR if anything changed. Cheap, predictable cadence.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+  push:
+    paths:
+      - "src/registry/seeds/**"
+      - "src/registry/providers/**"
+      - "scripts/sync-registry.mjs"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: registry-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run registry sync
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node --experimental-strip-types --no-warnings scripts/sync-registry.mjs
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(registry): sync versions from upstream"
+          title: "Sync service registry"
+          body: |
+            Automated weekly version refresh.
+
+            - See `registry.lock.json` for the raw snapshot.
+            - Review the diff in `src/registry/data.ts`.
+            - If a major bump landed, sanity-check the relevant
+              `seeds/*.ts` to make sure the compose defaults still
+              match the new major's contract.
+          branch: chore/registry-sync
+          delete-branch: true

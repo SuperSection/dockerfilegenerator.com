@@ -397,6 +397,14 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
   const initial = loadState();
   const state = {
     framework: initial.framework as FrameworkId,
+    // Stash the user-saved base image *before* setFramework() clobbers it.
+    // setFramework() resets state.baseImage to the framework's default
+    // and overwrites the input value — so if we let it run with a saved
+    // user value already in state, the value is silently lost. The fix:
+    // remember the saved base image, run setFramework() to populate the
+    // form, then restore the user's value on top. The input's value is
+    // reassigned AND the input dispatches an `input` event so the
+    // wireInput handler sees it and runs render() with the new value.
     baseImage: initial.baseImage,
     port: initial.port,
     workdir: initial.workdir,
@@ -410,6 +418,16 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     buildOptimizations: initial.buildOptimizations,
     activeTab: initial.activeTab,
   };
+  // Track whether the user has explicitly edited baseImage so
+  // setFramework() knows whether to overwrite it. Persisted in state
+  // so it survives reloads — otherwise every reload falls back to the
+  // framework default, which defeats the whole "I picked a custom
+  // image and I want it to stay" point.
+  const USER_EDITED_KEY = "dockerfile-generator-base-edited-v1";
+  let userEditedBaseImage: boolean = false;
+  try {
+    userEditedBaseImage = localStorage.getItem(USER_EDITED_KEY) === "1";
+  } catch {}
 
   function readConfig(): DockerfileConfig {
     return {
@@ -429,10 +447,31 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
   }
 
   function setFramework(id: FrameworkId) {
+    // Capture the previous framework BEFORE we mutate state.framework.
+    // We need to know whether the current state.baseImage was the
+    // previous framework's pinned default — if so, switching frameworks
+    // should adopt the new framework's default so the rendered
+    // Dockerfile reflects the framework the user just picked.
+    const prevFw = FRAMEWORKS[state.framework];
     state.framework = id;
     const fw = FRAMEWORKS[id];
-    // Reset framework-specific inputs to defaults
-    state.baseImage = fw.defaultBaseImage;
+    const wasPrevDefault = state.baseImage === prevFw?.defaultBaseImage;
+    // Reset framework-specific inputs to defaults. Preserve the user's
+    // edited baseImage if they explicitly customized it AND it doesn't
+    // match the old framework's default — otherwise the act of switching
+    // frameworks would wipe the user's choice. (See restore() in the
+    // init block for the matching logic that applies the persisted user
+    // value on first load.)
+    if (!userEditedBaseImage || wasPrevDefault) {
+      state.baseImage = fw.defaultBaseImage;
+      // If we just adopted the new framework's default because the
+      // value was previously identical to the old default, the user
+      // no longer has a custom edit to preserve.
+      if (wasPrevDefault) {
+        userEditedBaseImage = false;
+        try { localStorage.removeItem(USER_EDITED_KEY); } catch {}
+      }
+    }
     state.port = String(fw.defaultPort);
     state.workdir = fw.defaultWorkdir;
     state.packageManager = fw.defaultPackageManager;
@@ -564,8 +603,10 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
         continue;
       }
 
-      // Image reference: name[:tag] or name/name[:tag] (only meaningful right after FROM/COPY --from=)
-      const imgM = /^([a-zA-Z0-9.\-_]+(?::[a-zA-Z0-9.\-_]+)?(?:@[a-zA-Z0-9.\-_]+)?)/.exec(line.slice(i));
+      // Image reference: name[:tag] or registry/name[:tag][@digest].
+      // Includes '/' so registry paths like `gcr.io/distroless/static-debian12`
+      // match the full reference, not just the first segment.
+      const imgM = /^([a-zA-Z0-9.\-_\/]+(?::[a-zA-Z0-9.\-_]+)?(?:@[a-zA-Z0-9.\-_]+)?)/.exec(line.slice(i));
       if (imgM && (kwMatch && (kwMatch[1] === "FROM" || kwMatch[1] === "COPY"))) {
         const ref = imgM[0];
         const colon = ref.indexOf(":");
@@ -832,6 +873,22 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     el.addEventListener("input", handler);
     el.addEventListener("change", handler);
   };
+  // Track manual edits to the base image so a framework switch doesn't
+  // silently overwrite the user's choice. The flag is persisted to
+  // localStorage so reloads (and page-to-page nav) keep the value.
+  const baseImageInput = document.getElementById("base-image") as HTMLInputElement | null;
+  if (baseImageInput) {
+    baseImageInput.addEventListener("input", () => {
+      const fw = FRAMEWORKS[state.framework];
+      if (baseImageInput.value.trim() !== fw.defaultBaseImage) {
+        userEditedBaseImage = true;
+        try { localStorage.setItem(USER_EDITED_KEY, "1"); } catch {}
+      } else {
+        userEditedBaseImage = false;
+        try { localStorage.removeItem(USER_EDITED_KEY); } catch {}
+      }
+    });
+  }
   wireInput("base-image", "baseImage");
   wireInput("port", "port");
   wireInput("workdir", "workdir");
@@ -885,6 +942,18 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     downloadFile("Dockerfile", generateDockerfile(config));
   });
 
+  // Ctrl+K / Cmd+K focuses the framework search from anywhere on the page.
+  document.addEventListener("keydown", (e) => {
+    const isMac = navigator.platform.toUpperCase().includes("MAC");
+    const accel = isMac ? e.metaKey : e.ctrlKey;
+    if (accel && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      const fw = document.getElementById("framework-search") as HTMLInputElement | null;
+      fw?.focus();
+      fw?.select();
+    }
+  });
+
   // Init — restore from persisted state, or fall back to first-load defaults.
   (function restore() {
     setFramework(state.framework);
@@ -893,6 +962,15 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     (document.getElementById("production") as HTMLInputElement).checked = state.production;
     (document.getElementById("non-root") as HTMLInputElement).checked = state.nonRootUser;
     (document.getElementById("health-check") as HTMLInputElement).checked = state.healthCheck;
+    // setFramework() resets state.baseImage to the framework default
+    // (unless the user has a saved custom edit, in which case it
+    // preserves the saved value). state.baseImage already reflects the
+    // correct value, so the input only needs to be re-displayed if
+    // setFramework clobbered it — i.e. when there's no saved user edit
+    // and we want to fall back to the framework default. The input
+    // value is already in sync from setFramework's DOM write above.
+    // The render at the bottom of this block will pick up the right
+    // state and emit the correct Dockerfile.
     // Restore env rows from state
     state.envVars.forEach((v) => addEnvRow(v.key, v.value));
     // Restore active tab

@@ -4,6 +4,7 @@
 
 import type { ServiceConfig, PortMapping, VolumeMount, EnvVar } from "./services";
 import { SERVICES } from "./services";
+import { resolveVersion, type VersionSelection } from "~/registry";
 
 export interface ServiceOverride {
   ports?: PortMapping[];
@@ -12,6 +13,13 @@ export interface ServiceOverride {
   restart?: ServiceConfig["defaultRestart"];
   image?: string;
   tag?: string;
+  /**
+   * How the user picked the tag. Defaults to "recommended" when not set.
+   * The generator routes this through `resolveVersion` so the actual
+   * tag emitted in YAML is always pinned, never `latest` (unless the
+   * user explicitly asked for it via "custom").
+   */
+  tagSelection?: VersionSelection;
   command?: string[];
   healthCheck?: boolean;
   cpuLimit?: string;
@@ -145,7 +153,21 @@ const renderService = (
   const envVars = override.envVars ?? base.defaultEnv;
   const restart = override.restart ?? base.defaultRestart;
   const image = override.image ?? base.image;
-  const tag = override.tag ?? base.defaultTag;
+  // Route tag selection through the registry so we never emit a
+  // floating "latest" unless the user explicitly asked for it.
+  // For "app" (build context) we keep the existing defaultTag — the
+  // registry has no entry for it.
+  const isAppService = base.isApp === true;
+  const tagResolution = isAppService
+    ? { tag: override.tag ?? base.defaultTag, source: "recommended" as const }
+    : resolveVersion(
+        name,
+        override.tagSelection
+          ?? (override.tag
+            ? ({ kind: "pinned", tag: override.tag } as const)
+            : ({ kind: "recommended" } as const)),
+      );
+  const tag = tagResolution.tag;
   const command = override.command ?? base.defaultCommand;
   const includeHealthcheck = override.healthCheck ?? base.hasHealthcheck;
   // Container name override (defaults to the service key)
@@ -155,12 +177,19 @@ const renderService = (
   const imageLine = base.isApp
     ? `${indent(2)}build:\n${indent(3)}context: .\n${indent(3)}dockerfile: Dockerfile`
     : `${indent(2)}image: ${image}:${tag}`;
+  // When the user picked a non-recommended tag, emit a comment so the
+  // generated YAML is self-documenting. Skipped for app services.
+  const tagComment =
+    !base.isApp && tagResolution.source !== "recommended"
+      ? `${indent(2)}# image: ${image}:${tag} (${tagResolution.source})\n`
+      : "";
 
   // Service header lives at indent level 1 (under `services:`). All child
   // keys below use indent(2) and the section helpers (renderPorts, etc.)
   // use indent(3)/(4) for keys and list items respectively, which produces
   // a uniform 2-space YAML layout.
   const parts: string[] = [`${indent(1)}${name}:`];
+  if (tagComment) parts.push(tagComment.trimEnd());
   parts.push(imageLine);
   parts.push(`${indent(2)}container_name: ${containerName}`);
   parts.push(`${indent(2)}restart: ${restart}`);

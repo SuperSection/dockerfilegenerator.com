@@ -1,12 +1,13 @@
 ---
 import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/services";
+import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
 ---
 
 <div id="compose-generator">
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-[480px_1fr]">
     <!-- Left: Service selector + selected config -->
     <aside class="space-y-6">
-      <!-- Search -->
+      <!-- Search trigger — Ctrl+K focuses / opens. Shows a few popular services inline as quick picks. -->
       <div>
         <div class="relative">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -14,40 +15,128 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
             type="text"
             id="compose-search"
             placeholder="Search services..."
-            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] pl-9 pr-3 py-2.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] pl-9 pr-16 py-2.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
           />
+          <kbd class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Ctrl K</kbd>
+        </div>
+
+        <!-- Quick picks: a few popular services inline so the catalog isn't
+             a 500px scrolling list anymore. The full catalog lives in a
+             popover, opened by the "Browse all" button below or by Ctrl+K. -->
+        <div id="service-quickpicks" class="mt-3 space-y-4">
+          {CATEGORY_ORDER.map((cat) => {
+            const items = SERVICE_LIST.filter((s) => s.category === cat);
+            if (!items.length) return null;
+            const top = items.slice(0, 4);
+            return (
+              <div class="service-category" data-category={cat}>
+                <h3 class="t-caption-mono mb-2 text-[var(--color-body)]">{CATEGORY_LABELS[cat]}</h3>
+                <div class="grid grid-cols-2 gap-2">
+                  {top.map((svc) => (
+                    <button
+                      type="button"
+                      class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)] min-w-0"
+                      data-service={svc.name}
+                    >
+                      <span class="text-base shrink-0">{svc.emoji}</span>
+                      <span class="flex-1 min-w-0">
+                        <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{svc.label}</span>
+                        <span class="block t-caption text-[var(--color-body)] truncate" title={svc.image}>{svc.image}</span>
+                      </span>
+                      <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                {items.length > top.length && (
+                  <button
+                    type="button"
+                    data-action="open-picker"
+                    data-category={cat}
+                    class="mt-1.5 t-caption t-body-sm-strong text-[var(--color-link)] hover:underline"
+                  >
+                    + {items.length - top.length} more in {CATEGORY_LABELS[cat]}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <button
+            type="button"
+            id="btn-open-picker"
+            class="w-full t-body-sm-strong inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-[var(--color-hairline-strong)] bg-[var(--color-canvas-soft-2)] px-3 py-2.5 text-[var(--color-ink)] hover:bg-[var(--color-canvas)]"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Browse all services
+            <kbd class="ml-1 inline-flex items-center rounded border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Ctrl K</kbd>
+          </button>
         </div>
       </div>
 
-      <!-- Service catalog -->
-      <div id="service-catalog" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-        {CATEGORY_ORDER.map((cat) => {
-          const items = SERVICE_LIST.filter((s) => s.category === cat);
-          if (!items.length) return null;
-          return (
-            <div class="service-category" data-category={cat}>
-              <h3 class="t-caption-mono mb-2 text-[var(--color-body)]">{CATEGORY_LABELS[cat]}</h3>
-              <div class="grid grid-cols-2 gap-2">
-                {items.map((svc) => (
-                  <button
-                    type="button"
-                    class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)] min-w-0"
-                    data-service={svc.name}
-                  >
-                    <span class="text-base shrink-0">{svc.emoji}</span>
-                    <span class="flex-1 min-w-0">
-                      <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{svc.label}</span>
-                      <span class="block t-caption text-[var(--color-body)] truncate" title={svc.image}>{svc.image}</span>
-                    </span>
-                    <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <!-- Service picker popover (opened by Ctrl+K or the "Browse all" button) -->
+      <div
+        id="service-picker"
+        class="fixed inset-0 z-50 hidden items-start justify-center pt-[10vh] px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search services"
+      >
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" data-picker-backdrop></div>
+        <div class="relative w-full max-w-xl rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-[var(--shadow-level-3)] picker-panel">
+          <div class="flex items-center gap-2 border-b border-[var(--color-hairline)] px-4 py-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input
+              type="text"
+              id="picker-search"
+              placeholder="Type to search services..."
+              autocomplete="off"
+              class="flex-1 bg-transparent t-body-sm text-[var(--color-ink)] focus:outline-none placeholder:text-[var(--color-mute)]"
+            />
+            <kbd class="hidden sm:inline-flex items-center rounded border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Esc</kbd>
+            <button
+              type="button"
+              data-picker-close
+              aria-label="Close"
+              class="rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+          <div id="picker-results" class="max-h-[60vh] overflow-y-auto p-2">
+            {CATEGORY_ORDER.map((cat) => {
+              const items = SERVICE_LIST.filter((s) => s.category === cat);
+              if (!items.length) return null;
+              return (
+                <div class="picker-group mb-1" data-category={cat}>
+                  <h3 class="t-caption-mono px-2 py-1.5 text-[var(--color-body)]">{CATEGORY_LABELS[cat]}</h3>
+                  <div class="space-y-0.5">
+                    {items.map((svc) => (
+                      <button
+                        type="button"
+                        class="picker-item w-full flex items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-[var(--color-canvas-soft-2)] focus:bg-[var(--color-canvas-soft-2)] focus:outline-none"
+                        data-service={svc.name}
+                        data-label={svc.label.toLowerCase()}
+                        data-image={svc.image.toLowerCase()}
+                      >
+                        <span class="text-lg shrink-0">{svc.emoji}</span>
+                        <span class="flex-1 min-w-0">
+                          <span class="block t-body-sm-strong text-[var(--color-ink)]">{svc.label}</span>
+                          <span class="block t-caption text-[var(--color-body)] truncate">{svc.image}</span>
+                        </span>
+                        <span class="picker-check hidden text-[var(--color-primary-cta)]">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            <div id="picker-empty" class="hidden px-2 py-8 text-center t-caption text-[var(--color-body)]">No services match that search.</div>
+          </div>
+        </div>
       </div>
 
       <!-- Global project configuration -->
@@ -89,6 +178,14 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
         <h2 class="t-caption-mono mb-4 text-[var(--color-body)]">Selected services</h2>
         <div id="selected-list" class="space-y-3"></div>
       </section>
+    </aside>
+
+    <aside class="hidden">
+      <!-- Modal lives at the page root; we mount it here so it sits
+           alongside the rest of the generator markup and shares its
+           stylesheet scope. The body content is rendered dynamically
+           when openFor(name) is called from the parent script. -->
+      <ServiceConfigModal services={SERVICE_LIST} />
     </aside>
 
     <!-- Right: Output -->
@@ -152,19 +249,7 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
   }
-  .port-row, .volume-row, .env-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 6px;
-    align-items: center;
-  }
-  .port-row input, .volume-row input, .env-row input {
-    min-width: 0;
-  }
 
-  /* Subtle micro-interactions. The service button lifts slightly on
-   * hover (1px translate), and the code panel fades its inner content
-   * on each regeneration so the change feels "delivered". */
   .service-btn {
     transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
   }
@@ -183,15 +268,12 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     #compose-code, #env-code { animation: none; }
   }
 
-  /* Copy-button pulse feedback. We add .copy-pulse briefly, the
-   * keyframes paint a soft accent, then we strip the class. */
   @keyframes copyPulse {
     0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
     100% { background-color: var(--color-canvas); color: var(--color-ink); }
   }
   .copy-pulse { animation: copyPulse 600ms ease-out; }
 
-  /* Soft entrance for the validation panel when it appears */
   @keyframes panelFadeIn {
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -201,7 +283,6 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     #validation-panel:not(.hidden) { animation: none; }
   }
 
-  /* Selected service cards: gentle slide-down on first appearance */
   @keyframes svcFadeIn {
     from { opacity: 0; transform: translateY(-3px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -210,24 +291,35 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
   @media (prefers-reduced-motion: reduce) {
     #selected-list > div { animation: none; }
   }
+
+  @keyframes pickerFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .picker-panel { animation: pickerFadeIn 140ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .picker-panel { animation: none; }
+  }
+  .picker-item[data-active="true"] {
+    background: var(--color-canvas-soft-2);
+  }
+  .picker-item[data-active="true"] .picker-check {
+    color: var(--color-primary-cta);
+  }
 </style>
 
 <script>
-  import { SERVICES, SERVICE_LIST } from "../lib/compose/services";
+  import { SERVICES } from "../lib/compose/services";
   import { generateCompose, generateEnvExample, validateCompose, type ComposeConfig, type ServiceOverride } from "../lib/compose/generator";
+  import { type VersionSelection } from "../registry";
 
   type Tab = "compose" | "env";
 
-  /* ─────────────────────────────────────────────────────────
-   * State — all mutable state lives in this object, persisted to
-   * localStorage so reloads and page-to-page navigation don't
-   * wipe the user's configuration.
-   * ─────────────────────────────────────────────────────── */
   const STORAGE_KEY = "compose-generator-state-v1";
 
   type PersistedState = {
     selected: string[];
-    overrides: Record<string, ServiceOverride>;
+    overrides: Record<string, ServiceOverride & { tagSelection?: VersionSelection }>;
     projectName: string;
     networkName: string;
     useEnvFile: boolean;
@@ -287,56 +379,50 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     };
   }
 
+  /**
+   * Derive the VersionSelection currently in effect for a service.
+   * Reads from override.tagSelection first (new shape), falls back to
+   * the legacy override.tag by checking which known variant it matches.
+   * Kept here for the summary line in the selected-list card.
+   */
+  function deriveSelection(name: string, override: any): VersionSelection {
+    if (override.tagSelection) return override.tagSelection;
+    const svc = SERVICES[name];
+    if (!override.tag || !svc) return { kind: "recommended" };
+    if (override.tag === svc.defaultTag) return { kind: "recommended" };
+    if (override.tag === svc.latestTag) return { kind: "latest" };
+    if (svc.availableTags?.some((t: any) => t.tag === override.tag)) {
+      return { kind: "pinned", tag: override.tag };
+    }
+    return { kind: "custom", tag: override.tag };
+  }
+
   function highlight(code: string) {
     const escape = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     return escape(code)
-      // comments
       .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
-      // top-level keys (no leading whitespace): key:
       .replace(/^([A-Za-z_][\w-]*)(:)/gm, '<span class="tok-keyword">$1</span>$2')
-      // nested keys (indented): key: value  → color the key
       .replace(/^(\s+)(-?\s*)([A-Za-z_][\w-]*)(:)/gm, '$1$2<span class="tok-image">$3</span>$4')
-      // list items under a key (e.g. "  - something")
       .replace(/^(\s+)(-\s)/gm, '$1<span class="tok-punct">$2</span>')
-      // boolean / null / number values
       .replace(/(:\s)(true|false|yes|no|null|~)\b/g, '$1<span class="tok-number">$2</span>')
       .replace(/(:\s)(-?\d+(?:\.\d+)?)\b/g, '$1<span class="tok-number">$2</span>')
-      // unquoted scalar values that look like image refs / env names
       .replace(/(:\s)([a-zA-Z0-9._\-/:${}]+)$/gm, '$1<span class="tok-string">$2</span>')
-      // shell-style ${VAR} or $VAR
       .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
       .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
   }
 
-  /**
-   * .env syntax highlighter.
-   *  - # comments in italic grey
-   *  - KEY on the left in keyword violet (bold for emphasis)
-   *  - = in punct grey
-   *  - value (after the first =) in a distinct calm blue-green
-   *  - ${OTHER_VAR} interpolations stand out via tok-var
-   *  - empty lines preserved
-   */
   function highlightEnv(code: string) {
     const escape = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     return escape(code)
       .split("\n")
       .map((line) => {
-        // Full-line comment
-        if (/^\s*#/.test(line)) {
-          return `<span class="tok-comment">${line}</span>`;
-        }
-        // Empty line
-        if (/^\s*$/.test(line)) {
-          return line;
-        }
-        // KEY=VALUE (with optional export prefix)
+        if (/^\s*#/.test(line)) return `<span class="tok-comment">${line}</span>`;
+        if (/^\s*$/.test(line)) return line;
         const m = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*(=)\s*(.*)$/.exec(line);
         if (!m) return line;
         const [, lead, key, eq, rawValue] = m;
-        // Color ${INTERPOLATIONS} inside the value, escape the rest
         const valueHtml = rawValue.replace(/(\$\{[^}]+\})/g, '<span class="tok-env-varref">$1</span>');
         return `<span class="tok-env-key">${lead}${key}</span><span class="tok-env-equals">${eq}</span><span class="tok-env-value">${valueHtml}</span>`;
       })
@@ -357,7 +443,6 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     document.getElementById("compose-code")!.innerHTML = highlight(compose);
     document.getElementById("env-code")!.innerHTML = highlightEnv(env);
 
-    // Validation
     const issues = validateCompose(cfg);
     const panel = document.getElementById("validation-panel")!;
     if (issues.length) {
@@ -375,6 +460,14 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     } else {
       panel.classList.add("hidden");
     }
+  }
+
+  function escapeHtml(s: string): string {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function renderSelectedConfig() {
@@ -397,253 +490,76 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
       const restart = override.restart ?? svc.defaultRestart;
       const image = override.image ?? svc.image;
       const tag = override.tag ?? svc.defaultTag;
-      const healthCheck = override.healthCheck ?? svc.hasHealthcheck;
-      const cpuLimit = override.cpuLimit ?? "";
-      const memoryLimit = override.memoryLimit ?? "";
 
       const div = document.createElement("div");
       div.className = "rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)]";
+      // Compact summary row. Clicking "Configure" opens the pop-up modal
+      // where all fields are editable. The old inline body is gone — the
+      // modal is the single source of truth for per-service config.
       div.innerHTML = `
-        <button type="button" class="svc-header w-full flex items-center justify-between gap-2 p-3 text-left" data-name="${name}">
+        <div class="flex items-center justify-between gap-2 p-3">
           <div class="flex items-center gap-2 min-w-0">
             <span class="text-base shrink-0">${svc.emoji}</span>
             <div class="min-w-0">
-              <span class="t-body-sm-strong text-[var(--color-ink)] block">${svc.label}</span>
-              <span class="t-caption text-[var(--color-body)] block truncate">${containerName} · ${restart} · ${ports.length} port${ports.length === 1 ? "" : "s"} · ${envs.length} env</span>
+              <span class="t-body-sm-strong text-[var(--color-ink)] block">${escapeHtml(svc.label)}</span>
+              <span class="t-caption text-[var(--color-body)] block truncate">
+                <code class="t-code">${escapeHtml(image)}:${escapeHtml(tag)}</code> ·
+                ${containerName} ·
+                ${restart} ·
+                ${ports.length} port${ports.length === 1 ? "" : "s"} ·
+                ${volumes.length} vol ·
+                ${envs.length} env
+              </span>
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
+            <button type="button" data-action="configure" data-name="${name}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 t-caption t-body-sm-strong text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Configure</button>
             <span class="remove-svc inline-flex rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-error-deep)] cursor-pointer" data-name="${name}" role="button" aria-label="Remove service">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </span>
-            <span class="svc-chevron inline-flex text-[var(--color-body)] transition-transform" data-chevron>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </span>
-          </div>
-        </button>
-        <div class="svc-body hidden border-t border-[var(--color-hairline)] p-3 space-y-4" data-body>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">Container name</label>
-              <input type="text" data-field="containerName" value="${containerName}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-            </div>
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">Restart policy</label>
-              <select data-field="restart" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm">
-                ${RESTART_OPTIONS.map(o => `<option value="${o}" ${o === restart ? "selected" : ""}>${o}</option>`).join("")}
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-[1fr_120px] gap-3">
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">Image${svc.isApp ? " (ignored for app — uses build)" : ""}</label>
-              <input type="text" data-field="image" value="${image}" ${svc.isApp ? "disabled" : ""} class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm ${svc.isApp ? "opacity-50" : ""}" />
-            </div>
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">Tag</label>
-              <input type="text" data-field="tag" value="${tag}" ${svc.isApp ? "disabled" : ""} class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm ${svc.isApp ? "opacity-50" : ""}" />
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="t-caption text-[var(--color-body)]">Ports (host:container)</label>
-              <button type="button" data-action="add-port" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add port</button>
-            </div>
-            <div class="space-y-1.5" data-ports>
-              ${ports.map((p, i) => `
-                <div class="port-row">
-                  <input type="number" data-port-field="host" data-port-i="${i}" value="${p.host}" placeholder="host" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <input type="number" data-port-field="container" data-port-i="${i}" value="${p.container}" placeholder="container" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <button type="button" data-action="remove-port" data-port-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove port">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                  </button>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="t-caption text-[var(--color-body)]">Volumes (host:container[:ro])</label>
-              <button type="button" data-action="add-volume" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add volume</button>
-            </div>
-            <div class="space-y-1.5" data-volumes>
-              ${volumes.map((v, i) => `
-                <div class="volume-row">
-                  <input type="text" data-vol-field="host" data-vol-i="${i}" value="${v.host}" placeholder="host path or volume name" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <input type="text" data-vol-field="container" data-vol-i="${i}" value="${v.container}" placeholder="container path" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <button type="button" data-action="remove-volume" data-vol-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove volume">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                  </button>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="t-caption text-[var(--color-body)]">Environment variables</label>
-              <button type="button" data-action="add-env" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add env var</button>
-            </div>
-            <div class="space-y-1.5" data-envs>
-              ${envs.map((e, i) => `
-                <div class="env-row">
-                  <input type="text" data-env-field="key" data-env-i="${i}" value="${e.key}" placeholder="KEY" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <input type="text" data-env-field="value" data-env-i="${i}" value="${e.value}" placeholder="value" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-                  <button type="button" data-action="remove-env" data-env-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove env">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                  </button>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-          <div class="grid grid-cols-3 gap-3 items-end">
-            <label class="flex items-center gap-2 t-body-sm text-[var(--color-ink)]">
-              <input type="checkbox" data-field="healthCheck" ${healthCheck ? "checked" : ""} class="h-4 w-4 rounded border-[var(--color-hairline-strong)]" />
-              Healthcheck
-            </label>
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">CPU limit</label>
-              <input type="text" data-field="cpuLimit" value="${cpuLimit}" placeholder="0.5" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-            </div>
-            <div>
-              <label class="t-caption text-[var(--color-body)] block mb-1">Memory limit</label>
-              <input type="text" data-field="memoryLimit" value="${memoryLimit}" placeholder="512M" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-            </div>
           </div>
         </div>
       `;
       list.appendChild(div);
     });
 
-    // Remove buttons (in header)
+    // Wire per-row actions
+    list.querySelectorAll<HTMLElement>("[data-action='configure']").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const name = btn.dataset.name!;
+        (window as any).ServiceConfigModal?.openFor(name);
+      });
+    });
     list.querySelectorAll<HTMLElement>(".remove-svc").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         toggleService(btn.dataset.name!);
       });
     });
-
-    // Header click toggles the body
-    list.querySelectorAll<HTMLButtonElement>(".svc-header").forEach((hdr) => {
-      hdr.addEventListener("click", (e) => {
-        // Ignore if click was on the remove button
-        if ((e.target as HTMLElement).closest(".remove-svc")) return;
-        const body = hdr.parentElement?.querySelector<HTMLElement>("[data-body]");
-        const chev = hdr.querySelector<HTMLElement>("[data-chevron]");
-        if (!body) return;
-        const willOpen = body.classList.contains("hidden");
-        body.classList.toggle("hidden");
-        chev?.classList.toggle("rotate-180", willOpen);
-      });
-    });
-
-    // Wire per-field changes
-    list.querySelectorAll<HTMLElement>("[data-body]").forEach((body) => {
-      const name = (body.parentElement?.querySelector("[data-name]") as HTMLElement | null)?.dataset.name;
-      if (!name) return;
-      body.querySelectorAll<HTMLInputElement | HTMLSelectElement>("[data-field]").forEach((el) => {
-        el.addEventListener("input", () => updateServiceField(name, el));
-        el.addEventListener("change", () => updateServiceField(name, el));
-      });
-      body.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          handleServiceAction(name, btn);
-        });
-      });
-      body.querySelectorAll<HTMLInputElement>("[data-port-field], [data-vol-field], [data-env-field]").forEach((el) => {
-        el.addEventListener("input", () => updateServiceList(name, body));
-        el.addEventListener("change", () => updateServiceList(name, body));
-      });
-    });
   }
 
-  function updateServiceField(name: string, el: HTMLInputElement | HTMLSelectElement) {
-    const field = (el as HTMLElement).dataset.field!;
-    const ov = state.overrides[name] ?? {};
-    if (el.type === "checkbox") {
-      (ov as any)[field] = (el as HTMLInputElement).checked;
-    } else {
-      const v = (el as HTMLInputElement).value.trim();
-      (ov as any)[field] = v === "" ? undefined : v;
-    }
-    state.overrides[name] = ov;
-    saveState();
-    renderOutput();
-    // Update the header summary line in place
-    const header = document.querySelector(`#selected-list [data-name="${name}"]`)?.parentElement?.querySelector("span.t-caption");
-    if (header) {
-      const svc = SERVICES[name];
-      const ports = ov.ports ?? svc.defaultPorts;
-      const envs = ov.envVars ?? svc.defaultEnv;
-      const containerName = ov.containerName ?? name;
-      const restart = ov.restart ?? svc.defaultRestart;
-      header.textContent = `${containerName} · ${restart} · ${ports.length} port${ports.length === 1 ? "" : "s"} · ${envs.length} env`;
-    }
-  }
-
-  function updateServiceList(name: string, body: HTMLElement) {
-    const ov = state.overrides[name] ?? {};
-    const ports: { host: number; container: number }[] = [];
-    body.querySelectorAll<HTMLDivElement>("[data-ports] > div").forEach((row) => {
-      const host = parseInt((row.querySelector('[data-port-field="host"]') as HTMLInputElement).value, 10);
-      const container = parseInt((row.querySelector('[data-port-field="container"]') as HTMLInputElement).value, 10);
-      if (!isNaN(host) && !isNaN(container)) ports.push({ host, container });
+  // ── Modal wiring ───────────────────────────────────────────
+  // The ServiceConfigModal exposes openFor(name) on
+  // window.ServiceConfigModal. We feed it the current overrides map and
+  // listen for Apply events to write them back to state, re-render, and
+  // persist. Cancel does nothing on the parent side (the modal discards
+  // its own edit buffer). The modal reads the live overridesRef
+  // (synced above) every time it opens, so we don't need to re-push.
+  (function wireModal() {
+    const modal = (window as any).ServiceConfigModal;
+    if (!modal) return;
+    modal.setOverrides(state.overrides as any);
+    modal.onApply((name: string, ov: any) => {
+      state.overrides[name] = { ...(state.overrides[name] ?? {}), ...ov };
+      // Keep the modal's overridesRef in sync so a Cancel-then-reopen
+      // reads the freshly committed values, not the snapshot from
+      // before the Apply.
+      modal.setOverrides(state.overrides as any);
+      saveState();
+      renderSelectedConfig();
+      renderOutput();
     });
-    const volumes: { host: string; container: string }[] = [];
-    body.querySelectorAll<HTMLDivElement>("[data-volumes] > div").forEach((row) => {
-      const host = (row.querySelector('[data-vol-field="host"]') as HTMLInputElement).value.trim();
-      const container = (row.querySelector('[data-vol-field="container"]') as HTMLInputElement).value.trim();
-      if (host && container) volumes.push({ host, container });
-    });
-    const envVars: { key: string; value: string }[] = [];
-    body.querySelectorAll<HTMLDivElement>("[data-envs] > div").forEach((row) => {
-      const key = (row.querySelector('[data-env-field="key"]') as HTMLInputElement).value.trim();
-      const value = (row.querySelector('[data-env-field="value"]') as HTMLInputElement).value.trim();
-      if (key) envVars.push({ key, value });
-    });
-    state.overrides[name] = { ...ov, ports, volumes, envVars };
-    saveState();
-    renderOutput();
-  }
-
-  function handleServiceAction(name: string, btn: HTMLButtonElement) {
-    const action = btn.dataset.action!;
-    const ov = state.overrides[name] ?? {};
-    const svc = SERVICES[name];
-    if (action === "add-port") {
-      const ports = [...(ov.ports ?? [...svc.defaultPorts])];
-      ports.push({ host: 8080, container: 8080 });
-      state.overrides[name] = { ...ov, ports };
-    } else if (action === "remove-port") {
-      const i = parseInt(btn.dataset.portI!, 10);
-      const ports = [...(ov.ports ?? svc.defaultPorts)];
-      ports.splice(i, 1);
-      state.overrides[name] = { ...ov, ports };
-    } else if (action === "add-volume") {
-      const volumes = [...(ov.volumes ?? [...svc.defaultVolumes])];
-      volumes.push({ host: "./data", container: "/data" });
-      state.overrides[name] = { ...ov, volumes };
-    } else if (action === "remove-volume") {
-      const i = parseInt(btn.dataset.volI!, 10);
-      const volumes = [...(ov.volumes ?? svc.defaultVolumes)];
-      volumes.splice(i, 1);
-      state.overrides[name] = { ...ov, volumes };
-    } else if (action === "add-env") {
-      const envVars = [...(ov.envVars ?? [...svc.defaultEnv])];
-      envVars.push({ key: "", value: "" });
-      state.overrides[name] = { ...ov, envVars };
-    } else if (action === "remove-env") {
-      const i = parseInt(btn.dataset.envI!, 10);
-      const envVars = [...(ov.envVars ?? svc.defaultEnv)];
-      envVars.splice(i, 1);
-      state.overrides[name] = { ...ov, envVars };
-    }
-    saveState();
-    renderSelectedConfig();
-    renderOutput();
-  }
-
-  const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as const;
+  })();
 
   function toggleService(name: string) {
     if (state.selected.has(name)) {
@@ -660,6 +576,7 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
         image: base.image,
         tag: base.defaultTag,
         healthCheck: base.hasHealthcheck,
+        tagSelection: { kind: "recommended" },
       };
     }
     document.querySelectorAll<HTMLButtonElement>(`.service-btn[data-service="${name}"]`).forEach((b) => {
@@ -676,29 +593,147 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     });
   }
 
-  // Wire up service buttons
   document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((btn) => {
     btn.addEventListener("click", () => toggleService(btn.dataset.service!));
   });
 
-  // Search — normalize whitespace so "elastic search" matches "Elasticsearch"
-  document.getElementById("compose-search")?.addEventListener("input", (e) => {
+  // The inline sidebar search filters the quick-pick catalog AND opens the
+  // picker if the user is typing. If the field is empty, only the quick
+  // picks are shown — the full list lives behind the picker.
+  function filterQuickPicks(q: string) {
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
-    const q = normalize((e.target as HTMLInputElement).value);
+    const nq = normalize(q);
     document.querySelectorAll<HTMLButtonElement>(".service-btn").forEach((btn) => {
       const text = normalize(btn.textContent ?? "");
-      btn.style.display = text.includes(q) ? "" : "none";
+      btn.style.display = text.includes(nq) ? "" : "none";
     });
-    // Hide category sections that have no visible items
     document.querySelectorAll<HTMLElement>(".service-category").forEach((cat) => {
       const hasVisible = Array.from(
         cat.querySelectorAll<HTMLButtonElement>(".service-btn")
       ).some((b) => b.style.display !== "none");
       cat.style.display = hasVisible ? "" : "none";
     });
+  }
+
+  // ── Picker popover (Ctrl+K / Esc) ─────────────────────────────
+  const picker = document.getElementById("service-picker")!;
+  const pickerSearch = document.getElementById("picker-search") as HTMLInputElement | null;
+  const pickerResults = document.getElementById("picker-results")!;
+  const pickerEmpty = document.getElementById("picker-empty")!;
+  const inlineSearch = document.getElementById("compose-search") as HTMLInputElement | null;
+
+  function openPicker() {
+    picker.classList.remove("hidden");
+    picker.classList.add("flex");
+    // If the inline search has text, mirror it into the picker so the
+    // user can keep typing without re-typing.
+    if (inlineSearch && pickerSearch && inlineSearch.value) {
+      pickerSearch.value = inlineSearch.value;
+    }
+    setTimeout(() => pickerSearch?.focus(), 0);
+    filterPicker(pickerSearch?.value ?? "");
+    refreshPickerChecks();
+  }
+  function closePicker() {
+    picker.classList.add("hidden");
+    picker.classList.remove("flex");
+  }
+  function refreshPickerChecks() {
+    document.querySelectorAll<HTMLButtonElement>(".picker-item").forEach((b) => {
+      const check = b.querySelector<HTMLElement>(".picker-check");
+      const isOn = state.selected.has(b.dataset.service!);
+      b.dataset.active = isOn ? "true" : "false";
+      check?.classList.toggle("hidden", !isOn);
+    });
+  }
+  function filterPicker(q: string) {
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+    const nq = normalize(q);
+    const groups = pickerResults.querySelectorAll<HTMLElement>(".picker-group");
+    let anyVisible = false;
+    groups.forEach((g) => {
+      let groupHas = false;
+      g.querySelectorAll<HTMLButtonElement>(".picker-item").forEach((b) => {
+        const hay = `${b.dataset.label ?? ""} ${b.dataset.image ?? ""}`;
+        const match = !nq || normalize(hay).includes(nq);
+        b.style.display = match ? "" : "none";
+        if (match) groupHas = true;
+      });
+      g.style.display = groupHas ? "" : "none";
+      if (groupHas) anyVisible = true;
+    });
+    pickerEmpty.classList.toggle("hidden", anyVisible);
+  }
+
+  inlineSearch?.addEventListener("input", (e) => {
+    const v = (e.target as HTMLInputElement).value;
+    filterQuickPicks(v);
+    // Typing into the inline search also opens the picker with the
+    // full catalog, so the user has a single keystroke → see everything.
+    if (v.length > 0 && picker.classList.contains("hidden")) {
+      openPicker();
+    }
+  });
+  inlineSearch?.addEventListener("focus", () => {
+    if (inlineSearch && inlineSearch.value.length > 0) openPicker();
+  });
+  pickerSearch?.addEventListener("input", () => filterPicker(pickerSearch.value));
+
+  // Click on a picker item toggles the service
+  pickerResults.addEventListener("click", (e) => {
+    const t = e.target as HTMLElement;
+    const item = t.closest<HTMLButtonElement>(".picker-item");
+    if (!item) return;
+    toggleService(item.dataset.service!);
+    refreshPickerChecks();
+    // Keep the picker open so the user can add multiple services quickly.
+    // Esc (or clicking the backdrop / X) closes it.
   });
 
-  // Tabs
+  // Backdrop click closes
+  picker.querySelector<HTMLElement>("[data-picker-backdrop]")?.addEventListener("click", closePicker);
+  picker.querySelector<HTMLElement>("[data-picker-close]")?.addEventListener("click", closePicker);
+
+  // "Browse all" button + per-category "+ N more" buttons
+  document.getElementById("btn-open-picker")?.addEventListener("click", () => openPicker());
+  document.querySelectorAll<HTMLButtonElement>("[data-action='open-picker']").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      openPicker();
+      // Pre-focus the search filtered to the relevant category for context
+      const cat = btn.dataset.category;
+      if (cat && pickerSearch) {
+        const label = (document.querySelector(`.picker-group[data-category="${cat}"] h3`)?.textContent ?? "").trim();
+        pickerSearch.value = label;
+        filterPicker(label);
+      }
+    });
+  });
+
+  // Global keyboard shortcuts
+  document.addEventListener("keydown", (e) => {
+    // Esc closes the picker (and clears focus from any open picker search)
+    if (e.key === "Escape" && !picker.classList.contains("hidden")) {
+      e.preventDefault();
+      closePicker();
+      return;
+    }
+    // Ctrl+K / Cmd+K — open picker (or focus the framework search on Dockerfile page)
+    const isMac = navigator.platform.toUpperCase().includes("MAC");
+    const accel = isMac ? e.metaKey : e.ctrlKey;
+    if (accel && (e.key === "k" || e.key === "K")) {
+      e.preventDefault();
+      // If the inline search exists on this page, open the picker.
+      // Otherwise (Dockerfile page), focus the framework search.
+      if (inlineSearch) {
+        openPicker();
+      } else {
+        const fw = document.getElementById("framework-search") as HTMLInputElement | null;
+        fw?.focus();
+        fw?.select();
+      }
+    }
+  });
+
   document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((b) => {
     b.addEventListener("click", () => {
       state.activeTab = b.dataset.tab as Tab;
@@ -715,7 +750,6 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     });
   });
 
-  // Project name, network name, .env toggle — wire to state + save
   document.getElementById("compose-project-name")?.addEventListener("input", (e) => {
     state.projectName = (e.target as HTMLInputElement).value || "app";
     saveState();
@@ -732,7 +766,6 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
     renderOutput();
   });
 
-  // Copy / download
   const copy = async (text: string) => navigator.clipboard.writeText(text);
   const download = (name: string, content: string) => {
     const blob = new Blob([content], { type: "text/plain" });
@@ -765,13 +798,10 @@ import { SERVICE_LIST, CATEGORY_LABELS, CATEGORY_ORDER } from "../lib/compose/se
   }
   document.getElementById("btn-compose-download")?.addEventListener("click", () => download("docker-compose.yml", generateCompose(getConfig())));
   document.getElementById("btn-compose-zip")?.addEventListener("click", async () => {
-    // Simple ZIP via fetch + JSZip-free approach: package as multiple downloads, or compose
-    // For simplicity, download both files
     download("docker-compose.yml", generateCompose(getConfig()));
     setTimeout(() => download(".env.example", generateEnvExample(getConfig())), 200);
   });
 
-  // Restore from persisted state on initial load
   (function restore() {
     const projectInput = document.getElementById("compose-project-name") as HTMLInputElement | null;
     const networkInput = document.getElementById("compose-network-name") as HTMLInputElement | null;

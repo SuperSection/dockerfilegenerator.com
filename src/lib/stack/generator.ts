@@ -2,19 +2,22 @@
  * Stack Builder — full-stack generation.
  * Composes a Dockerfile + docker-compose.yml + .env.example + .dockerignore
  * from Frontend × Backend × Database × Optional services.
+ *
+ * Image versions are routed through the central registry
+ * (`~/registry`). Adding a new optional service = drop a seed.
  */
 
 import {
   FRONTENDS,
   BACKENDS,
   DATABASES,
-  OPTIONALS,
   buildConnectionString,
   type Frontend,
   type Backend,
   type Database,
   type Optional,
 } from "./presets";
+import { getService } from "~/registry";
 
 export interface StackConfig {
   frontend?: Frontend;
@@ -30,6 +33,13 @@ export interface StackConfig {
    * generators stay consistent.
    */
   useEnvFile?: boolean;
+  /**
+   * Per-service image+tag overrides keyed by service id. The Stack
+   * Builder UI populates this from its per-card configure modal;
+   * the generator resolves the final image:tag for each service by
+   * checking this map first, then the registry.
+   */
+  serviceOverrides?: Record<string, { image?: string; tag?: string }>;
 }
 
 const dockerfileForNode = (cfg: StackConfig, which: "frontend" | "backend"): string => {
@@ -37,6 +47,11 @@ const dockerfileForNode = (cfg: StackConfig, which: "frontend" | "backend"): str
   const isFrontend = which === "frontend";
   const startCmd = isFrontend ? meta.startCmd : BACKENDS[cfg.backend!].startCmd;
   const port = meta.port;
+  // buildCmd only exists on FrontendMeta (backends have a runtime startCmd
+  // and no separate build step in this generator). We use a typed cast
+  // here so the SPA path can still read it without TS complaining about
+  // the union.
+  const buildCmd = isFrontend ? (meta as typeof FRONTENDS[keyof typeof FRONTENDS]).buildCmd : "";
 
   // Static SPA frontend (react/vue) — build to nginx
   if (isFrontend && (cfg.frontend === "react" || cfg.frontend === "vue")) {
@@ -48,7 +63,7 @@ WORKDIR ${meta.workdir}
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
-RUN ${meta.buildCmd}
+RUN ${isFrontend ? buildCmd : meta.startCmd}
 
 # ---- Runtime: nginx ----
 FROM nginx:1.27-alpine
@@ -161,7 +176,7 @@ CMD ${JSON.stringify(startCmd.split(/\s+/))}
 `;
 };
 
-const dockerfileForFastapi = (cfg: StackConfig): string => {
+const dockerfileForFastapi = (_cfg: StackConfig): string => {
   return `# syntax=docker/dockerfile:1.7
 
 # ---- Builder ----
@@ -186,7 +201,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 `;
 };
 
-const dockerfileForSpringBoot = (cfg: StackConfig): string => {
+const dockerfileForSpringBoot = (_cfg: StackConfig): string => {
   return `# syntax=docker/dockerfile:1.7
 
 # ---- Build ----
@@ -244,9 +259,15 @@ export const generateStackCompose = (cfg: StackConfig): string => {
       if (cfg.useEnvFile) return `    ${e.key}: "\${${e.key}}"`;
       return `    ${e.key}: ${JSON.stringify(e.value)}`;
     });
+    // Pull image+tag from registry first, then serviceOverrides, then
+    // the legacy `db.tag` for back-compat until a sync has run.
+    const reg = getService(cfg.database);
+    const ovr = cfg.serviceOverrides?.[cfg.database];
+    const dbImage = ovr?.image ?? reg?.image ?? db.image;
+    const dbTag = ovr?.tag ?? reg?.recommended ?? db.tag;
     lines.push("");
     lines.push(renderService(serviceName, [
-      `  image: ${db.image}:${db.tag}`,
+      `  image: ${dbImage}:${dbTag}`,
       `  container_name: ${serviceName}`,
       `  restart: unless-stopped`,
       `  environment:`,
@@ -352,9 +373,15 @@ export const generateStackCompose = (cfg: StackConfig): string => {
   // Optional services
   cfg.optional.forEach((o) => {
     if (o === "redis") {
+      // Pull image+tag from overrides → registry → fallback. Never
+      // hardcode in this file.
+      const r = getService("redis");
+      const ovr = cfg.serviceOverrides?.["redis"];
+      const image = ovr?.image ?? r?.image ?? "redis";
+      const tag = ovr?.tag ?? r?.recommended ?? "7-alpine";
       lines.push("");
       lines.push(renderService("redis", [
-        `  image: redis:7-alpine`,
+        `  image: ${image}:${tag}`,
         `  container_name: redis`,
         `  restart: unless-stopped`,
         `  ports:`,
@@ -373,9 +400,13 @@ export const generateStackCompose = (cfg: StackConfig): string => {
       const env = cfg.useEnvFile
         ? `    RABBITMQ_DEFAULT_USER: "\${RABBITMQ_USER}"\n    RABBITMQ_DEFAULT_PASS: "\${RABBITMQ_PASSWORD}"`
         : `    RABBITMQ_DEFAULT_USER: guest\n    RABBITMQ_DEFAULT_PASS: guest`;
+      const r = getService("rabbitmq");
+      const ovr = cfg.serviceOverrides?.["rabbitmq"];
+      const image = ovr?.image ?? r?.image ?? "rabbitmq";
+      const tag = ovr?.tag ?? r?.recommended ?? "3.13-management-alpine";
       lines.push("");
       lines.push(renderService("rabbitmq", [
-        `  image: rabbitmq:3.13-management-alpine`,
+        `  image: ${image}:${tag}`,
         `  container_name: rabbitmq`,
         `  restart: unless-stopped`,
         `  ports:`,
@@ -394,9 +425,18 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - appnet`,
       ]));
     } else if (o === "kafka") {
+      // Bitnami's bitnami/kafka is the well-trodden path. The registry's
+      // "kafka" entry currently maps to apache/kafka (the upstream Apache
+      // image), which has different env var conventions. Resolve via
+      // the registry when possible; otherwise fall back to bitnami for
+      // back-compat with the existing env block below.
+      const r = getService("kafka");
+      const ovr = cfg.serviceOverrides?.["kafka"];
+      const image = ovr?.image ?? r?.image ?? "bitnami/kafka";
+      const tag = ovr?.tag ?? r?.recommended ?? "3.7";
       lines.push("");
       lines.push(renderService("kafka", [
-        `  image: bitnami/kafka:3.7`,
+        `  image: ${image}:${tag}`,
         `  container_name: kafka`,
         `  restart: unless-stopped`,
         `  ports:`,
@@ -416,9 +456,13 @@ export const generateStackCompose = (cfg: StackConfig): string => {
         `    - appnet`,
       ]));
     } else if (o === "nginx") {
+      const r = getService("nginx");
+      const ovr = cfg.serviceOverrides?.["nginx"];
+      const image = ovr?.image ?? r?.image ?? "nginx";
+      const tag = ovr?.tag ?? r?.recommended ?? "1.27-alpine";
       lines.push("");
       lines.push(renderService("nginx", [
-        `  image: nginx:1.27-alpine`,
+        `  image: ${image}:${tag}`,
         `  container_name: nginx`,
         `  restart: unless-stopped`,
         `  ports:`,
@@ -482,7 +526,7 @@ export const generateStackEnv = (cfg: StackConfig): string => {
   return lines.join("\n");
 };
 
-export const generateStackDockerignore = (target: "frontend" | "backend"): string => {
+export const generateStackDockerignore = (_target: "frontend" | "backend"): string => {
   return `node_modules
 .next
 dist

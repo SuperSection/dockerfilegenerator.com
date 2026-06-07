@@ -1,0 +1,188 @@
+---
+/**
+ * VersionPicker.astro
+ *
+ * Renders a tri-state segmented control + dropdown + Custom textbox
+ * for picking a service image tag. The four options are:
+ *
+ *   Recommended  — pinned, what generated output uses by default
+ *   Latest       — highest stable as of last registry sync
+ *   Specific     — pick from the curated list of available tags
+ *   Custom       — type any tag (validated against TAG_PATTERN)
+ *
+ * The control is a controlled component: the parent owns `value`
+ * and listens for `version-change` events. State is read on the
+ * client from localStorage so reloads don't lose the user's pick.
+ */
+import type { ServiceDefinition, VersionSelection, TagInfo } from "~/registry";
+import { availableTags } from "~/registry";
+import { TAG_PATTERN } from "~/registry/providers/types";
+
+interface Props {
+  service: ServiceDefinition;
+  /** Form field prefix — parent reads `${name}.kind` + `${name}.tag`. */
+  name: string;
+  value: VersionSelection;
+}
+
+const { service, name, value } = Astro.props;
+const tags = availableTags(service);
+
+// Show the most recent ~12 tags in the Specific dropdown; full list
+// lives in service.availableTags and the user can use Custom for older.
+const recentTags: ReadonlyArray<TagInfo> = tags.slice(0, 12);
+
+const isFloatingRecommended = /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.test(service.recommended);
+---
+
+<div class="version-picker" data-service={service.id} data-name={name}>
+  <div role="tablist" class="seg inline-flex rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 gap-1">
+    <button
+      type="button"
+      role="tab"
+      data-mode="recommended"
+      aria-selected={value.kind === "recommended"}
+      class="seg-btn px-3 py-1.5 t-body-sm-strong rounded-md"
+      title="Pinned version we ship by default. Stable, predictable, won't surprise you on rebuild."
+    >
+      <span>Recommended</span>
+      <code class="ml-1.5 t-code text-[var(--color-body)]">{service.recommended}</code>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-mode="latest"
+      aria-selected={value.kind === "latest"}
+      class="seg-btn px-3 py-1.5 t-body-sm-strong rounded-md"
+      title="Highest stable release discovered at the last weekly sync."
+    >
+      <span>Latest</span>
+      <code class="ml-1.5 t-code text-[var(--color-body)]">{service.latest}</code>
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-mode="pinned"
+      aria-selected={value.kind === "pinned"}
+      class="seg-btn px-3 py-1.5 t-body-sm-strong rounded-md"
+      title="Choose a specific version from the available tags."
+    >
+      Specific
+    </button>
+    <button
+      type="button"
+      role="tab"
+      data-mode="custom"
+      aria-selected={value.kind === "custom"}
+      class="seg-btn px-3 py-1.5 t-body-sm-strong rounded-md"
+      title="Type any tag — useful for pre-releases or images not yet in the registry."
+    >
+      Custom
+    </button>
+  </div>
+
+  <div class="panels mt-2.5 min-h-[2.25rem]">
+    {value.kind === "recommended" && (
+      <p class="t-caption text-[var(--color-body)]">
+        Pinned to <code class="t-code text-[var(--color-ink)]">{service.recommended}</code>
+        {isFloatingRecommended && <span class="ml-1.5 opacity-70">(floating — moves with the upstream line)</span>}
+        — never bumps automatically. Safe for production.
+      </p>
+    )}
+    {value.kind === "latest" && (
+      <p class="t-caption text-[var(--color-body)]">
+        Highest stable as of last sync (<code class="t-code text-[var(--color-ink)]">{service.latest}</code>).
+        Pinned in the generated output — only updates when the registry refreshes.
+      </p>
+    )}
+    {value.kind === "pinned" && (
+      <div>
+        <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-pinned`}>
+          Choose from {tags.length} available tag{tags.length === 1 ? "" : "s"}:
+        </label>
+        <select
+          id={`vp-${name}-pinned`}
+          name={`${name}.tag`}
+          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+        >
+          {recentTags.map((t) => (
+            <option value={t.tag} selected={t.tag === (value as { kind: "pinned"; tag: string }).tag}>
+              {t.tag}{t.publishedAt && ` — ${t.publishedAt.slice(0, 10)}`}{t.isFloating ? " (floating)" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+    )}
+    {value.kind === "custom" && (
+      <div>
+        <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-custom`}>
+          Type any Docker tag:
+        </label>
+        <input
+          type="text"
+          id={`vp-${name}-custom`}
+          name={`${name}.tag`}
+          pattern={TAG_PATTERN.source}
+          value={(value as { kind: "custom"; tag: string }).tag}
+          placeholder="e.g. 16.3-bookworm"
+          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+        />
+      </div>
+    )}
+  </div>
+
+  <input type="hidden" name={`${name}.kind`} value={value.kind} />
+</div>
+
+<style>
+  .version-picker .seg-btn {
+    color: var(--color-body);
+    transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+  }
+  .version-picker .seg-btn:hover {
+    color: var(--color-ink);
+  }
+  .version-picker .seg-btn[aria-selected="true"] {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-level-1);
+  }
+  .version-picker .seg-btn[aria-selected="true"] code {
+    color: var(--color-ink);
+  }
+</style>
+
+<script>
+  import { validateTag } from "~/registry/providers/types";
+  import type { VersionSelection } from "~/registry";
+
+  type PickerEvent = CustomEvent<{ kind: VersionSelection["kind"]; tag?: string }>;
+
+  document.querySelectorAll<HTMLElement>(".version-picker").forEach((picker) => {
+    const buttons = picker.querySelectorAll<HTMLButtonElement>("[data-mode]");
+    const kindField = picker.querySelector<HTMLInputElement>(`input[name$=".kind"]`)!;
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = (btn.dataset.mode ?? "recommended") as VersionSelection["kind"];
+        buttons.forEach((b) => b.setAttribute("aria-selected", "false"));
+        btn.setAttribute("aria-selected", "true");
+        kindField.value = kind;
+
+        // Notify parent — they re-render the panel + their own output.
+        const ev: PickerEvent = new CustomEvent("version-change", {
+          bubbles: true,
+          detail: { kind },
+        });
+        picker.dispatchEvent(ev);
+      });
+    });
+
+    // Validate Custom text on input
+    const customInput = picker.querySelector<HTMLInputElement>('input[type="text"]');
+    customInput?.addEventListener("input", () => {
+      const v = validateTag(customInput.value);
+      customInput.setCustomValidity(v.valid ? "" : (v.reason ?? "Invalid tag"));
+    });
+  });
+</script>

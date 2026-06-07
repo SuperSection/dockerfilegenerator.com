@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "lastSync": "2026-06-07T04:50:34.956Z",
+  "entryCount": 11,
+  "entries": [
+    {
+      "id": "elasticsearch",
+      "image": "docker.elastic.co/elasticsearch/elasticsearch",
+      "providerResults": {},
+      "tagCount": 4,
+      "recommended": "8.13.0",
+      "latest": "8.15.0"
+    },
+    {
+      "id": "kafka",
+      "image": "apache/kafka",
+      "providerResults": {},
+      "tagCount": 5,
+      "recommended": "3.9.2",
+      "latest": "3.9.2"
+    },
+    {
+      "id": "mariadb",
+      "image": "mariadb",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mariadb/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "11.4",
+      "latest": "11.4"
+    },
+    {
+      "id": "minio",
+      "image": "minio/minio",
+      "providerResults": {
+        "dockerhub": {
+          "count": 1181,
+          "ok": true
+        },
+        "github": {
+          "count": 100,
+          "ok": true
+        }
+      },
+      "tagCount": 30,
+      "recommended": "RELEASE.2024-10-13T13-34-11Z",
+      "latest": "RELEASE.2024-10-13T13-34-11Z"
+    },
+    {
+      "id": "mongodb",
+      "image": "mongo",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mongo/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "8",
+      "latest": "8"
+    },
+    {
+      "id": "mysql",
+      "image": "mysql",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mysql/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "8.4",
+      "latest": "8.4"
+    },
+    {
+      "id": "nginx",
+      "image": "nginx",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/nginx/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "1.27-alpine",
+      "latest": "1.27-alpine"
+    },
+    {
+      "id": "postgres",
+      "image": "postgres",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/postgres/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "17-alpine",
+      "latest": "17-alpine"
+    },
+    {
+      "id": "rabbitmq",
+      "image": "rabbitmq",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/rabbitmq/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "4.0-management-alpine",
+      "latest": "4.0-management-alpine"
+    },
+    {
+      "id": "redis",
+      "image": "redis",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/redis/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 1,
+      "recommended": "7.4-alpine",
+      "latest": "7.4-alpine"
+    },
+    {
+      "id": "traefik",
+      "image": "traefik",
+      "providerResults": {
+        "dockerhub": {
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/traefik/tags/?page_size=100"
+        },
+        "github": {
+          "count": 0,
+          "ok": true
+        }
+      },
+      "tagCount": 3,
+      "recommended": "v3.2",
+      "latest": "v3.2"
+    }
+  ]
+}
