@@ -1,5 +1,5 @@
 // AUTO-GENERATED — sync metadata.
 // Last successful registry sync.
 export const REGISTRY_META = {
-  lastSync: "2026-06-07T04:50:34.955Z",
+  lastSync: "2026-06-08T10:51:38.289Z",
 } as const;
