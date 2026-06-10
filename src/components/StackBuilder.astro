@@ -1,6 +1,21 @@
 ---
-import { FRONTENDS, BACKENDS, DATABASES, OPTIONALS, type Frontend, type Backend, type Database, type Optional } from "../lib/stack/presets";
-import { generateStackDockerfile, generateStackCompose, generateStackEnv, generateStackDockerignore, type StackConfig } from "../lib/stack/generator";
+import {
+  FRONTENDS,
+  BACKENDS,
+  DATABASES,
+  OPTIONALS,
+  type Frontend,
+  type Backend,
+  type Database,
+  type Optional,
+} from "../lib/stack/presets";
+import {
+  generateStackDockerfile,
+  generateStackCompose,
+  generateStackEnv,
+  generateStackDockerignore,
+  type StackConfig,
+} from "../lib/stack/generator";
 import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
 import { SERVICES, type ServiceConfig } from "../lib/compose/services";
 
@@ -10,28 +25,34 @@ const databases = Object.values(DATABASES);
 const optionals = Object.values(OPTIONALS);
 
 // Stack Builder can configure the database + each optional service.
-// Convert to the legacy ServiceConfig shape so we can reuse the
-// Compose modal. The presets don't carry a version picker, so we
-// layer the registry's availableTags on top.
+// Convert to the legacy ServiceConfig shape so we can reuse the Compose modal.
 const stackServices: ServiceConfig[] = [
-  ...Object.values(DATABASES).map((d) => ({
-    ...SERVICES[d.id],
-    name: d.id,
-    label: d.name,
-    image: SERVICES[d.id]?.image ?? d.image,
-    defaultTag: SERVICES[d.id]?.recommended ?? d.tag,
-    availableTags: SERVICES[d.id]?.availableTags ?? [],
-    latestTag: SERVICES[d.id]?.latest ?? d.tag,
-  })).filter(Boolean) as ServiceConfig[],
-  ...optionals.map((o) => ({
-    ...SERVICES[o.id],
-    name: o.id,
-    label: o.name,
-    image: SERVICES[o.id]?.image ?? o.id,
-    defaultTag: SERVICES[o.id]?.recommended ?? "latest",
-    availableTags: SERVICES[o.id]?.availableTags ?? [],
-    latestTag: SERVICES[o.id]?.latest ?? "latest",
-  })).filter(Boolean) as ServiceConfig[],
+  ...Object.values(DATABASES).map((d) => {
+    const svc: any = (SERVICES as any)[d.id];
+    return {
+      ...(svc ?? {}),
+      name: d.id,
+      label: d.name,
+      image: svc?.image ?? d.image,
+      isApp: false,
+      defaultTag: svc?.tag ?? d.tag,
+      availableTags: svc?.availableTags ?? [],
+      latestTag: svc?.tag ?? d.tag,
+    } as ServiceConfig;
+  }),
+  ...optionals.map((o) => {
+    const svc: any = (SERVICES as any)[o.id];
+    return {
+      ...(svc ?? {}),
+      name: o.id,
+      label: o.name,
+      image: svc?.image ?? o.id,
+      isApp: false,
+      defaultTag: svc?.tag ?? "latest",
+      availableTags: svc?.availableTags ?? [],
+      latestTag: svc?.tag ?? "latest",
+    } as ServiceConfig;
+  }),
 ];
 ---
 
@@ -44,7 +65,11 @@ const stackServices: ServiceConfig[] = [
         <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Frontend</h2>
         <div class="grid grid-cols-2 gap-2" id="frontend-grid">
           {frontends.map((f) => (
-            <button type="button" data-frontend={f.id} class="frontend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+            <button
+              type="button"
+              data-frontend={f.id}
+              class="frontend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+            >
               <span class="text-lg">{f.emoji}</span>
               <span class="flex-1">
                 <span class="block t-body-sm-strong text-[var(--color-ink)]">{f.name}</span>
@@ -59,7 +84,11 @@ const stackServices: ServiceConfig[] = [
         <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Backend</h2>
         <div class="grid grid-cols-2 gap-2" id="backend-grid">
           {backends.map((b) => (
-            <button type="button" data-backend={b.id} class="backend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+            <button
+              type="button"
+              data-backend={b.id}
+              class="backend-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+            >
               <span class="text-lg">{b.emoji}</span>
               <span class="flex-1">
                 <span class="block t-body-sm-strong text-[var(--color-ink)]">{b.name}</span>
@@ -76,24 +105,47 @@ const stackServices: ServiceConfig[] = [
         <div class="grid grid-cols-3 gap-2" id="database-grid">
           {databases.map((d) => (
             <div class="relative" data-database-wrap={d.id}>
-              <button type="button" data-database={d.id} class="database-btn w-full flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <button
+                type="button"
+                data-database={d.id}
+                class="database-btn w-full flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+              >
                 <span class="text-lg">{d.emoji}</span>
                 <span class="flex-1 min-w-0">
                   <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{d.name}</span>
-                  <span class="block t-caption text-[var(--color-body)] truncate" data-database-image-preview>
-                    {SERVICES[d.id]?.image ?? d.image}:{SERVICES[d.id]?.recommended ?? d.tag}
+                  <span
+                    class="block t-caption text-[var(--color-body)] truncate"
+                    data-database-image-preview
+                  >
+                    {(SERVICES as any)[d.id]?.image ?? d.image}:{d.tag}
                   </span>
                 </span>
               </button>
+
               <button
                 type="button"
                 data-action="configure-service"
                 data-name={d.id}
-                class="absolute right-1 top-1 hidden rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+                class="absolute right-1.5 top-1.5 rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
                 aria-label="Configure database"
                 title="Configure image and version"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                  />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
               </button>
             </div>
           ))}
@@ -106,27 +158,62 @@ const stackServices: ServiceConfig[] = [
         <div class="grid grid-cols-2 gap-2" id="optional-grid">
           {optionals.map((o) => (
             <div class="relative" data-optional-wrap={o.id}>
-              <button type="button" data-optional={o.id} class="optional-btn w-full flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]">
+              <button
+                type="button"
+                data-optional={o.id}
+                class="optional-btn w-full flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]"
+              >
                 <span class="text-lg">{o.emoji}</span>
                 <span class="flex-1 min-w-0">
                   <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{o.name}</span>
-                  <span class="block t-caption text-[var(--color-body)] truncate" data-optional-image-preview>
-                    {SERVICES[o.id]?.image ?? o.id}:{SERVICES[o.id]?.recommended ?? "latest"}
+                  <span
+                    class="block t-caption text-[var(--color-body)] truncate"
+                    data-optional-image-preview
+                  >
+                    {(SERVICES as any)[o.id]?.image ?? o.id}:{(SERVICES as any)[o.id]?.tag ?? "latest"}
                   </span>
                 </span>
                 <span class="optional-check hidden text-[var(--color-primary-cta-fg)]">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
                 </span>
               </button>
+
               <button
                 type="button"
                 data-action="configure-service"
                 data-name={o.id}
-                class="absolute right-1 top-1 hidden rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+                class="absolute right-1.5 top-1.5 rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
                 aria-label="Configure service"
                 title="Configure image and version"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                  />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
               </button>
             </div>
           ))}
@@ -136,15 +223,14 @@ const stackServices: ServiceConfig[] = [
 
     <!-- Right: Output tabs -->
     <div class="space-y-6">
-      <!-- Service config modal (pop-up) for editing the database or
-           any selected optional service's image and version. Reuses
-           the Compose modal component so behavior is identical. -->
       <ServiceConfigModal services={stackServices} />
 
       <!-- Project name + .env toggle -->
       <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 space-y-3">
         <div>
-          <label for="project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+          <label for="project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]"
+            >Project name</label
+          >
           <input
             type="text"
             id="project-name"
@@ -153,22 +239,39 @@ const stackServices: ServiceConfig[] = [
           />
           <p class="t-caption mt-1 text-[var(--color-mute)]">Used for volume names and container prefixes.</p>
         </div>
+
         <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
           <input type="checkbox" id="stack-use-env" class="toggle shrink-0" />
           <div class="flex-1">
             <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file for variables</span>
-            <p class="t-caption text-[var(--color-body)]">Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.</p>
+            <p class="t-caption text-[var(--color-body)]">
+              Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.
+            </p>
           </div>
         </label>
       </div>
 
       <!-- Tabs -->
       <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit overflow-x-auto">
-        <button type="button" data-tab="compose" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)] whitespace-nowrap">docker-compose.yml</button>
-        <button type="button" data-tab="backend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">backend/Dockerfile</button>
-        <button type="button" data-tab="frontend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">frontend/Dockerfile</button>
-        <button type="button" data-tab="env" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">.env.example</button>
-        <button type="button" data-tab="dockerignore" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">.dockerignore</button>
+        <button
+          type="button"
+          data-tab="compose"
+          class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)] whitespace-nowrap"
+        >
+          docker-compose.yml
+        </button>
+        <button type="button" data-tab="backend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">
+          backend/Dockerfile
+        </button>
+        <button type="button" data-tab="frontend-dockerfile" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">
+          frontend/Dockerfile
+        </button>
+        <button type="button" data-tab="env" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">
+          .env.example
+        </button>
+        <button type="button" data-tab="dockerignore" class="stack-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">
+          .dockerignore
+        </button>
       </div>
 
       <!-- Code panels -->
@@ -189,18 +292,35 @@ const stackServices: ServiceConfig[] = [
               </div>
               <span class="t-code ml-2 text-[var(--color-body)]">{p.label}</span>
             </div>
-            <button type="button" class="copy-btn t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target={p.id}>Copy</button>
+            <button
+              type="button"
+              class="copy-btn t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
+              data-target={p.id}
+            >
+              Copy
+            </button>
           </div>
           <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
         </div>
       ))}
 
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" id="btn-stack-download-zip" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <button
+          type="button"
+          id="btn-stack-download-zip"
+          class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
           Download ZIP
         </button>
-        <button type="button" id="btn-stack-download-all" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download all files</button>
+
+        <button type="button" id="btn-stack-download-all" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+          Download all files
+        </button>
       </div>
     </div>
   </div>
@@ -244,43 +364,21 @@ const stackServices: ServiceConfig[] = [
     background: var(--color-primary-cta);
     color: var(--color-primary-cta-fg);
   }
-  .frontend-btn[data-active="true"] .text-\[var\(--color-ink\)\],
-  .backend-btn[data-active="true"] .text-\[var\(--color-ink\)\],
-  .database-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
-    color: var(--color-primary-cta-fg);
-  }
-  .frontend-btn[data-active="true"] .text-\[var\--color-body\)\],
-  .backend-btn[data-active="true"] .text-\[var\(--color-body\)\] {
-    color: var(--color-primary-cta-fg);
-    opacity: 0.8;
-  }
   .optional-btn[data-active="true"] {
     border-color: var(--color-primary-cta);
     background: var(--color-primary-cta);
     color: var(--color-primary-cta-fg);
   }
-  .optional-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
-    color: var(--color-primary-cta-fg);
-  }
 
-  /* Subtle 1px lift on hover, and a soft code fade-in on each
-   * regeneration so the user notices the change. transform+opacity
-   * only — keeps the compositor happy and the page responsive. */
   .frontend-btn, .backend-btn, .database-btn, .optional-btn {
     transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
   }
   .frontend-btn:hover, .backend-btn:hover, .database-btn:hover, .optional-btn:hover {
     transform: translateY(-1px);
   }
-  @keyframes codeFadeIn {
-    from { opacity: 0; transform: translateY(2px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  [id$="-code"] { animation: codeFadeIn 180ms ease-out; }
-  @media (prefers-reduced-motion: reduce) {
-    .frontend-btn:hover, .backend-btn:hover, .database-btn:hover, .optional-btn:hover { transform: none; }
-    [id$="-code"] { animation: none; }
-  }
+
+  /* Output panels: no animation on re-render to prevent content shift. */
+  [id$="-code"] { transition: opacity 120ms ease; }
 
   @keyframes copyPulse {
     0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
@@ -292,13 +390,10 @@ const stackServices: ServiceConfig[] = [
 <script>
   import { FRONTENDS, BACKENDS, DATABASES, OPTIONALS, type Frontend, type Backend, type Database, type Optional } from "../lib/stack/presets";
   import { generateStackDockerfile, generateStackCompose, generateStackEnv, generateStackDockerignore, type StackConfig } from "../lib/stack/generator";
+  import { SERVICES } from "../lib/compose/services";
 
   type Tab = "compose" | "backend-dockerfile" | "frontend-dockerfile" | "env" | "dockerignore";
 
-  /* ─────────────────────────────────────────────────────────
-   * State + localStorage persistence. Survives reloads and
-   * page-to-page navigation within the site.
-   * ─────────────────────────────────────────────────────── */
   const STORAGE_KEY = "stack-builder-state-v1";
 
   type PersistedState = {
@@ -309,8 +404,7 @@ const stackServices: ServiceConfig[] = [
     projectName: string;
     useEnvFile: boolean;
     activeTab: Tab;
-    /** Per-service image+tag overrides keyed by service id. */
-    serviceOverrides: Record<string, StackOverride>;
+    serviceOverrides: Record<string, { image?: string; tag?: string }>;
   };
 
   const defaultState = (): PersistedState => ({
@@ -324,20 +418,9 @@ const stackServices: ServiceConfig[] = [
     serviceOverrides: {},
   });
 
-  function loadState(): PersistedState {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
-      return { ...defaultState(), ...JSON.parse(raw) };
-    } catch {
-      return defaultState();
-    }
-  }
-  function saveState() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {}
-  }
+  // No persistence — page refresh always resets to defaults
+  function loadState(): PersistedState { return defaultState(); }
+  function saveState() {}
 
   const initial = loadState();
   const state = {
@@ -363,63 +446,8 @@ const stackServices: ServiceConfig[] = [
     };
   }
 
-  function highlight(code: string) {
-    const escape = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return escape(code)
-      // comments
-      .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
-      // top-level keys (no leading whitespace): key:
-      .replace(/^([A-Za-z_][\w-]*)(:)/gm, '<span class="tok-keyword">$1</span>$2')
-      // nested keys (indented): key: value  → color the key
-      .replace(/^(\s+)(-?\s*)([A-Za-z_][\w-]*)(:)/gm, '$1$2<span class="tok-image">$3</span>$4')
-      // list items under a key (e.g. "  - something")
-      .replace(/^(\s+)(-\s)/gm, '$1<span class="tok-punct">$2</span>')
-      // boolean / null / number values
-      .replace(/(:\s)(true|false|yes|no|null|~)\b/g, '$1<span class="tok-number">$2</span>')
-      .replace(/(:\s)(-?\d+(?:\.\d+)?)\b/g, '$1<span class="tok-number">$2</span>')
-      // unquoted scalar values that look like image refs / env names
-      .replace(/(:\s)([a-zA-Z0-9._\-/:${}]+)$/gm, '$1<span class="tok-string">$2</span>')
-      // shell-style ${VAR} or $VAR
-      .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
-      .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
-  }
-
-  function dockerfileHighlight(code: string) {
-    const escape = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return escape(code)
-      // comments
-      .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
-      // FROM <image>[:<tag>] — color image and tag distinctly
-      .replace(/^(FROM)(\s+)([A-Za-z0-9.\-_]+)(?::([A-Za-z0-9.\-_]+))?/gm,
-        '<span class="tok-keyword">$1</span>$2<span class="tok-image">$3</span><span class="tok-tag">:$4</span>')
-      // other Dockerfile instructions
-      .replace(/^(RUN|COPY|ADD|WORKDIR|ENV|EXPOSE|USER|CMD|ENTRYPOINT|ARG|LABEL|HEALTHCHECK|VOLUME|STOPSIGNAL|SHELL)\b/gm,
-        '<span class="tok-keyword">$1</span>')
-      // flags like --from=builder
-      .replace(/(--[a-zA-Z][\w-]*(?:=[^\s\\]*)?)/g, '<span class="tok-flag">$1</span>')
-      // ${VAR} / $VAR
-      .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
-      .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
-  }
-
-  /** .env syntax highlighter — distinct colors for KEY vs value (see ComposeGenerator). */
-  function highlightEnv(code: string) {
-    const escape = (s: string) =>
-      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    return escape(code)
-      .split("\n")
-      .map((line) => {
-        if (/^\s*#/.test(line)) return `<span class="tok-comment">${line}</span>`;
-        if (/^\s*$/.test(line)) return line;
-        const m = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*(=)\s*(.*)$/.exec(line);
-        if (!m) return line;
-        const [, lead, key, eq, rawValue] = m;
-        const valueHtml = rawValue.replace(/(\$\{[^}]+\})/g, '<span class="tok-env-varref">$1</span>');
-        return `<span class="tok-env-key">${lead}${key}</span><span class="tok-env-equals">${eq}</span><span class="tok-env-value">${valueHtml}</span>`;
-      })
-      .join("\n");
+  function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   function render() {
@@ -430,16 +458,40 @@ const stackServices: ServiceConfig[] = [
     const backendDockerfile = cfg.backend ? generateStackDockerfile(cfg, "backend") : "# Pick a backend to generate its Dockerfile";
     const frontendDockerfile = cfg.frontend ? generateStackDockerfile(cfg, "frontend") : "# Pick a frontend to generate its Dockerfile";
 
-    document.getElementById("stack-compose-code")!.innerHTML = highlight(compose);
-    document.getElementById("stack-env-code")!.innerHTML = highlightEnv(env);
-    document.getElementById("stack-dockerignore-code")!.innerHTML = dockerfileHighlight(dockerignore);
-    document.getElementById("stack-backend-dockerfile-code")!.innerHTML = dockerfileHighlight(backendDockerfile);
-    document.getElementById("stack-frontend-dockerfile-code")!.innerHTML = dockerfileHighlight(frontendDockerfile);
+    const composeEl = document.getElementById("stack-compose-code");
+    const envEl = document.getElementById("stack-env-code");
+    const ignoreEl = document.getElementById("stack-dockerignore-code");
+    const backendEl = document.getElementById("stack-backend-dockerfile-code");
+    const frontendEl = document.getElementById("stack-frontend-dockerfile-code");
+
+    if (composeEl) composeEl.innerHTML = `<code>${escapeHtml(compose)}</code>`;
+    if (envEl) envEl.innerHTML = `<code>${escapeHtml(env)}</code>`;
+    if (ignoreEl) ignoreEl.innerHTML = `<code>${escapeHtml(dockerignore)}</code>`;
+    if (backendEl) backendEl.innerHTML = `<code>${escapeHtml(backendDockerfile)}</code>`;
+    if (frontendEl) frontendEl.innerHTML = `<code>${escapeHtml(frontendDockerfile)}</code>`;
+
+    // Update image preview lines (simple + safe)
+    document.querySelectorAll<HTMLElement>("[data-database-image-preview]").forEach((el) => {
+      const wrap = el.closest("[data-database-wrap]");
+      const id = wrap?.getAttribute("data-database") ?? "";
+      const image = state.serviceOverrides[id]?.image ?? (SERVICES as any)[id]?.image ?? id;
+      const tag = state.serviceOverrides[id]?.tag ?? (SERVICES as any)[id]?.tag ?? "latest";
+      el.textContent = `${image}:${tag}`;
+    });
+
+    document.querySelectorAll<HTMLElement>("[data-optional-image-preview]").forEach((el) => {
+      const wrap = el.closest("[data-optional-wrap]");
+      const id = wrap?.getAttribute("data-optional") ?? "";
+      const image = state.serviceOverrides[id]?.image ?? (SERVICES as any)[id]?.image ?? id;
+      const tag = state.serviceOverrides[id]?.tag ?? (SERVICES as any)[id]?.tag ?? "latest";
+      el.textContent = `${image}:${tag}`;
+    });
   }
 
   function setTab(tab: Tab) {
     state.activeTab = tab;
     saveState();
+
     document.querySelectorAll<HTMLButtonElement>(".stack-tab-btn").forEach((b) => {
       const active = b.dataset.tab === tab;
       b.classList.toggle("bg-[var(--color-canvas)]", active);
@@ -447,9 +499,9 @@ const stackServices: ServiceConfig[] = [
       b.classList.toggle("shadow-[var(--shadow-level-1)]", active);
       b.classList.toggle("text-[var(--color-body)]", !active);
     });
-    document.querySelectorAll<HTMLDivElement>(".stack-panel").forEach((p) => {
-      p.classList.add("hidden");
-    });
+
+    document.querySelectorAll<HTMLDivElement>(".stack-panel").forEach((p) => p.classList.add("hidden"));
+
     const map: Record<Tab, string> = {
       compose: "stack-compose",
       "backend-dockerfile": "stack-backend-dockerfile",
@@ -468,60 +520,14 @@ const stackServices: ServiceConfig[] = [
       b.dataset.active = b.dataset.backend === state.backend ? "true" : "false";
     });
     document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((b) => {
-      const isActive = b.dataset.database === state.database;
-      b.dataset.active = isActive ? "true" : "false";
-      // Reveal the configure gear only on the selected database
-      const wrap = b.closest("[data-database-wrap]");
-      wrap?.querySelector<HTMLElement>("[data-action='configure-service']")?.classList.toggle("hidden", !isActive);
+      b.dataset.active = b.dataset.database === state.database ? "true" : "false";
     });
     document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((b) => {
-      const isActive = state.optional.includes(b.dataset.optional as Optional);
-      b.dataset.active = isActive ? "true" : "false";
-      const wrap = b.closest("[data-optional-wrap]");
-      wrap?.querySelector<HTMLElement>("[data-action='configure-service']")?.classList.toggle("hidden", !isActive);
+      b.dataset.active = state.optional.includes(b.dataset.optional as Optional) ? "true" : "false";
     });
   }
 
-  // Update the per-service image preview line on each card so the user
-  // can see at a glance which image+tag the generator will use. Reads
-  // state.serviceOverrides and falls back to the registry default.
-  function updateImagePreviews() {
-    document.querySelectorAll<HTMLElement>("[data-database-image-preview]").forEach((el) => {
-      const id = (el.closest("[data-database-wrap]") as HTMLElement | null)?.querySelector("[data-database]")?.getAttribute("data-database") ?? "";
-      const svc = SERVICES[id];
-      const image = state.serviceOverrides[id]?.image ?? svc?.image ?? id;
-      const tag = state.serviceOverrides[id]?.tag ?? svc?.recommended ?? "latest";
-      el.textContent = `${image}:${tag}`;
-    });
-    document.querySelectorAll<HTMLElement>("[data-optional-image-preview]").forEach((el) => {
-      const id = (el.closest("[data-optional-wrap]") as HTMLElement | null)?.querySelector("[data-optional]")?.getAttribute("data-optional") ?? "";
-      const svc = SERVICES[id];
-      const image = state.serviceOverrides[id]?.image ?? svc?.image ?? id;
-      const tag = state.serviceOverrides[id]?.tag ?? svc?.recommended ?? "latest";
-      el.textContent = `${image}:${tag}`;
-    });
-  }
-
-  // ── Per-stack-service image overrides ────────────────────────
-  // The Stack Builder lets the user pick a database and a set of
-  // optional services. We let them also override the image and tag
-  // of each one — opening the same ServiceConfigModal used by the
-  // Compose Generator. Edits live in state.serviceOverrides, keyed
-  // by service id. The generators read these via `imageOverrideFor`
-  // / `tagOverrideFor` helpers below.
-  type StackOverride = {
-    image?: string;
-    tag?: string;
-    tagSelection?: { kind: "recommended" | "latest" | "pinned"; tag?: string } | { kind: "custom"; tag: string };
-  };
-  function imageOverrideFor(id: string): string | undefined {
-    return state.serviceOverrides?.[id]?.image;
-  }
-  function tagOverrideFor(id: string): string | undefined {
-    return state.serviceOverrides?.[id]?.tag;
-  }
-
-  // Wire up grids
+  // Wire grids
   document.querySelectorAll<HTMLButtonElement>(".frontend-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.frontend as Frontend;
@@ -531,6 +537,7 @@ const stackServices: ServiceConfig[] = [
       render();
     });
   });
+
   document.querySelectorAll<HTMLButtonElement>(".backend-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.backend as Backend;
@@ -540,6 +547,7 @@ const stackServices: ServiceConfig[] = [
       render();
     });
   });
+
   document.querySelectorAll<HTMLButtonElement>(".database-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.database as Database;
@@ -549,24 +557,18 @@ const stackServices: ServiceConfig[] = [
       render();
     });
   });
+
   document.querySelectorAll<HTMLButtonElement>(".optional-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.optional as Optional;
-      if (state.optional.includes(id)) {
-        state.optional = state.optional.filter((o) => o !== id);
-      } else {
-        state.optional = [...state.optional, id];
-      }
+      state.optional = state.optional.includes(id) ? state.optional.filter((o) => o !== id) : [...state.optional, id];
       applyActiveStates();
       saveState();
       render();
     });
   });
 
-  // Configure (gear) buttons open the ServiceConfigModal for that
-  // service. The modal exposes setOverrides/onApply; we hand it a
-  // shape it understands (each override has image, tag, tagSelection)
-  // and write back the result on Apply.
+  // Configure (gear) buttons open the ServiceConfigModal
   document.querySelectorAll<HTMLButtonElement>("[data-action='configure-service']").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -576,31 +578,23 @@ const stackServices: ServiceConfig[] = [
   });
 
   // Wire modal Apply → state.serviceOverrides
+  // Retry in case ServiceConfigModal's script hasn't executed yet
   (function wireModal() {
-    const modal = (window as any).ServiceConfigModal;
-    if (!modal) return;
-    // Adapt the Stack Builder's per-service override shape to the
-    // shape the modal expects (ServiceOverride).
-    const adapted: Record<string, any> = {};
-    Object.entries(state.serviceOverrides).forEach(([k, v]) => {
-      adapted[k] = { image: v.image, tag: v.tag, tagSelection: v.tagSelection };
-    });
-    modal.setOverrides(adapted);
-    modal.onApply((name: string, ov: any) => {
-      state.serviceOverrides[name] = {
-        image: ov.image,
-        tag: ov.tag,
-        tagSelection: ov.tagSelection,
-      };
-      const adapted2: Record<string, any> = {};
-      Object.entries(state.serviceOverrides).forEach(([k, v]) => {
-        adapted2[k] = { image: v.image, tag: v.tag, tagSelection: v.tagSelection };
+    const tryWire = (attempt: number) => {
+      const modal = (window as any).ServiceConfigModal;
+      if (!modal) {
+        if (attempt < 10) setTimeout(() => tryWire(attempt + 1), 50);
+        return;
+      }
+      modal.setOverrides(state.serviceOverrides);
+      modal.onApply((name: string, ov: any) => {
+        state.serviceOverrides[name] = ov;
+        modal.setOverrides(state.serviceOverrides);
+        saveState();
+        render();
       });
-      modal.setOverrides(adapted2);
-      saveState();
-      updateImagePreviews();
-      render();
-    });
+    };
+    tryWire(0);
   })();
 
   // Tabs
@@ -615,7 +609,7 @@ const stackServices: ServiceConfig[] = [
     render();
   });
 
-  // .env toggle — switch between inline env values and ${KEY} references
+  // .env toggle
   document.getElementById("stack-use-env")?.addEventListener("change", (e) => {
     state.useEnvFile = (e.target as HTMLInputElement).checked;
     saveState();
@@ -625,20 +619,24 @@ const stackServices: ServiceConfig[] = [
   // Copy buttons
   document.querySelectorAll<HTMLButtonElement>(".copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      if (btn.dataset.flash === "1") return;
       const codeEl = document.getElementById(`${btn.dataset.target}-code`);
       const text = codeEl?.textContent ?? "";
       await navigator.clipboard.writeText(text);
-      const orig = btn.innerHTML;
-      btn.innerHTML = "✓ Copied";
+
+      btn.dataset.flash = "1";
+      const orig = btn.textContent;
+      btn.textContent = "\u2713 Copied";
       btn.classList.add("copy-pulse");
       setTimeout(() => {
-        btn.innerHTML = orig;
+        btn.textContent = orig;
         btn.classList.remove("copy-pulse");
+        btn.dataset.flash = "";
       }, 1500);
     });
   });
 
-  // Download all
+  // Download all files (sequential)
   document.getElementById("btn-stack-download-all")?.addEventListener("click", () => {
     const cfg = getConfig();
     const files: Record<string, string> = {
@@ -662,7 +660,7 @@ const stackServices: ServiceConfig[] = [
     });
   });
 
-  // Download zip (sequential downloads as a stand-in for now)
+  // Download ZIP (currently maps to "download all" as a stand-in baseline)
   document.getElementById("btn-stack-download-zip")?.addEventListener("click", () => {
     document.getElementById("btn-stack-download-all")?.click();
   });
@@ -671,11 +669,12 @@ const stackServices: ServiceConfig[] = [
   (function restore() {
     const pn = document.getElementById("project-name") as HTMLInputElement | null;
     if (pn) pn.value = state.projectName;
+
     const useEnv = document.getElementById("stack-use-env") as HTMLInputElement | null;
     if (useEnv) useEnv.checked = state.useEnvFile;
+
     applyActiveStates();
-    updateImagePreviews();
-    if (state.activeTab !== "compose") setTab(state.activeTab);
+    setTab(state.activeTab);
     render();
   })();
 </script>

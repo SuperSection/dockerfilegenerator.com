@@ -4,73 +4,76 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
 ---
 
 <div id="compose-generator">
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-[480px_1fr]">
-    <!-- Left: Service selector + selected config -->
-    <aside class="space-y-6">
-      <!-- Search trigger — Ctrl+K focuses / opens. Shows a few popular services inline as quick picks. -->
-      <div>
-        <div class="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  <div class="space-y-6">
+    <!-- Top: Service selector -->
+    <div class="space-y-4">
+      <!-- Search bar + quick picks in a horizontal card -->
+      <div class="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+        <!-- Search input -->
+        <div class="relative max-w-md">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-mute)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           <input
             type="text"
             id="compose-search"
             placeholder="Search services..."
-            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] pl-9 pr-16 py-2.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+            class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] pl-8 pr-14 py-1.5 t-body-sm text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-hairline-strong)] focus:ring-0 focus:outline-none transition-colors"
           />
-          <kbd class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Ctrl K</kbd>
+          <kbd class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Ctrl K</kbd>
         </div>
 
-        <!-- Quick picks: a few popular services inline so the catalog isn't
-             a 500px scrolling list anymore. The full catalog lives in a
-             popover, opened by the "Browse all" button below or by Ctrl+K. -->
-        <div id="service-quickpicks" class="mt-3 space-y-4">
-          {CATEGORY_ORDER.map((cat) => {
-            const items = SERVICE_LIST.filter((s) => s.category === cat);
-            if (!items.length) return null;
-            const top = items.slice(0, 4);
-            return (
-              <div class="service-category" data-category={cat}>
-                <h3 class="t-caption-mono mb-2 text-[var(--color-body)]">{CATEGORY_LABELS[cat]}</h3>
-                <div class="grid grid-cols-2 gap-2">
-                  {top.map((svc) => (
-                    <button
-                      type="button"
-                      class="service-btn flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2.5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)] min-w-0"
-                      data-service={svc.name}
-                    >
-                      <span class="text-base shrink-0">{svc.emoji}</span>
-                      <span class="flex-1 min-w-0">
-                        <span class="block t-body-sm-strong text-[var(--color-ink)] truncate">{svc.label}</span>
-                        <span class="block t-caption text-[var(--color-body)] truncate" title={svc.image}>{svc.image}</span>
-                      </span>
-                      <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                      </span>
-                    </button>
-                  ))}
+        <!-- Quick picks: compact horizontal rows per category -->
+        <div id="service-quickpicks" class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+          {(() => {
+            const quickCategories = CATEGORY_ORDER.filter(cat => {
+              const items = SERVICE_LIST.filter((s) => s.category === cat);
+              return items.length > 0;
+            });
+            return quickCategories.map((cat) => {
+              const items = SERVICE_LIST.filter((s) => s.category === cat);
+              const top = items.slice(0, 4);
+              return (
+                <div class="service-category flex items-center gap-1.5 min-w-0" data-category={cat}>
+                  <span class="t-caption text-[var(--color-mute)] shrink-0">{CATEGORY_LABELS[cat]}</span>
+                  <div class="flex items-center gap-1 flex-wrap">
+                    {top.map((svc) => (
+                      <button
+                        type="button"
+                        class="service-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2 py-1 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas)] min-w-0"
+                        data-service={svc.name}
+                      >
+                        <span class="text-xs shrink-0">{svc.emoji}</span>
+                        <span class="t-body-sm text-[var(--color-ink)] truncate">{svc.label}</span>
+                        <span class="service-check hidden text-[var(--color-primary-cta-fg)]">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        </span>
+                      </button>
+                    ))}
+                    {items.length > top.length && (
+                      <button
+                        type="button"
+                        data-action="open-picker"
+                        data-category={cat}
+                        class="t-caption text-[var(--color-link)] hover:underline shrink-0"
+                      >
+                        +{items.length - top.length}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {items.length > top.length && (
-                  <button
-                    type="button"
-                    data-action="open-picker"
-                    data-category={cat}
-                    class="mt-1.5 t-caption t-body-sm-strong text-[var(--color-link)] hover:underline"
-                  >
-                    + {items.length - top.length} more in {CATEGORY_LABELS[cat]}
-                  </button>
-                )}
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
+        </div>
 
+        <!-- Browse all -->
+        <div class="mt-3 flex items-center gap-2">
           <button
             type="button"
             id="btn-open-picker"
-            class="w-full t-body-sm-strong inline-flex items-center justify-center gap-2 rounded-md border border-dashed border-[var(--color-hairline-strong)] bg-[var(--color-canvas-soft-2)] px-3 py-2.5 text-[var(--color-ink)] hover:bg-[var(--color-canvas)]"
+            class="t-body-sm inline-flex items-center gap-1.5 rounded-md border border-dashed border-[var(--color-hairline-strong)] bg-[var(--color-canvas-soft-2)] px-3 py-1.5 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas)]"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            Browse all services
-            <kbd class="ml-1 inline-flex items-center rounded border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Ctrl K</kbd>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            All services
           </button>
         </div>
       </div>
@@ -85,14 +88,14 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
       >
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" data-picker-backdrop></div>
         <div class="relative w-full max-w-xl rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-[var(--shadow-level-3)] picker-panel">
-          <div class="flex items-center gap-2 border-b border-[var(--color-hairline)] px-4 py-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <div class="flex items-center gap-3 border-b border-[var(--color-hairline)] px-4 py-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-[var(--color-mute)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input
               type="text"
               id="picker-search"
-              placeholder="Type to search services..."
+              placeholder="Search services by name or image..."
               autocomplete="off"
-              class="flex-1 bg-transparent t-body-sm text-[var(--color-ink)] focus:outline-none placeholder:text-[var(--color-mute)]"
+              class="flex-1 bg-transparent t-body-sm text-[var(--color-ink)] py-0.5 focus:outline-none placeholder:text-[var(--color-mute)]"
             />
             <kbd class="hidden sm:inline-flex items-center rounded border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-1.5 py-0.5 t-caption text-[10px] font-medium text-[var(--color-body)]" style="font-family:var(--font-mono)">Esc</kbd>
             <button
@@ -101,7 +104,7 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
               aria-label="Close"
               class="rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
           </div>
           <div id="picker-results" class="max-h-[60vh] overflow-y-auto p-2">
@@ -138,93 +141,94 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Global project configuration -->
-      <section class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-4">
-        <h2 class="t-caption-mono text-[var(--color-body)]">Project configuration</h2>
+    <!-- Two-column: config + selected on left, output on right -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+      <!-- Left: config + selected services -->
+      <div class="space-y-6">
+        <!-- Global project configuration -->
+        <section class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-4">
+          <h2 class="t-caption-mono text-[var(--color-body)]">Project configuration</h2>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="compose-project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
-            <input
-              type="text"
-              id="compose-project-name"
-              value="app"
-              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
-            />
-          </div>
-          <div>
-            <label for="compose-network-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Network name</label>
-            <input
-              type="text"
-              id="compose-network-name"
-              value="appnet"
-              class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
-          <input type="checkbox" id="compose-use-env" class="toggle shrink-0" />
-          <div class="flex-1">
-            <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file for variables</span>
-            <p class="t-caption text-[var(--color-body)]">Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.</p>
-          </div>
-        </label>
-      </section>
-
-      <!-- Selected services config -->
-      <section id="selected-config" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-        <h2 class="t-caption-mono mb-4 text-[var(--color-body)]">Selected services</h2>
-        <div id="selected-list" class="space-y-3"></div>
-      </section>
-    </aside>
-
-    <aside class="hidden">
-      <!-- Modal lives at the page root; we mount it here so it sits
-           alongside the rest of the generator markup and shares its
-           stylesheet scope. The body content is rendered dynamically
-           when openFor(name) is called from the parent script. -->
-      <ServiceConfigModal services={SERVICE_LIST} />
-    </aside>
-
-    <!-- Right: Output -->
-    <div class="space-y-6">
-      <!-- Validation -->
-      <div id="validation-panel" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"></div>
-
-      <!-- Tabs -->
-      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit">
-        <button type="button" data-tab="compose" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]">docker-compose.yml</button>
-        <button type="button" data-tab="env" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">.env.example</button>
-      </div>
-
-      <!-- Code panels -->
-      <div id="compose-output" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
-        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
-          <div class="flex items-center gap-2">
-            <div class="flex gap-1.5">
-              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
-              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
-              <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="compose-project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+              <input
+                type="text"
+                id="compose-project-name"
+                value="app"
+                class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+              />
             </div>
-            <span class="t-code ml-2 text-[var(--color-body)]">docker-compose.yml</span>
+            <div>
+              <label for="compose-network-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Network name</label>
+              <input
+                type="text"
+                id="compose-network-name"
+                value="appnet"
+                class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+              />
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
-            <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
-            <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-1 text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
-          </div>
-        </div>
-        <pre class="code-panel overflow-x-auto min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services from the left to generate your docker-compose.yml</code></pre>
+
+          <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <input type="checkbox" id="compose-use-env" class="toggle shrink-0" />
+            <div class="flex-1">
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file for variables</span>
+              <p class="t-caption text-[var(--color-body)]">Compose references <code class="t-code">{"$" + "{KEY}"}</code> from the project-level <code class="t-code">.env</code>.</p>
+            </div>
+          </label>
+        </section>
+
+        <!-- Selected services config -->
+        <section id="selected-config" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+          <h2 class="t-caption-mono mb-4 text-[var(--color-body)]">Selected services</h2>
+          <div id="selected-list" class="space-y-3"></div>
+        </section>
       </div>
 
-      <div id="env-output" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
-        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
-          <span class="t-code text-[var(--color-body)]">.env.example</span>
-          <button type="button" id="btn-env-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+      <!-- Modal lives outside the hidden aside so its script executes -->
+      <ServiceConfigModal services={SERVICE_LIST} />
+
+      <!-- Right: Output -->
+      <div class="space-y-6">
+        <!-- Validation -->
+        <div id="validation-panel" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"></div>
+
+        <!-- Tabs -->
+        <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit">
+          <button type="button" data-tab="compose" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]">docker-compose.yml</button>
+          <button type="button" data-tab="env" class="compose-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">.env.example</button>
         </div>
-        <pre class="code-panel overflow-x-auto min-h-[200px] max-h-[500px]" id="env-code"></pre>
+
+        <!-- Code panels -->
+        <div id="compose-output" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+          <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+            <div class="flex items-center gap-2">
+              <div class="flex gap-1.5">
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+                <span class="h-3 w-3 rounded-full bg-[var(--color-hairline-strong)]"></span>
+              </div>
+              <span class="t-code ml-2 text-[var(--color-body)]">docker-compose.yml</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+              <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
+              <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-1 text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
+            </div>
+          </div>
+          <pre class="code-panel overflow-x-auto min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services above to generate your docker-compose.yml</code></pre>
+        </div>
+
+        <div id="env-output" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+          <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+            <span class="t-code text-[var(--color-body)]">.env.example</span>
+            <button type="button" id="btn-env-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+          </div>
+          <pre class="code-panel overflow-x-auto min-h-[200px] max-h-[500px]" id="env-code"></pre>
+        </div>
       </div>
     </div>
   </div>
@@ -236,36 +240,19 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     background: var(--color-primary-cta);
     color: var(--color-primary-cta-fg);
   }
-  .service-btn[data-active="true"] .text-\[var\(--color-body\)\] {
-    color: var(--color-primary-cta-fg);
-    opacity: 0.8;
-  }
-  .service-btn[data-active="true"] .text-\[var\(--color-ink\)\] {
+  .service-btn[data-active="true"] .service-check {
+    display: inline-flex;
     color: var(--color-primary-cta-fg);
   }
-  .line-clamp-1 {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
+  .service-btn[data-active="true"] .t-body-sm {
+    color: var(--color-primary-cta-fg);
   }
 
   .service-btn {
-    transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease, background-color 150ms ease, color 150ms ease;
-  }
-  .service-btn:hover {
-    transform: translateY(-1px);
-  }
-  @keyframes codeFadeIn {
-    from { opacity: 0; transform: translateY(2px); }
-    to   { opacity: 1; transform: translateY(0); }
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
   #compose-code, #env-code {
-    animation: codeFadeIn 180ms ease-out;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .service-btn:hover { transform: none; }
-    #compose-code, #env-code { animation: none; }
+    transition: opacity 120ms ease;
   }
 
   @keyframes copyPulse {
@@ -283,15 +270,6 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     #validation-panel:not(.hidden) { animation: none; }
   }
 
-  @keyframes svcFadeIn {
-    from { opacity: 0; transform: translateY(-3px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  #selected-list > div { animation: svcFadeIn 180ms ease-out; }
-  @media (prefers-reduced-motion: reduce) {
-    #selected-list > div { animation: none; }
-  }
-
   @keyframes pickerFadeIn {
     from { opacity: 0; transform: translateY(-6px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -306,6 +284,33 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   .picker-item[data-active="true"] .picker-check {
     color: var(--color-primary-cta);
   }
+
+  /* Desktop: bump text sizes slightly inside the working area for readability */
+  @media (min-width: 1024px) {
+    #compose-generator .t-body-sm {
+      font-size: 15px;
+      line-height: 22px;
+    }
+    #compose-generator .t-body-sm-strong {
+      font-size: 15px;
+      line-height: 22px;
+    }
+    #compose-generator .t-caption {
+      font-size: 13px;
+      line-height: 18px;
+    }
+    #compose-generator .t-caption-mono {
+      font-size: 13px;
+      line-height: 18px;
+    }
+    #compose-generator .cfg-section-label {
+      font-size: 12px;
+    }
+    #compose-generator .code-panel {
+      font-size: 14px;
+      line-height: 22px;
+    }
+  }
 </style>
 
 <script>
@@ -314,8 +319,6 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   import { type VersionSelection } from "../registry";
 
   type Tab = "compose" | "env";
-
-  const STORAGE_KEY = "compose-generator-state-v1";
 
   type PersistedState = {
     selected: string[];
@@ -335,29 +338,9 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     activeTab: "compose",
   });
 
-  function loadState(): PersistedState {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return defaultState();
-      const parsed = JSON.parse(raw);
-      return { ...defaultState(), ...parsed };
-    } catch {
-      return defaultState();
-    }
-  }
-  function saveState() {
-    try {
-      const snap: PersistedState = {
-        selected: [...state.selected],
-        overrides: state.overrides,
-        projectName: state.projectName,
-        networkName: state.networkName,
-        useEnvFile: state.useEnvFile,
-        activeTab: state.activeTab,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snap));
-    } catch {}
-  }
+  // No persistence — page refresh always resets to defaults
+  function loadState(): PersistedState { return defaultState(); }
+  function saveState() {}
 
   const initial = loadState();
   const state = {
@@ -430,31 +413,52 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   }
 
   function renderOutput() {
+    const composePanel = document.getElementById("compose-code")!;
+    const envPanel = document.getElementById("env-code")!;
+    // Preserve scroll position across re-renders
+    const composeScrollTop = composePanel.scrollTop;
+    const envScrollTop = envPanel.scrollTop;
+
     if (state.selected.size === 0) {
-      document.getElementById("compose-code")!.innerHTML = "Select services from the left to generate your docker-compose.yml";
-      document.getElementById("env-code")!.innerHTML = "";
+      composePanel.innerHTML = "Select services above to generate your docker-compose.yml";
+      envPanel.innerHTML = "";
       document.getElementById("selected-config")!.classList.add("hidden");
       document.getElementById("validation-panel")!.classList.add("hidden");
+      // Reset to compose tab so user doesn't see a blank env panel
+      state.activeTab = "compose";
+      document.getElementById("compose-output")!.classList.remove("hidden");
+      document.getElementById("env-output")!.classList.add("hidden");
+      document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((bb) => {
+        const active = bb.dataset.tab === "compose";
+        bb.classList.toggle("bg-[var(--color-canvas)]", active);
+        bb.classList.toggle("text-[var(--color-ink)]", active);
+        bb.classList.toggle("shadow-[var(--shadow-level-1)]", active);
+        bb.classList.toggle("text-[var(--color-body)]", !active);
+      });
+      saveState();
       return;
     }
     const cfg = getConfig();
     const compose = generateCompose(cfg);
     const env = generateEnvExample(cfg);
-    document.getElementById("compose-code")!.innerHTML = highlight(compose);
-    document.getElementById("env-code")!.innerHTML = highlightEnv(env);
+    composePanel.innerHTML = highlight(compose);
+    envPanel.innerHTML = highlightEnv(env);
+    // Restore scroll positions
+    composePanel.scrollTop = composeScrollTop;
+    envPanel.scrollTop = envScrollTop;
 
     const issues = validateCompose(cfg);
     const panel = document.getElementById("validation-panel")!;
     if (issues.length) {
       panel.classList.remove("hidden");
-      panel.innerHTML = `<div class="flex items-center gap-2 mb-2">
+      panel.innerHTML = `<div class="flex items-center gap-2 mb-3">
           <span class="t-caption-mono px-2 py-0.5 rounded-full ${issues.some(i => i.level === "error") ? "bg-[var(--color-error-soft)] text-[var(--color-error-deep)]" : "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]"}">${issues.length} ${issues.some(i => i.level === "error") ? "errors" : "warnings"}</span>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-3">
           ${issues.map(f => {
             const color = f.level === "error" ? "var(--color-error-deep)" : f.level === "warning" ? "var(--color-warning-deep)" : "var(--color-link)";
             const bg = f.level === "error" ? "var(--color-error-soft)" : f.level === "warning" ? "var(--color-warning-soft)" : "var(--color-link-bg-soft)";
-            return `<div class="flex items-start gap-2 text-[13px]"><span class="t-caption-mono rounded-full px-1.5 py-0.5" style="background:${bg};color:${color}">${f.level}</span><div><p class="text-[var(--color-ink)] font-medium">${f.title}</p><p class="text-[var(--color-body)]">${f.message}</p></div></div>`;
+            return `<div class="flex items-start gap-2.5"><span class="t-caption-mono rounded-full px-1.5 py-0.5 shrink-0" style="background:${bg};color:${color}">${f.level}</span><div class="min-w-0"><p class="t-body-sm-strong text-[var(--color-ink)]">${f.title}</p><p class="t-body-sm text-[var(--color-body)] mt-0.5 leading-relaxed">${f.message}</p></div></div>`;
           }).join("")}
         </div>`;
     } else {
@@ -513,8 +517,10 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            <button type="button" data-action="configure" data-name="${name}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 t-caption t-body-sm-strong text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Configure</button>
-            <span class="remove-svc inline-flex rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-error-deep)] cursor-pointer" data-name="${name}" role="button" aria-label="Remove service">
+            <button type="button" data-action="configure" data-name="${name}" class="rounded-md p-1.5 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] transition-colors" title="Configure ${escapeHtml(svc.label)}" aria-label="Configure ${escapeHtml(svc.label)}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <span class="remove-svc inline-flex rounded-md p-1.5 text-[var(--color-body)] hover:text-[var(--color-error-deep)] cursor-pointer transition-colors" data-name="${name}" role="button" aria-label="Remove service">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </span>
           </div>
@@ -545,20 +551,24 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   // persist. Cancel does nothing on the parent side (the modal discards
   // its own edit buffer). The modal reads the live overridesRef
   // (synced above) every time it opens, so we don't need to re-push.
+  // Retry in case ServiceConfigModal's script hasn't executed yet.
   (function wireModal() {
-    const modal = (window as any).ServiceConfigModal;
-    if (!modal) return;
-    modal.setOverrides(state.overrides as any);
-    modal.onApply((name: string, ov: any) => {
-      state.overrides[name] = { ...(state.overrides[name] ?? {}), ...ov };
-      // Keep the modal's overridesRef in sync so a Cancel-then-reopen
-      // reads the freshly committed values, not the snapshot from
-      // before the Apply.
+    const tryWire = (attempt: number) => {
+      const modal = (window as any).ServiceConfigModal;
+      if (!modal) {
+        if (attempt < 10) setTimeout(() => tryWire(attempt + 1), 50);
+        return;
+      }
       modal.setOverrides(state.overrides as any);
-      saveState();
-      renderSelectedConfig();
-      renderOutput();
-    });
+      modal.onApply((name: string, ov: any) => {
+        state.overrides[name] = { ...(state.overrides[name] ?? {}), ...ov };
+        modal.setOverrides(state.overrides as any);
+        saveState();
+        renderSelectedConfig();
+        renderOutput();
+      });
+    };
+    tryWire(0);
   })();
 
   function toggleService(name: string) {
@@ -736,6 +746,8 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
 
   document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((b) => {
     b.addEventListener("click", () => {
+      // Don't allow switching to env tab when no services are selected
+      if (state.selected.size === 0 && b.dataset.tab === "env") return;
       state.activeTab = b.dataset.tab as Tab;
       saveState();
       document.querySelectorAll<HTMLButtonElement>(".compose-tab-btn").forEach((bb) => {
@@ -788,12 +800,15 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   function flashCopy(id: string) {
     const btn = document.getElementById(id);
     if (!btn) return;
-    const orig = btn.innerHTML;
-    btn.innerHTML = "✓ Copied";
+    if (btn.dataset.flash === "1") return; // guard against double-click
+    const orig = btn.textContent;
+    btn.dataset.flash = "1";
+    btn.textContent = "\u2713 Copied";
     btn.classList.add("copy-pulse");
     setTimeout(() => {
-      btn.innerHTML = orig;
+      btn.textContent = orig;
       btn.classList.remove("copy-pulse");
+      btn.dataset.flash = "";
     }, 1500);
   }
   document.getElementById("btn-compose-download")?.addEventListener("click", () => download("docker-compose.yml", generateCompose(getConfig())));

@@ -128,6 +128,11 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
     letter-spacing: 0.04em;
     color: var(--color-body);
   }
+  @media (min-width: 1024px) {
+    .cfg-section-label {
+      font-size: 12px;
+    }
+  }
 </style>
 
 <script>
@@ -258,7 +263,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
     }
 
     return `
-      <div class="grid grid-cols-2 gap-2" data-service="${svc.name}">
+      <div class="cfg-version-modes grid grid-cols-2 gap-2" data-service="${svc.name}">
         ${card("recommended", "Recommended", svc.defaultTag, "Stable pinned default. Safe for production.")}
         ${card("latest", "Latest", svc.latestTag, "Highest stable release from the last sync.")}
         ${card("pinned", "Specific", tags[0]?.tag ?? svc.defaultTag, "Pick from registry-known tags.")}
@@ -287,11 +292,11 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
     body!.innerHTML = `
       <div class="cfg-grid">
         <div>
-          <label class="cfg-section-label block mb-1">Container name</label>
+          <label class="cfg-section-label block mb-2">Container name</label>
           <input type="text" data-cfg-field="containerName" value="${escapeHtml(containerName)}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
         </div>
         <div>
-          <label class="cfg-section-label block mb-1">Restart policy</label>
+          <label class="cfg-section-label block mb-2">Restart policy</label>
           <select data-cfg-field="restart" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm">
             ${RESTART_OPTIONS.map((o) => `<option value="${o}" ${o === restart ? "selected" : ""}>${o}</option>`).join("")}
           </select>
@@ -300,13 +305,13 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
 
       ${svc.isApp ? `
         <div>
-          <label class="cfg-section-label block mb-1">Image (build context)</label>
+          <label class="cfg-section-label block mb-2">Image (build context)</label>
           <input type="text" data-cfg-field="image" value="${escapeHtml(image)}" disabled class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2.5 py-1.5 t-body-sm opacity-60" />
           <p class="t-caption mt-1 text-[var(--color-body)]">Build context — version is controlled by the Dockerfile.</p>
         </div>
       ` : `
         <div>
-          <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center justify-between mb-2">
             <label class="cfg-section-label" for="cfg-image-input">Image reference</label>
             ${image !== svc.image
               ? `<button type="button" data-cfg-action="reset-image" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline" title="Reset to ${escapeHtml(svc.image)}">↺ Use registry default</button>`
@@ -327,7 +332,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Ports (host:container)</label>
-          <button type="button" data-cfg-action="add-port" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add port</button>
+          <button type="button" data-cfg-action="add-port" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add port</button>
         </div>
         <div class="space-y-1.5" data-cfg-ports>
           ${ports.map((p, i) => `
@@ -345,7 +350,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Volumes (host:container[:ro])</label>
-          <button type="button" data-cfg-action="add-volume" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add volume</button>
+          <button type="button" data-cfg-action="add-volume" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add volume</button>
         </div>
         <div class="space-y-1.5" data-cfg-volumes>
           ${volumes.map((v, i) => `
@@ -363,7 +368,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Environment variables</label>
-          <button type="button" data-cfg-action="add-env" class="t-caption t-body-sm-strong text-[var(--color-link)] hover:underline">+ Add env var</button>
+          <button type="button" data-cfg-action="add-env" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add env var</button>
         </div>
         <div class="space-y-1.5" data-cfg-envs>
           ${envs.map((e, i) => `

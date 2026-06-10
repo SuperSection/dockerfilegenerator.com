@@ -1,0 +1,849 @@
+---
+import { PRESET_LIST } from "../lib/microservice/presets";
+import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
+---
+
+<div id="microservice-builder" class="space-y-6">
+  <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-3">
+    <h2 class="t-caption-mono text-[var(--color-body)]">Architecture builder</h2>
+    <p class="t-caption text-[var(--color-body)]">
+      Build a complete Docker setup for your application. Each service gets its own Dockerfile.
+      Standard Docker Compose output, ready for any deployment.
+    </p>
+  </div>
+
+  <!-- Architecture selection -->
+  <div id="phase-select">
+    <h3 class="t-caption-mono mb-3 text-[var(--color-body)]">What are you building?</h3>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" id="arch-grid">
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="monolith">
+        <div class="text-2xl mb-2">🧱</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Monolith</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">Single application + database + cache. Simple and fast to deploy.</p>
+      </button>
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="frontendApi">
+        <div class="text-2xl mb-2">🧩</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Frontend + API</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">Two-tier: frontend service and backend API sharing a database.</p>
+      </button>
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="threeTier">
+        <div class="text-2xl mb-2">🏗️</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Three-tier</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">Frontend + API + dedicated business logic service + database.</p>
+      </button>
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="microservices">
+        <div class="text-2xl mb-2">🕸️</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Microservices</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">Gateway + auth + core service, backed by Postgres and Redis.</p>
+      </button>
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="eventDriven">
+        <div class="text-2xl mb-2">📨</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Event-driven</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">API + multiple workers consuming from a message queue.</p>
+      </button>
+      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="blank">
+        <div class="text-2xl mb-2">✨</div>
+        <span class="t-body-sm-strong text-[var(--color-ink)] block">Custom</span>
+        <p class="t-caption mt-1 text-[var(--color-body)]">Start from scratch. Add your own services.</p>
+      </button>
+    </div>
+  </div>
+
+  <!-- Service configuration -->
+  <div id="phase-config" class="hidden">
+    <div class="mb-4">
+      <button type="button" id="ms-back-btn" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-1.5 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back to architecture
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[440px_1fr]">
+      <aside class="space-y-6">
+        <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 space-y-3">
+          <div>
+            <label for="ms-project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
+            <input type="text" id="ms-project-name" value="my-app" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" />
+          </div>
+          <div>
+            <label for="ms-description" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Description</label>
+            <input type="text" id="ms-description" placeholder="My application" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" />
+          </div>
+          <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <input type="checkbox" id="ms-use-env" class="toggle shrink-0" />
+            <div class="flex-1">
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Use .env file</span>
+              <p class="t-caption text-[var(--color-body)]">Reference variables from .env</p>
+            </div>
+          </label>
+          <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <input type="checkbox" id="ms-pin-tags" class="toggle shrink-0" checked />
+            <div class="flex-1">
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Pin image tags</span>
+              <p class="t-caption text-[var(--color-body)]">Warn on :latest usage</p>
+            </div>
+          </label>
+          <label class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-[var(--color-canvas-soft-2)]">
+            <input type="checkbox" id="ms-include-readme" class="toggle shrink-0" />
+            <div class="flex-1">
+              <span class="t-body-sm-strong text-[var(--color-ink)]">Include README</span>
+              <p class="t-caption text-[var(--color-body)]">Generate project documentation</p>
+            </div>
+          </label>
+        </div>
+
+        <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="t-caption-mono text-[var(--color-body)]">Services</h3>
+            <button type="button" id="ms-add-service-btn" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-3 py-1.5 text-[var(--color-primary-cta-fg)] hover:opacity-90">+ Add</button>
+          </div>
+          <div id="ms-add-menu" class="hidden space-y-2">
+            <div class="relative">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-body)]"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input
+                type="text"
+                id="ms-add-search"
+                placeholder="Search services (postgres, redis, express...)"
+                autocomplete="off"
+                class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] pl-9 pr-3 py-2.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:ring-2 focus:ring-[var(--color-ink)]/10 focus:outline-none transition-colors"
+              />
+            </div>
+            <div id="ms-add-results" class="max-h-[240px] overflow-y-auto rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] hidden">
+              <!-- Populated dynamically by JS -->
+            </div>
+            <div class="flex gap-2">
+              <button type="button" id="ms-add-cancel" class="t-body-sm-strong rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-1.5 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Cancel</button>
+            </div>
+          </div>
+          <div id="ms-service-list" class="space-y-2">
+            <p class="t-caption text-[var(--color-mute)]">No services yet.</p>
+          </div>
+        </div>
+      </aside>
+
+      <div class="space-y-6">
+        <!-- Tabs container - dynamically populated -->
+        <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit overflow-x-auto" id="ms-tabs">
+          <button type="button" data-tab="compose" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)] whitespace-nowrap">compose.yaml</button>
+          <button type="button" data-tab="env" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">.env.example</button>
+          <button type="button" data-tab="readme" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)] whitespace-nowrap">README.md</button>
+        </div>
+
+        <!-- Panels container - dynamically populated -->
+        <div id="ms-panels">
+          <div id="ms-panel-compose" class="ms-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+            <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+              <span class="font-mono text-[13px] text-[var(--color-body)]">compose.yaml</span>
+              <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target="ms-compose-code">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span class="t-caption">Copy</span>
+              </button>
+            </div>
+            <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-compose-code"><code>Select an architecture to begin</code></pre>
+          </div>
+
+          <div id="ms-panel-env" class="ms-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+            <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+              <span class="font-mono text-[13px] text-[var(--color-body)]">.env.example</span>
+              <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target="ms-env-code">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span class="t-caption">Copy</span>
+              </button>
+            </div>
+            <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-env-code"><code>.env.example</code></pre>
+          </div>
+
+          <div id="ms-panel-readme" class="ms-panel hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
+            <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+              <span class="font-mono text-[13px] text-[var(--color-body)]">README.md</span>
+              <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-target="ms-readme-code">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span class="t-caption">Copy</span>
+              </button>
+            </div>
+            <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-readme-code"><code>README.md</code></pre>
+          </div>
+        </div>
+
+        <div id="ms-validation" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4 space-y-2">
+          <h4 class="t-caption-mono text-[var(--color-body)]">Validation</h4>
+          <div id="ms-validation-list"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" id="ms-download-zip" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download ZIP
+          </button>
+          <button type="button" id="ms-download-all" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download all files</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ms-modal-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] shadow-xl">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] px-5 py-4">
+          <h3 class="t-body-lg-strong text-[var(--color-ink)]" id="ms-modal-title">Edit service</h3>
+          <button type="button" id="ms-modal-close" class="text-[var(--color-body)] hover:text-[var(--color-ink)]">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="p-5 space-y-4" id="ms-modal-body"></div>
+        <div class="flex items-center justify-end gap-2 border-t border-[var(--color-hairline)] px-5 py-4">
+          <button type="button" id="ms-modal-delete" class="t-body-sm-strong rounded-md border border-red-500 bg-red-500/10 px-4 py-2 text-red-500 hover:bg-red-500/20 hidden">Delete</button>
+          <div class="flex-1"></div>
+          <button type="button" id="ms-modal-cancel" class="t-body-sm-strong rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Cancel</button>
+          <button type="button" id="ms-modal-save" class="t-body-sm-strong rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .arch-card[data-active="true"] { border-color: var(--color-primary-cta); background: var(--color-primary-cta); color: var(--color-primary-cta-fg); }
+  .toggle { appearance: none; width: 36px; height: 20px; background: var(--color-hairline-strong); border-radius: 9999px; position: relative; cursor: pointer; transition: background 150ms ease; flex-shrink: 0; }
+  .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--color-canvas); border-radius: 9999px; transition: transform 150ms ease; }
+  .toggle:checked { background: var(--color-primary-cta); }
+  .toggle:checked::after { transform: translateX(16px); background: var(--color-primary-cta-fg); }
+  .service-card { transition: border-color 150ms ease; cursor: pointer; }
+  .service-card:hover { border-color: var(--color-hairline-strong); }
+  @keyframes copyPulse { 0% { background-color: var(--color-link-bg-soft); color: var(--color-link); } 100% { background-color: var(--color-canvas); color: var(--color-ink); } }
+  .copy-pulse { animation: copyPulse 600ms ease-out; }
+  .df-tab { transition: background 150ms ease, color 150ms ease; }
+</style>
+
+<script>
+  import { ARCHITECTURE_PRESETS } from "../lib/microservice/presets";
+  import { FRAMEWORKS, FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
+  import { generateMicroserviceCompose } from "../lib/microservice/generator";
+  import { generateMicroserviceDockerfile, applicationServiceIds } from "../lib/microservice/dockerfile";
+  import { generateMicroserviceEnv } from "../lib/microservice/env";
+  import { generateMicroserviceReadme } from "../lib/microservice/readme";
+  import { validateMicroservice } from "../lib/microservice/validation";
+  import { zipMicroserviceExport } from "../lib/microservice/export";
+  import { getService, listServices } from "../registry";
+  import type { MicroserviceConfig, ServiceOverride, ServiceCategory } from "../lib/microservice/schema";
+
+  const STORAGE_KEY = "microservice-builder-v3";
+  const ARCH_STORAGE_KEY = "microservice-arch-v2";
+  const categoryEmoji: Record<string, string> = { application: "🚀", database: "🗄️", cache: "⚡", search: "🔍", queue: "📨", proxy: "🌐", storage: "📦", monitoring: "📈" };
+
+  type TabId = "compose" | "env" | "readme" | `df-${string}`;
+
+  const state = {
+    projectName: "my-app",
+    description: "",
+    useEnvFile: false,
+    pinAllTags: true,
+    includeReadme: false,
+    services: {} as Record<string, ServiceOverride>,
+    activeTab: "compose" as TabId,
+    modal: { editingId: null as string | null, isNew: false },
+    currentArch: null as string | null,
+  };
+
+  // ── Persistence ──────────────────────────────────────────
+  // No persistence — page refresh always resets to defaults
+  function save() {}
+  function load() {}
+
+  // ── Helpers ──────────────────────────────────────────────
+  function esc(s: string) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+  function getConfig(): MicroserviceConfig {
+    return {
+      projectName: state.projectName, description: state.description || undefined,
+      useEnvFile: state.useEnvFile, composeFileName: "compose.yaml",
+      services: state.services, networks: [], volumes: [], secrets: [],
+      pinAllTags: state.pinAllTags,
+    };
+  }
+
+  // ── Syntax highlighting ──────────────────────────────────
+  function highlightCompose(code: string): string {
+    return esc(code)
+      .replace(/(^|\s)(#.*)$/gm, '$1<span class="tok-comment">$2</span>')
+      .replace(/^([A-Za-z_][\w-]*)(:)/gm, '<span class="tok-keyword">$1</span>$2')
+      .replace(/^(\s+)(-?\s*)([A-Za-z_][\w-]*)(:)/gm, '$1$2<span class="tok-image">$3</span>$4')
+      .replace(/^(\s+)(-\s)/gm, '$1<span class="tok-punct">$2</span>')
+      .replace(/(:\s)(true|false|yes|no|null|~)\b/g, '$1<span class="tok-number">$2</span>')
+      .replace(/(:\s)(-?\d+(?:\.\d+)?)\b/g, '$1<span class="tok-number">$2</span>')
+      .replace(/(:\s)([a-zA-Z0-9._\-/:${}]+)$/gm, '$1<span class="tok-string">$2</span>')
+      .replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>')
+      .replace(/(\$[A-Za-z_][\w]*)/g, '<span class="tok-var">$1</span>');
+  }
+
+  function highlightDockerfile(code: string): string {
+    return code.split("\n").map((line) => {
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith("#")) return `<span class="tok-comment">${esc(line)}</span>`;
+      const kwMatch = /^([A-Z]+)/.exec(trimmed);
+      if (kwMatch) {
+        const keywords = new Set(["FROM","RUN","CMD","LABEL","MAINTAINER","EXPOSE","ENV","ADD","COPY","ENTRYPOINT","VOLUME","USER","WORKDIR","ARG","ONBUILD","STOPSIGNAL","HEALTHCHECK","SHELL"]);
+        if (keywords.has(kwMatch[1])) {
+          return `<span class="tok-keyword">${esc(kwMatch[1])}</span>${esc(line.slice(kwMatch[1].length))}`;
+        }
+      }
+      return esc(line);
+    }).join("\n");
+  }
+
+  function highlightEnv(code: string): string {
+    return esc(code).split("\n").map((line) => {
+      if (/^\s*#/.test(line)) return `<span class="tok-comment">${line}</span>`;
+      if (/^\s*$/.test(line)) return line;
+      const m = /^(\s*(?:export\s+)?)([A-Za-z_][A-Za-z0-9_]*)\s*(=)\s*(.*)$/.exec(line);
+      if (!m) return line;
+      const [, lead, key, eq, rawValue] = m;
+      const valueHtml = rawValue.replace(/(\$\{[^}]+\})/g, '<span class="tok-var">$1</span>');
+      return `<span class="tok-env-key">${lead}${key}</span><span class="tok-punct">${eq}</span><span class="tok-string">${valueHtml}</span>`;
+    }).join("\n");
+  }
+
+  // ── Tab management ───────────────────────────────────────
+  function getDockerfileIds(): string[] {
+    return applicationServiceIds(getConfig());
+  }
+
+  function renderTabs() {
+    const tabsEl = document.getElementById("ms-tabs")!;
+    const dfIds = getDockerfileIds();
+
+    // Order: compose → Dockerfiles → .env → README (if enabled)
+    let html = `
+      <button type="button" data-tab="compose" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md whitespace-nowrap ${state.activeTab === "compose" ? "bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]" : "text-[var(--color-body)] hover:text-[var(--color-ink)]"}">compose.yaml</button>
+    `;
+
+    for (const id of dfIds) {
+      const isActive = state.activeTab === `df-${id}`;
+      html += `<button type="button" data-tab="df-${id}" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md whitespace-nowrap ${isActive ? "bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]" : "text-[var(--color-body)] hover:text-[var(--color-ink)]"}">${id}/Dockerfile</button>`;
+    }
+
+    html += `
+      <button type="button" data-tab="env" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md whitespace-nowrap ${state.activeTab === "env" ? "bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]" : "text-[var(--color-body)] hover:text-[var(--color-ink)]"}">.env.example</button>
+    `;
+
+    if (state.includeReadme) {
+      html += `
+        <button type="button" data-tab="readme" class="ms-tab-btn px-3 py-1.5 t-body-sm-strong rounded-md whitespace-nowrap ${state.activeTab === "readme" ? "bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]" : "text-[var(--color-body)] hover:text-[var(--color-ink)]"}">README.md</button>
+      `;
+    }
+
+    tabsEl.innerHTML = html;
+
+    // Wire tab clicks
+    tabsEl.querySelectorAll<HTMLButtonElement>(".ms-tab-btn").forEach((b) => {
+      b.addEventListener("click", () => setTab(b.dataset.tab as TabId));
+    });
+  }
+
+  function renderPanels() {
+    const panelsEl = document.getElementById("ms-panels")!;
+    const cfg = getConfig();
+    const dfIds = getDockerfileIds();
+
+    // Order: compose → Dockerfiles → .env → README (if enabled)
+    let html = `
+      <div id="ms-panel-compose" class="ms-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden ${state.activeTab !== "compose" ? "hidden" : ""}">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="font-mono text-[13px] text-[var(--color-body)]">compose.yaml</span>
+          <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-copy-content="ms-compose-code">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span class="t-caption">Copy</span>
+          </button>
+        </div>
+        <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-compose-code"><code>${highlightCompose(generateMicroserviceCompose(cfg))}</code></pre>
+      </div>
+    `;
+
+    // Dockerfile panels
+    for (const id of dfIds) {
+      const df = generateMicroserviceDockerfile(id, cfg);
+      const isActive = state.activeTab === `df-${id}`;
+      html += `
+        <div id="ms-panel-df-${id}" class="ms-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden ${!isActive ? "hidden" : ""}">
+          <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+            <span class="font-mono text-[13px] text-[var(--color-body)]">${id}/Dockerfile</span>
+            <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-copy-content="ms-df-${id}-code">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span class="t-caption">Copy</span>
+            </button>
+          </div>
+          <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-df-${id}-code"><code>${df ? highlightDockerfile(df) : "No Dockerfile generated"}</code></pre>
+        </div>
+      `;
+    }
+
+    // .env panel
+    html += `
+      <div id="ms-panel-env" class="ms-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden ${state.activeTab !== "env" ? "hidden" : ""}">
+        <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+          <span class="font-mono text-[13px] text-[var(--color-body)]">.env.example</span>
+          <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-copy-content="ms-env-code">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span class="t-caption">Copy</span>
+          </button>
+        </div>
+        <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-env-code"><code>${highlightEnv(generateMicroserviceEnv(cfg))}</code></pre>
+      </div>
+    `;
+
+    // README panel (only if enabled)
+    if (state.includeReadme) {
+      html += `
+        <div id="ms-panel-readme" class="ms-panel rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden ${state.activeTab !== "readme" ? "hidden" : ""}">
+          <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
+            <span class="font-mono text-[13px] text-[var(--color-body)]">README.md</span>
+            <button type="button" class="ms-copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]" data-copy-content="ms-readme-code">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span class="t-caption">Copy</span>
+            </button>
+          </div>
+          <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px] font-mono text-[13px]" id="ms-readme-code"><code>${esc(generateMicroserviceReadme(cfg))}</code></pre>
+        </div>
+      `;
+    }
+
+    panelsEl.innerHTML = html;
+
+    // Wire copy buttons
+    panelsEl.querySelectorAll<HTMLButtonElement>(".ms-copy-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const targetId = btn.dataset.copyContent!;
+        const target = document.getElementById(targetId);
+        const text = target?.textContent ?? "";
+        await navigator.clipboard.writeText(text);
+        const label = btn.querySelector(".t-caption");
+        const orig = label?.textContent ?? "Copy";
+        if (label) label.textContent = "✓ Copied";
+        btn.classList.add("copy-pulse");
+        setTimeout(() => { if (label) label.textContent = orig; btn.classList.remove("copy-pulse"); }, 1500);
+      });
+    });
+  }
+
+  function setTab(tab: TabId) {
+    state.activeTab = tab;
+    save();
+    renderTabs();
+    document.querySelectorAll<HTMLDivElement>(".ms-panel").forEach((p) => p.classList.add("hidden"));
+    const panelId = tab.startsWith("df-") ? `ms-panel-${tab}` : `ms-panel-${tab}`;
+    document.getElementById(panelId)?.classList.remove("hidden");
+  }
+
+  // ── Service list ─────────────────────────────────────────
+  function renderServiceList() {
+    const el = document.getElementById("ms-service-list")!;
+    const ids = Object.keys(state.services);
+    if (!ids.length) { el.innerHTML = `<p class="t-caption text-[var(--color-mute)]">No services yet.</p>`; return; }
+    el.innerHTML = ids.map((id) => {
+      const svc = state.services[id];
+      const emoji = categoryEmoji[svc.category ?? "application"] ?? "•";
+      const fw = svc.framework ? ` · ${svc.framework}` : "";
+      const ports = svc.ports?.length ? ` · :${svc.ports[0].container}` : "";
+      return `<div class="service-card flex items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-3" data-service-id="${id}">
+        <span class="text-base">${emoji}</span>
+        <div class="min-w-0 flex-1"><span class="t-body-sm-strong text-[var(--color-ink)] block truncate">${id}${fw}${ports}</span></div>
+        <button type="button" class="ms-edit-svc text-[var(--color-body)] hover:text-[var(--color-ink)] p-1" data-edit="${id}" title="Edit">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <button type="button" class="ms-remove-svc text-[var(--color-body)] hover:text-red-500 p-1" data-remove="${id}" title="Remove">×</button>
+      </div>`;
+    }).join("");
+    el.querySelectorAll<HTMLButtonElement>("[data-edit]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); openModal(b.dataset.edit!, false); }));
+    el.querySelectorAll<HTMLButtonElement>("[data-remove]").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); delete state.services[b.dataset.remove!]; save(); render(); }));
+  }
+
+  // ── Validation ───────────────────────────────────────────
+  function renderValidation() {
+    const issues = validateMicroservice(getConfig());
+    const vEl = document.getElementById("ms-validation");
+    const vList = document.getElementById("ms-validation-list");
+    if (issues.length && vEl && vList) {
+      vEl.classList.remove("hidden");
+      const colors: Record<string, string> = { error: "text-red-500", warning: "text-amber-500", info: "text-blue-500" };
+      vList.innerHTML = issues.map((i) => `<div class="t-caption ${colors[i.level]}">${i.service ? `[${i.service}] ` : ""}${i.title}: ${i.message}</div>`).join("");
+    } else if (vEl) vEl.classList.add("hidden");
+  }
+
+  function render() {
+    const cb = document.getElementById("ms-include-readme") as HTMLInputElement | null;
+    if (cb) cb.checked = state.includeReadme;
+    renderServiceList(); renderTabs(); renderPanels(); renderValidation();
+  }
+
+  // ── Architecture selection ───────────────────────────────
+  function selectArchitecture(archId: string) {
+    if (archId === "blank") { state.services = {}; }
+    else {
+      const preset = ARCHITECTURE_PRESETS[archId];
+      if (preset) state.services = preset.services();
+    }
+    state.currentArch = archId;
+    state.activeTab = "compose";
+    save(); render();
+    document.getElementById("phase-select")!.classList.add("hidden");
+    document.getElementById("phase-config")!.classList.remove("hidden");
+  }
+
+  function goBack() {
+    document.getElementById("phase-select")!.classList.remove("hidden");
+    document.getElementById("phase-config")!.classList.add("hidden");
+  }
+
+  // ── Modal ────────────────────────────────────────────────
+  function buildModalForm(svc: ServiceOverride): string {
+    const ports = svc.ports ?? [{ host: 3000, container: 3000 }];
+    const envVars = svc.envVars ?? [];
+    const vols = svc.volumes ?? [];
+    const dependsOn = svc.dependsOn ?? [];
+    const fwOpts = FRAMEWORK_LIST.map((fw) => `<option value="${fw.id}" ${svc.framework === fw.id ? "selected" : ""}>${fw.emoji} ${fw.name}</option>`).join("");
+    const catOpts = ["application","database","cache","search","queue","proxy","storage","monitoring"].map((c) => `<option value="${c}" ${svc.category === c ? "selected" : ""}>${categoryEmoji[c] ?? ""} ${c}</option>`).join("");
+    const rstOpts = ["no","always","on-failure","unless-stopped"].map((r) => `<option value="${r}" ${svc.restart === r ? "selected" : ""}>${r}</option>`).join("");
+    const secOpts = ["relaxed","hardened","custom"].map((p) => `<option value="${p}" ${(svc.security?.preset ?? "relaxed") === p ? "selected" : ""}>${p}</option>`).join("");
+    const isApp = svc.category === "application" || svc.build;
+
+    return `
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Service ID</label>
+        <input type="text" id="msf-id" value="${svc.id}" ${state.modal.isNew ? "" : "readonly"} class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" />
+        <p class="t-caption text-[var(--color-mute)] mt-1">lowercase, digits, dashes only</p></div>
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Category</label>
+        <select id="msf-category" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none">${catOpts}</select></div>
+      </div>
+      ${isApp ? `<div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Framework</label>
+      <select id="msf-framework" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none">${fwOpts}</select></div>` : ""}
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Host port</label>
+        <input type="number" id="msf-host-port" value="${ports[0]?.host ?? 3000}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Container port</label>
+        <input type="number" id="msf-container-port" value="${ports[0]?.container ?? 3000}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+      </div>
+      <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Restart</label>
+      <select id="msf-restart" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none">${rstOpts}</select></div>
+      <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Depends on</label>
+      <input type="text" id="msf-depends" value="${dependsOn.join(", ")}" placeholder="postgres, redis" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+      ${isApp ? `
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Build context</label>
+        <input type="text" id="msf-build-context" value="${svc.build?.context ?? `./${svc.id}`}" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" />
+        <p class="t-caption text-[var(--color-mute)] mt-1">Path to Dockerfile context</p></div>
+      ` : `
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Volumes</label>
+        <div id="msf-vol-list" class="space-y-2">${vols.map((v) => `<div class="flex items-center gap-2 vol-row"><input type="text" value="${esc(v.host)}" placeholder="host path or volume name" class="vol-host flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><input type="text" value="${esc(v.container)}" placeholder="container path" class="vol-dest flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><button type="button" class="vol-remove text-[var(--color-body)] hover:text-red-500 p-1" title="Remove">×</button></div>`).join("")}</div>
+        <button type="button" id="msf-add-vol" class="t-caption text-[var(--color-primary-cta)] hover:underline mt-1">+ Add volume</button></div>
+      `}
+      <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Image override</label>
+      <input type="text" id="msf-image" value="${svc.image ?? ""}" placeholder="e.g. postgres:16-alpine" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+      <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Environment variables</label>
+      <div id="msf-env-list" class="space-y-2">${envVars.map((e) => `<div class="flex items-center gap-2 env-row"><input type="text" value="${e.key}" placeholder="KEY" class="env-key flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><input type="text" value="${e.value}" placeholder="value" class="env-val flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><button type="button" class="env-remove text-[var(--color-body)] hover:text-red-500 p-1" title="Remove">×</button></div>`).join("")}</div>
+      <button type="button" id="msf-add-env" class="t-caption text-[var(--color-primary-cta)] hover:underline mt-1">+ Add env var</button></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Security</label>
+        <select id="msf-security" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none">${secOpts}</select></div>
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Memory</label>
+        <input type="text" id="msf-memory" value="${svc.resources?.memory ?? ""}" placeholder="512M" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">CPU</label>
+        <input type="text" id="msf-cpus" value="${svc.resources?.cpus ?? ""}" placeholder="0.5" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+        <div><label class="t-body-sm-strong block text-[var(--color-ink)] mb-1">Command</label>
+        <input type="text" id="msf-command" value="${(svc.command ?? []).join(" ")}" placeholder="optional" class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /></div>
+      </div>`;
+  }
+
+  function wireModalForm() {
+    document.getElementById("msf-add-env")?.addEventListener("click", () => {
+      const list = document.getElementById("msf-env-list")!;
+      const row = document.createElement("div");
+      row.className = "flex items-center gap-2 env-row";
+      row.innerHTML = `<input type="text" placeholder="KEY" class="env-key flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><input type="text" placeholder="value" class="env-val flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><button type="button" class="env-remove text-[var(--color-body)] hover:text-red-500 p-1" title="Remove">×</button>`;
+      list.appendChild(row);
+      row.querySelector(".env-remove")!.addEventListener("click", () => row.remove());
+    });
+    document.querySelectorAll<HTMLButtonElement>("#ms-modal-body .env-remove").forEach((b) => b.addEventListener("click", () => b.closest(".env-row")?.remove()));
+
+    // Volume rows
+    document.getElementById("msf-add-vol")?.addEventListener("click", () => {
+      const list = document.getElementById("msf-vol-list")!;
+      const row = document.createElement("div");
+      row.className = "flex items-center gap-2 vol-row";
+      row.innerHTML = `<input type="text" placeholder="host path or volume name" class="vol-host flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><input type="text" placeholder="container path" class="vol-dest flex-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-2 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none" /><button type="button" class="vol-remove text-[var(--color-body)] hover:text-red-500 p-1" title="Remove">×</button>`;
+      list.appendChild(row);
+      row.querySelector(".vol-remove")!.addEventListener("click", () => row.remove());
+    });
+    document.querySelectorAll<HTMLButtonElement>("#ms-modal-body .vol-remove").forEach((b) => b.addEventListener("click", () => b.closest(".vol-row")?.remove()));
+  }
+
+  function openModal(serviceId: string | null, isNew: boolean) {
+    const overlay = document.getElementById("ms-modal-overlay")!;
+    const title = document.getElementById("ms-modal-title")!;
+    const body = document.getElementById("ms-modal-body")!;
+    const deleteBtn = document.getElementById("ms-modal-delete")!;
+    state.modal = { editingId: serviceId, isNew };
+    deleteBtn.classList.toggle("hidden", isNew);
+    if (isNew) {
+      title.textContent = "Add service";
+      body.innerHTML = buildModalForm({ id: "", category: "application", framework: "node", ports: [{ host: 3000, container: 3000 }], restart: "unless-stopped", init: true, build: { context: "./new-service" } });
+    } else {
+      title.textContent = `Edit ${serviceId}`;
+      body.innerHTML = buildModalForm(state.services[serviceId!]);
+    }
+    overlay.classList.remove("hidden");
+    wireModalForm();
+  }
+
+  function closeModal() { document.getElementById("ms-modal-overlay")!.classList.add("hidden"); }
+
+  function readModalForm(): { id: string; svc: ServiceOverride } | null {
+    const id = (document.getElementById("msf-id") as HTMLInputElement)?.value?.trim();
+    if (!id || !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(id)) return null;
+    const category = (document.getElementById("msf-category") as HTMLSelectElement)?.value as ServiceCategory;
+    const framework = (document.getElementById("msf-framework") as HTMLSelectElement)?.value as any;
+    const hostPort = parseInt((document.getElementById("msf-host-port") as HTMLInputElement)?.value ?? "3000", 10);
+    const containerPort = parseInt((document.getElementById("msf-container-port") as HTMLInputElement)?.value ?? "3000", 10);
+    const restart = (document.getElementById("msf-restart") as HTMLSelectElement)?.value as any;
+    const dependsStr = (document.getElementById("msf-depends") as HTMLInputElement)?.value ?? "";
+    const buildContext = (document.getElementById("msf-build-context") as HTMLInputElement)?.value?.trim();
+    const image = (document.getElementById("msf-image") as HTMLInputElement)?.value?.trim();
+    const securityPreset = (document.getElementById("msf-security") as HTMLSelectElement)?.value as any;
+    const memory = (document.getElementById("msf-memory") as HTMLInputElement)?.value?.trim();
+    const cpus = (document.getElementById("msf-cpus") as HTMLInputElement)?.value?.trim();
+    const commandStr = (document.getElementById("msf-command") as HTMLInputElement)?.value?.trim();
+    const envVars: { key: string; value: string }[] = [];
+    document.querySelectorAll<HTMLDivElement>("#msf-env-list .env-row").forEach((row) => {
+      const key = (row.querySelector(".env-key") as HTMLInputElement)?.value?.trim();
+      const value = (row.querySelector(".env-val") as HTMLInputElement)?.value ?? "";
+      if (key) envVars.push({ key, value });
+    });
+    const volumes: { host: string; container: string }[] = [];
+    document.querySelectorAll<HTMLDivElement>("#msf-vol-list .vol-row").forEach((row) => {
+      const host = (row.querySelector(".vol-host") as HTMLInputElement)?.value?.trim();
+      const container = (row.querySelector(".vol-dest") as HTMLInputElement)?.value?.trim();
+      if (host && container) volumes.push({ host, container });
+    });
+    const dependsOn = dependsStr.split(",").map((s) => s.trim()).filter(Boolean);
+    const svc: ServiceOverride = { id, category, framework, ports: [{ host: hostPort, container: containerPort }], restart: restart || "unless-stopped", init: category === "application", dependsOn: dependsOn.length ? dependsOn : undefined, envVars: envVars.length ? envVars : undefined, volumes: volumes.length ? volumes : undefined, resources: (memory || cpus) ? { memory: memory || undefined, cpus: cpus || undefined } : undefined, security: securityPreset !== "relaxed" ? { preset: securityPreset } : undefined, command: commandStr ? commandStr.split(/\s+/) : undefined };
+    if (buildContext) svc.build = { context: buildContext };
+    if (image) svc.image = image;
+    return { id, svc };
+  }
+
+  // ── Wire up ──────────────────────────────────────────────
+  load();
+
+  document.querySelectorAll<HTMLButtonElement>("[data-arch]").forEach((b) => b.addEventListener("click", () => selectArchitecture(b.dataset.arch!)));
+  document.getElementById("ms-back-btn")!.addEventListener("click", goBack);
+  document.getElementById("ms-include-readme")?.addEventListener("change", (e) => {
+    state.includeReadme = (e.target as HTMLInputElement).checked;
+    if (!state.includeReadme && state.activeTab === "readme") state.activeTab = "compose";
+    save(); renderTabs(); renderPanels();
+  });
+
+  document.getElementById("ms-add-service-btn")!.addEventListener("click", () => {
+    const menu = document.getElementById("ms-add-menu")!;
+    const searchInput = document.getElementById("ms-add-search") as HTMLInputElement;
+    menu.classList.toggle("hidden");
+    if (!menu.classList.contains("hidden")) {
+      searchInput.value = "";
+      searchInput.focus();
+      renderAddResults("");
+    }
+  });
+  document.getElementById("ms-add-cancel")!.addEventListener("click", () => document.getElementById("ms-add-menu")!.classList.add("hidden"));
+
+  // Build the unified service list: frameworks (app) + registry services
+  interface AddServiceItem {
+    id: string;
+    label: string;
+    emoji: string;
+    category: string;
+    isApp: boolean;
+    framework?: string;
+    image?: string;
+  }
+
+  const CATEGORY_LABELS_MS: Record<string, string> = {
+    application: "Application",
+    database: "Database",
+    cache: "Cache",
+    search: "Search",
+    queue: "Message Queue",
+    proxy: "Reverse Proxy",
+    storage: "Storage",
+    monitoring: "Monitoring",
+  };
+
+  const addServiceItems: AddServiceItem[] = [];
+
+  // Add framework/application services
+  for (const fw of FRAMEWORK_LIST) {
+    addServiceItems.push({
+      id: fw.id,
+      label: fw.name,
+      emoji: fw.emoji,
+      category: "Application",
+      isApp: true,
+      framework: fw.id,
+    });
+  }
+
+  // Add registry services (database, cache, queue, etc.)
+  const registryServices = listServices();
+  for (const svc of registryServices) {
+    if (svc.id === "app") continue;
+    addServiceItems.push({
+      id: svc.id,
+      label: svc.label,
+      emoji: svc.emoji,
+      category: CATEGORY_LABELS_MS[svc.category] ?? svc.category,
+      isApp: false,
+      image: svc.image,
+    });
+  }
+
+  function renderAddResults(query: string) {
+    const resultsEl = document.getElementById("ms-add-results")!;
+    const nq = query.toLowerCase().replace(/\s+/g, "");
+    const filtered = addServiceItems.filter((item) => {
+      if (!nq) return true;
+      const hay = `${item.label} ${item.id} ${item.category} ${item.image ?? ""}`.toLowerCase().replace(/\s+/g, "");
+      return hay.includes(nq);
+    });
+
+    if (!filtered.length) {
+      resultsEl.innerHTML = `<div class="px-3 py-4 text-center t-caption text-[var(--color-mute)]">No services match "${esc(query)}"</div>`;
+      resultsEl.classList.remove("hidden");
+      return;
+    }
+
+    // Group by category
+    const groups = new Map<string, AddServiceItem[]>();
+    for (const item of filtered) {
+      const cat = item.category;
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat)!.push(item);
+    }
+
+    let html = "";
+    for (const [cat, items] of groups) {
+      html += `<div class="px-2 py-1.5 t-caption-mono text-[11px] uppercase tracking-wider text-[var(--color-mute)] border-b border-[var(--color-hairline)]">${esc(cat)}</div>`;
+      for (const item of items) {
+        const alreadyExists = !!state.services[item.id];
+        html += `<button type="button" class="ms-add-result-item w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[var(--color-canvas-soft-2)] ${alreadyExists ? "opacity-50 pointer-events-none" : ""}" data-id="${item.id}" data-is-app="${item.isApp}" data-framework="${item.framework ?? ""}">
+          <span class="text-base shrink-0">${item.emoji}</span>
+          <span class="flex-1 min-w-0">
+            <span class="block t-body-sm-strong text-[var(--color-ink)]">${esc(item.label)}</span>
+            <span class="block t-caption text-[var(--color-body)] truncate">${esc(item.image ?? (item.isApp ? "Dockerfile build" : item.id))}</span>
+          </span>
+          ${alreadyExists ? `<span class="t-caption text-[var(--color-mute)]">added</span>` : ""}
+        </button>`;
+      }
+    }
+    resultsEl.innerHTML = html;
+    resultsEl.classList.remove("hidden");
+
+    // Wire clicks
+    resultsEl.querySelectorAll<HTMLButtonElement>(".ms-add-result-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id!;
+        const isApp = btn.dataset.isApp === "true";
+        const framework = btn.dataset.framework || undefined;
+        if (state.services[id]) return;
+        if (isApp && framework) {
+          const meta = FRAMEWORKS[framework as keyof typeof FRAMEWORKS];
+          state.services[id] = {
+            id,
+            category: "application",
+            framework: framework as any,
+            ports: [{ host: meta?.defaultPort ?? 3000, container: meta?.defaultPort ?? 3000 }],
+            healthCheck: { test: ["CMD", "wget", "--spider", "-q", `http://localhost:${meta?.defaultPort ?? 3000}/health`], interval: "30s", timeout: "3s", retries: 3, startPeriod: "40s" },
+            restart: "unless-stopped",
+            init: true,
+            build: { context: `./${id}` },
+          };
+        } else {
+          const svcDef = getService(id);
+          state.services[id] = {
+            id,
+            category: (svcDef?.category ?? "database") as any,
+            image: svcDef?.image,
+            tag: svcDef?.recommended,
+            ports: (svcDef?.compose.ports as any[]) ?? [],
+            volumes: (svcDef?.compose.volumes as any[]) ?? [],
+            envVars: (svcDef?.compose.env as any[]) ?? [],
+            restart: "unless-stopped",
+          };
+        }
+        save();
+        render();
+        document.getElementById("ms-add-menu")!.classList.add("hidden");
+      });
+    });
+  }
+
+  document.getElementById("ms-add-search")?.addEventListener("input", (e) => {
+    renderAddResults((e.target as HTMLInputElement).value);
+  });
+
+  document.getElementById("ms-modal-close")!.addEventListener("click", closeModal);
+  document.getElementById("ms-modal-cancel")!.addEventListener("click", closeModal);
+  document.getElementById("ms-modal-overlay")!.addEventListener("click", (e) => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById("ms-modal-save")!.addEventListener("click", () => {
+    const result = readModalForm();
+    if (!result) { alert("Invalid service ID (lowercase alphanumeric + dashes only)"); return; }
+    if (state.modal.isNew && state.services[result.id]) { alert(`Service "${result.id}" already exists`); return; }
+    // Check for collision when renaming an existing service
+    if (!state.modal.isNew && state.modal.editingId && state.modal.editingId !== result.id && state.services[result.id]) {
+      alert(`Service "${result.id}" already exists. Choose a different ID.`);
+      return;
+    }
+    if (!state.modal.isNew && state.modal.editingId && state.modal.editingId !== result.id) { delete state.services[state.modal.editingId]; }
+    state.services[result.id] = result.svc;
+    save(); render(); closeModal();
+  });
+  document.getElementById("ms-modal-delete")!.addEventListener("click", () => {
+    if (state.modal.editingId) { delete state.services[state.modal.editingId]; save(); render(); closeModal(); }
+  });
+
+  document.getElementById("ms-project-name")!.addEventListener("input", (e) => { state.projectName = (e.target as HTMLInputElement).value || "my-app"; save(); render(); });
+  document.getElementById("ms-description")!.addEventListener("input", (e) => { state.description = (e.target as HTMLInputElement).value; save(); render(); });
+  document.getElementById("ms-use-env")!.addEventListener("change", (e) => { state.useEnvFile = (e.target as HTMLInputElement).checked; save(); render(); });
+  document.getElementById("ms-pin-tags")!.addEventListener("change", (e) => { state.pinAllTags = (e.target as HTMLInputElement).checked; save(); render(); });
+
+  document.getElementById("ms-download-zip")!.addEventListener("click", async () => {
+    const cfg = getConfig();
+    const blob = await zipMicroserviceExport(cfg);
+    const url = URL.createObjectURL(new Blob([blob], { type: "application/zip" }));
+    const a = document.createElement("a"); a.href = url; a.download = `${cfg.projectName}.zip`; a.click(); URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("ms-download-all")!.addEventListener("click", async () => {
+    const cfg = getConfig();
+    const files: Record<string, string> = { "compose.yaml": generateMicroserviceCompose(cfg), ".env.example": generateMicroserviceEnv(cfg) };
+    if (state.includeReadme) files["README.md"] = generateMicroserviceReadme(cfg);
+    for (const id of applicationServiceIds(cfg)) { const df = generateMicroserviceDockerfile(id, cfg); if (df) files[`${id}/Dockerfile`] = df; }
+    let i = 0;
+    for (const [name, content] of Object.entries(files)) {
+      setTimeout(() => { const blob = new Blob([content], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url); }, i * 200);
+      i++;
+    }
+  });
+
+  // Restore state
+  (function restore() {
+    const pn = document.getElementById("ms-project-name") as HTMLInputElement | null;
+    if (pn) pn.value = state.projectName;
+    const desc = document.getElementById("ms-description") as HTMLInputElement | null;
+    if (desc) desc.value = state.description;
+    const useEnv = document.getElementById("ms-use-env") as HTMLInputElement | null;
+    if (useEnv) useEnv.checked = state.useEnvFile;
+    const pinTags = document.getElementById("ms-pin-tags") as HTMLInputElement | null;
+    if (pinTags) pinTags.checked = state.pinAllTags;
+    if (Object.keys(state.services).length > 0) {
+      document.getElementById("phase-select")!.classList.add("hidden");
+      document.getElementById("phase-config")!.classList.remove("hidden");
+    }
+    render();
+  })();
+</script>

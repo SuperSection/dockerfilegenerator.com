@@ -4,12 +4,12 @@ import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import Container from "../components/ui/Container.astro";
 import Badge from "../components/ui/Badge.astro";
-import StackBuilder from "../components/StackBuilder.astro";
+import MicroserviceBuilder from "../components/MicroserviceBuilder.astro";
 ---
 
 <Layout
-  title="Full Stack Builder — Docker Compose for any stack"
-  description="Generate a complete Docker setup for your full-stack application. Frontend, backend, database, and optional services. Dockerfile + docker-compose.yml + .env.example in one click."
+  title="Architecture Builder — Docker for any stack"
+  description="Generate Docker setup for monolithic, two-tier, three-tier, or microservice architectures. Pick your architecture, configure services, and get production-ready Dockerfiles + docker-compose.yml."
 >
   <Nav />
   <main id="main" class="relative">
@@ -17,12 +17,12 @@ import StackBuilder from "../components/StackBuilder.astro";
       <div class="absolute inset-x-0 top-0 -z-10 h-[320px] mesh-gradient-sm"></div>
       <Container>
         <div class="text-center">
-          <Badge variant="new" class="mb-4">Full-stack in one click</Badge>
+          <Badge variant="new" class="mb-4">Architecture generator</Badge>
           <h1 class="t-display-xl mx-auto max-w-3xl text-[var(--color-ink)]">
-            Full stack, fully containerized.
+            Docker for any architecture.
           </h1>
           <p class="t-body-lg mx-auto mt-4 max-w-2xl text-[var(--color-body)]">
-            Pick your frontend, backend, database, and optional services. Get a production-ready Docker setup — Dockerfile, docker-compose.yml, and .env.example — generated for you.
+            Choose your architecture. Configure services. Get production-ready Dockerfiles and docker-compose.yml.
           </p>
         </div>
       </Container>
@@ -30,7 +30,7 @@ import StackBuilder from "../components/StackBuilder.astro";
 
     <section class="py-12 md:py-20">
       <Container>
-        <StackBuilder />
+        <MicroserviceBuilder />
       </Container>
     </section>
   </main>

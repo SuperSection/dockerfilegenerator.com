@@ -300,13 +300,35 @@ export const generateStackCompose = (cfg: StackConfig): string => {
     if (cfg.database) {
       const db = DATABASES[cfg.database];
       const urlKey = db.dependsOnEnvVar;
-      const url = buildConnectionString(db.id);
-      envLines.push(`      ${urlKey}: ${JSON.stringify(url)}`);
+      if (cfg.useEnvFile) {
+        envLines.push(`      ${urlKey}: "\${${urlKey}}"`);
+      } else {
+        const url = buildConnectionString(db.id);
+        envLines.push(`      ${urlKey}: ${JSON.stringify(url)}`);
+      }
     }
     cfg.optional.forEach((o) => {
-      if (o === "redis") envLines.push(`      REDIS_URL: ${JSON.stringify("redis://redis:6379")}`);
-      if (o === "rabbitmq") envLines.push(`      RABBITMQ_URL: ${JSON.stringify("amqp://guest:guest@rabbitmq:5672")}`);
-      if (o === "kafka") envLines.push(`      KAFKA_BROKERS: ${JSON.stringify("kafka:9092")}`);
+      if (o === "redis") {
+        if (cfg.useEnvFile) {
+          envLines.push(`      REDIS_URL: "\${REDIS_URL}"`);
+        } else {
+          envLines.push(`      REDIS_URL: ${JSON.stringify("redis://redis:6379")}`);
+        }
+      }
+      if (o === "rabbitmq") {
+        if (cfg.useEnvFile) {
+          envLines.push(`      RABBITMQ_URL: "\${RABBITMQ_URL}"`);
+        } else {
+          envLines.push(`      RABBITMQ_URL: ${JSON.stringify("amqp://guest:guest@rabbitmq:5672")}`);
+        }
+      }
+      if (o === "kafka") {
+        if (cfg.useEnvFile) {
+          envLines.push(`      KAFKA_BROKERS: "\${KAFKA_BROKERS}"`);
+        } else {
+          envLines.push(`      KAFKA_BROKERS: ${JSON.stringify("kafka:9092")}`);
+        }
+      }
     });
 
     const deps: string[] = [];
@@ -359,7 +381,9 @@ export const generateStackCompose = (cfg: StackConfig): string => {
       `    - "${fe.port}:${fe.port}"`,
       ...(cfg.backend ? [
         `  environment:`,
-        `    API_URL: ${JSON.stringify(`http://backend:${BACKENDS[cfg.backend].port}`)}`,
+        cfg.useEnvFile
+          ? `    API_URL: "\${API_URL}"`
+          : `    API_URL: ${JSON.stringify(`http://backend:${BACKENDS[cfg.backend].port}`)}`,
       ] : []),
       ...(deps.length ? [
         `  depends_on:`,
@@ -514,14 +538,30 @@ export const generateStackEnv = (cfg: StackConfig): string => {
     lines.push(`${urlKey}=${buildConnectionString(db.id)}`);
     lines.push("");
   }
+  if (cfg.backend) {
+    const be = BACKENDS[cfg.backend];
+    lines.push(`# Backend`);
+    lines.push(`API_URL=http://backend:${be.port}`);
+    lines.push("");
+  }
   cfg.optional.forEach((o) => {
-    if (o === "redis") lines.push(`REDIS_URL=redis://redis:6379`);
+    if (o === "redis") {
+      lines.push(`# Redis`);
+      lines.push(`REDIS_URL=redis://redis:6379`);
+      lines.push("");
+    }
     if (o === "rabbitmq") {
+      lines.push(`# RabbitMQ`);
       lines.push(`RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672`);
       lines.push(`RABBITMQ_USER=guest`);
       lines.push(`RABBITMQ_PASSWORD=guest`);
+      lines.push("");
     }
-    if (o === "kafka") lines.push(`KAFKA_BROKERS=kafka:9092`);
+    if (o === "kafka") {
+      lines.push(`# Kafka`);
+      lines.push(`KAFKA_BROKERS=kafka:9092`);
+      lines.push("");
+    }
   });
   return lines.join("\n");
 };
