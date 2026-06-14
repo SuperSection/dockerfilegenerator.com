@@ -1,6 +1,4 @@
 ---
-import { PRESET_LIST } from "../lib/microservice/presets";
-import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
 ---
 
 <div id="microservice-builder" class="space-y-6">
@@ -202,15 +200,36 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
 
 <style>
   .arch-card[data-active="true"] { border-color: var(--color-primary-cta); background: var(--color-primary-cta); color: var(--color-primary-cta-fg); }
-  .toggle { appearance: none; width: 36px; height: 20px; background: var(--color-hairline-strong); border-radius: 9999px; position: relative; cursor: pointer; transition: background 150ms ease; flex-shrink: 0; }
-  .toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--color-canvas); border-radius: 9999px; transition: transform 150ms ease; }
-  .toggle:checked { background: var(--color-primary-cta); }
-  .toggle:checked::after { transform: translateX(16px); background: var(--color-primary-cta-fg); }
   .service-card { transition: border-color 150ms ease; cursor: pointer; }
   .service-card:hover { border-color: var(--color-hairline-strong); }
-  @keyframes copyPulse { 0% { background-color: var(--color-link-bg-soft); color: var(--color-link); } 100% { background-color: var(--color-canvas); color: var(--color-ink); } }
-  .copy-pulse { animation: copyPulse 600ms ease-out; }
   .df-tab { transition: background 150ms ease, color 150ms ease; }
+
+  /* Desktop: bump text sizes for readability */
+  @media (min-width: 1024px) {
+    #microservice-builder .t-body-sm {
+      font-size: 15px;
+      line-height: 22px;
+    }
+    #microservice-builder .t-body-sm-strong {
+      font-size: 15px;
+      line-height: 22px;
+    }
+    #microservice-builder .t-caption {
+      font-size: 13px;
+      line-height: 18px;
+    }
+    #microservice-builder .t-caption-mono {
+      font-size: 13px;
+      line-height: 18px;
+    }
+    #microservice-builder .cfg-section-label {
+      font-size: 12px;
+    }
+    #microservice-builder .code-panel {
+      font-size: 14px;
+      line-height: 22px;
+    }
+  }
 </style>
 
 <script>
@@ -225,8 +244,6 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
   import { getService, listServices } from "../registry";
   import type { MicroserviceConfig, ServiceOverride, ServiceCategory } from "../lib/microservice/schema";
 
-  const STORAGE_KEY = "microservice-builder-v3";
-  const ARCH_STORAGE_KEY = "microservice-arch-v2";
   const categoryEmoji: Record<string, string> = { application: "🚀", database: "🗄️", cache: "⚡", search: "🔍", queue: "📨", proxy: "🌐", storage: "📦", monitoring: "📈" };
 
   type TabId = "compose" | "env" | "readme" | `df-${string}`;
@@ -413,7 +430,18 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
         const targetId = btn.dataset.copyContent!;
         const target = document.getElementById(targetId);
         const text = target?.textContent ?? "";
-        await navigator.clipboard.writeText(text);
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+        }
         const label = btn.querySelector(".t-caption");
         const orig = label?.textContent ?? "Copy";
         if (label) label.textContent = "✓ Copied";
@@ -462,8 +490,39 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     const vList = document.getElementById("ms-validation-list");
     if (issues.length && vEl && vList) {
       vEl.classList.remove("hidden");
-      const colors: Record<string, string> = { error: "text-red-500", warning: "text-amber-500", info: "text-blue-500" };
-      vList.innerHTML = issues.map((i) => `<div class="t-caption ${colors[i.level]}">${i.service ? `[${i.service}] ` : ""}${i.title}: ${i.message}</div>`).join("");
+      const hasErrors = issues.some(i => i.level === "error");
+      const hasWarnings = issues.some(i => i.level === "warning");
+      const hasInfo = issues.some(i => i.level === "info");
+      const summaryParts: string[] = [];
+      if (hasErrors) summaryParts.push(`${issues.filter(i => i.level === "error").length} error${issues.filter(i => i.level === "error").length === 1 ? "" : "s"}`);
+      if (hasWarnings) summaryParts.push(`${issues.filter(i => i.level === "warning").length} warning${issues.filter(i => i.level === "warning").length === 1 ? "" : "s"}`);
+      if (hasInfo) summaryParts.push(`${issues.filter(i => i.level === "info").length} info`);
+      const summaryColor = hasErrors ? "bg-[var(--color-error-soft)] text-[var(--color-error-deep)]" : hasWarnings ? "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]" : "bg-[var(--color-link-bg-soft)] text-[var(--color-link)]";
+      vList.innerHTML = `
+        <div class="flex items-center gap-2 mb-3">
+          <span class="inline-flex items-center gap-1.5 t-body-sm-strong rounded-full px-3 py-1 ${summaryColor}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            ${summaryParts.join(" and ")}
+          </span>
+        </div>
+        <div class="space-y-2">
+          ${issues.map(i => {
+            const border = i.level === "error" ? "border-l-[var(--color-error-deep)]" : i.level === "warning" ? "border-l-[var(--color-warning-deep)]" : "border-l-[var(--color-link)]";
+            const bg = i.level === "error" ? "bg-[var(--color-error-soft)]" : i.level === "warning" ? "bg-[var(--color-warning-soft)]" : "bg-[var(--color-link-bg-soft)]";
+            const badgeBg = i.level === "error" ? "bg-[var(--color-error-soft)] text-[var(--color-error-deep)]" : i.level === "warning" ? "bg-[var(--color-warning-soft)] text-[var(--color-warning-deep)]" : "bg-[var(--color-link-bg-soft)] text-[var(--color-link)]";
+            const serviceBadge = i.service ? `<span class="inline-flex items-center rounded-md bg-[var(--color-canvas-soft-2)] px-1.5 py-0.5 t-body-sm text-[var(--color-ink)]">${i.service}</span>` : "";
+            return `<div class="flex items-start gap-3 rounded-md border-l-[3px] ${border} ${bg} px-4 py-3">
+              <span class="t-caption-mono rounded-full px-1.5 py-0.5 shrink-0 mt-0.5 ${badgeBg}">${i.level}</span>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  ${serviceBadge}
+                  <span class="t-body-sm-strong text-[var(--color-ink)]">${i.title}</span>
+                </div>
+                <p class="t-body-sm text-[var(--color-body)] mt-1 leading-relaxed">${i.message}</p>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>`;
     } else if (vEl) vEl.classList.add("hidden");
   }
 
@@ -814,8 +873,8 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
   document.getElementById("ms-download-zip")!.addEventListener("click", async () => {
     const cfg = getConfig();
     const blob = await zipMicroserviceExport(cfg);
-    const url = URL.createObjectURL(new Blob([blob], { type: "application/zip" }));
-    const a = document.createElement("a"); a.href = url; a.download = `${cfg.projectName}.zip`; a.click(); URL.revokeObjectURL(url);
+    const url = URL.createObjectURL(new Blob([new Uint8Array(blob)], { type: "application/zip" }));
+    const a = document.createElement("a"); a.href = url; a.download = `${cfg.projectName}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
 
   document.getElementById("ms-download-all")!.addEventListener("click", async () => {
@@ -825,7 +884,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     for (const id of applicationServiceIds(cfg)) { const df = generateMicroserviceDockerfile(id, cfg); if (df) files[`${id}/Dockerfile`] = df; }
     let i = 0;
     for (const [name, content] of Object.entries(files)) {
-      setTimeout(() => { const blob = new Blob([content], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url); }, i * 200);
+      setTimeout(() => { const blob = new Blob([content], { type: "text/plain" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }, i * 200);
       i++;
     }
   });

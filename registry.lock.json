@@ -1,8 +1,44 @@
 {
   "schemaVersion": 1,
-  "lastSync": "2026-06-08T10:51:38.289Z",
-  "entryCount": 11,
+  "lastSync": "2026-06-11T18:53:05.094Z",
+  "entryCount": 26,
   "entries": [
+    {
+      "id": "adminer",
+      "image": "adminer",
+      "providerResults": {
+        "dockerhub": {
+          "count": 123,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "4.8.1",
+      "latest": "5.4.2"
+    },
+    {
+      "id": "caddy",
+      "image": "caddy",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "2-alpine",
+      "latest": "2.11.4-alpine"
+    },
     {
       "id": "elasticsearch",
       "image": "docker.elastic.co/elasticsearch/elasticsearch",
@@ -10,6 +46,77 @@
       "tagCount": 4,
       "recommended": "8.13.0",
       "latest": "8.15.0"
+    },
+    {
+      "id": "envoy",
+      "image": "envoyproxy/envoy",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "v1.31-alpine",
+      "latest": "v1.38.2"
+    },
+    {
+      "id": "grafana",
+      "image": "grafana/grafana",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "11.2.0",
+      "latest": "13.1.0-24220292042"
+    },
+    {
+      "id": "haproxy",
+      "image": "haproxy",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "3.0-alpine",
+      "latest": "3.4-alpine3.23"
+    },
+    {
+      "id": "jaeger",
+      "image": "jaegertracing/all-in-one",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 100,
+          "ok": true
+        }
+      },
+      "tagCount": 30,
+      "recommended": "1.62",
+      "latest": "1.76.0"
     },
     {
       "id": "kafka",
@@ -20,29 +127,210 @@
       "latest": "3.9.2"
     },
     {
-      "id": "mariadb",
-      "image": "mariadb",
+      "id": "keycloak",
+      "image": "quay.io/keycloak/keycloak",
       "providerResults": {
         "dockerhub": {
           "count": 0,
           "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mariadb/tags/?page_size=100"
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/quay.io/keycloak/keycloak/tags/?page_size=100"
         },
         "github": {
           "count": 0,
-          "ok": true
+          "ok": true,
+          "skipped": "no github repo mapping"
         }
       },
       "tagCount": 1,
+      "recommended": "25.0",
+      "latest": "25.0"
+    },
+    {
+      "id": "kong",
+      "image": "kong",
+      "providerResults": {
+        "dockerhub": {
+          "count": 473,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "3.8-alpine",
+      "latest": "3.9.2"
+    },
+    {
+      "id": "loki",
+      "image": "grafana/loki",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "3.3.0",
+      "latest": "3.7.2-amd64"
+    },
+    {
+      "id": "mailhog",
+      "image": "mailhog/mailhog",
+      "providerResults": {
+        "dockerhub": {
+          "count": 3,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 3,
+      "recommended": "v1.0.1",
+      "latest": "v1.0.1"
+    },
+    {
+      "id": "mariadb",
+      "image": "mariadb",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
       "recommended": "11.4",
-      "latest": "11.4"
+      "latest": "12.3.2"
     },
     {
       "id": "minio",
       "image": "minio/minio",
       "providerResults": {
         "dockerhub": {
-          "count": 1181,
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "RELEASE.2024-10-13T13-34-11Z",
+      "latest": "RELEASE.2024-10-13T13-34-11Z"
+    },
+    {
+      "id": "mongo-express",
+      "image": "mongo-express",
+      "providerResults": {
+        "dockerhub": {
+          "count": 67,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "1.0.2",
+      "latest": "1.0.2-20"
+    },
+    {
+      "id": "mongodb",
+      "image": "mongo",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "8",
+      "latest": "8.3.3"
+    },
+    {
+      "id": "mysql",
+      "image": "mysql",
+      "providerResults": {
+        "dockerhub": {
+          "count": 363,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "8.4",
+      "latest": "9.7"
+    },
+    {
+      "id": "nats",
+      "image": "nats",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "2.10-alpine",
+      "latest": "2.14.2-alpine"
+    },
+    {
+      "id": "nginx",
+      "image": "nginx",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "1.27-alpine",
+      "latest": "1.31.1-alpine-otel"
+    },
+    {
+      "id": "otel-collector",
+      "image": "otel/opentelemetry-collector-contrib",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
           "ok": true
         },
         "github": {
@@ -51,129 +339,109 @@
         }
       },
       "tagCount": 30,
-      "recommended": "RELEASE.2024-10-13T13-34-11Z",
-      "latest": "RELEASE.2024-10-13T13-34-11Z"
-    },
-    {
-      "id": "mongodb",
-      "image": "mongo",
-      "providerResults": {
-        "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mongo/tags/?page_size=100"
-        },
-        "github": {
-          "count": 0,
-          "ok": true
-        }
-      },
-      "tagCount": 1,
-      "recommended": "8",
-      "latest": "8"
-    },
-    {
-      "id": "mysql",
-      "image": "mysql",
-      "providerResults": {
-        "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/mysql/tags/?page_size=100"
-        },
-        "github": {
-          "count": 0,
-          "ok": true
-        }
-      },
-      "tagCount": 1,
-      "recommended": "8.4",
-      "latest": "8.4"
-    },
-    {
-      "id": "nginx",
-      "image": "nginx",
-      "providerResults": {
-        "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/nginx/tags/?page_size=100"
-        },
-        "github": {
-          "count": 0,
-          "ok": true
-        }
-      },
-      "tagCount": 1,
-      "recommended": "1.27-alpine",
-      "latest": "1.27-alpine"
+      "recommended": "0.110.0",
+      "latest": "0.154.0-armv7"
     },
     {
       "id": "postgres",
       "image": "postgres",
       "providerResults": {
         "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/postgres/tags/?page_size=100"
+          "count": 500,
+          "ok": true
         },
         "github": {
           "count": 0,
+          "ok": true,
+          "skipped": "no github repo mapping"
+        }
+      },
+      "tagCount": 30,
+      "recommended": "17-alpine",
+      "latest": "18.4-alpine"
+    },
+    {
+      "id": "prometheus",
+      "image": "prom/prometheus",
+      "providerResults": {
+        "dockerhub": {
+          "count": 382,
+          "ok": true
+        },
+        "github": {
+          "count": 100,
           "ok": true
         }
       },
-      "tagCount": 1,
-      "recommended": "17-alpine",
-      "latest": "17-alpine"
+      "tagCount": 30,
+      "recommended": "v2.54.1",
+      "latest": "v3.12.0-busybox"
+    },
+    {
+      "id": "promtail",
+      "image": "grafana/promtail",
+      "providerResults": {
+        "dockerhub": {
+          "count": 500,
+          "ok": true
+        },
+        "github": {
+          "count": 100,
+          "ok": true
+        }
+      },
+      "tagCount": 30,
+      "recommended": "3.3.0",
+      "latest": "3.6.11-amd64"
     },
     {
       "id": "rabbitmq",
       "image": "rabbitmq",
       "providerResults": {
         "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/rabbitmq/tags/?page_size=100"
+          "count": 500,
+          "ok": true
         },
         "github": {
           "count": 0,
-          "ok": true
+          "ok": true,
+          "skipped": "no github repo mapping"
         }
       },
-      "tagCount": 1,
+      "tagCount": 30,
       "recommended": "4.0-management-alpine",
-      "latest": "4.0-management-alpine"
+      "latest": "4.3.1"
     },
     {
       "id": "redis",
       "image": "redis",
       "providerResults": {
         "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/redis/tags/?page_size=100"
+          "count": 500,
+          "ok": true
         },
         "github": {
           "count": 0,
-          "ok": true
+          "ok": true,
+          "skipped": "no github repo mapping"
         }
       },
-      "tagCount": 1,
+      "tagCount": 30,
       "recommended": "7.4-alpine",
-      "latest": "7.4-alpine"
+      "latest": "8.8-m03-alpine"
     },
     {
       "id": "traefik",
       "image": "traefik",
       "providerResults": {
         "dockerhub": {
-          "count": 0,
-          "ok": false,
-          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/traefik/tags/?page_size=100"
+          "count": 500,
+          "ok": true
         },
         "github": {
           "count": 0,
-          "ok": true
+          "ok": true,
+          "skipped": "no github repo mapping"
         }
       },
       "tagCount": 3,

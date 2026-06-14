@@ -521,3 +521,43 @@ html.dark {
     background-color: color-mix(in oklab, var(--color-canvas-soft) 80%, transparent);
   }
 }
+
+/* Toggle checkbox — shared across all components */
+.toggle {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  background: var(--color-hairline-strong);
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  transition: background 150ms ease;
+  flex-shrink: 0;
+}
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: var(--color-canvas);
+  border-radius: 9999px;
+  transition: transform 150ms ease, background 150ms ease;
+}
+.toggle:checked {
+  background: var(--color-primary-cta);
+}
+.toggle:checked::after {
+  transform: translateX(16px);
+  background: var(--color-primary-cta-fg);
+}
+
+/* Copy pulse animation — shared across all components */
+@keyframes copyPulse {
+  0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
+  100% { background-color: var(--color-canvas); color: var(--color-ink); }
+}
+.copy-pulse {
+  animation: copyPulse 600ms ease-out;
+}

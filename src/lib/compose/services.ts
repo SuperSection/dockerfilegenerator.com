@@ -118,6 +118,9 @@ export const CATEGORY_LABELS: Record<ServiceCategory, string> = {
   proxy: "Reverse Proxy",
   storage: "Storage",
   monitoring: "Monitoring",
+  observability: "Observability",
+  auth: "Auth",
+  "ci-dev": "CI/CD",
 };
 
 export const CATEGORY_ORDER: ReadonlyArray<ServiceCategory> = [
@@ -129,4 +132,7 @@ export const CATEGORY_ORDER: ReadonlyArray<ServiceCategory> = [
   "proxy",
   "storage",
   "monitoring",
+  "observability",
+  "auth",
+  "ci-dev",
 ];

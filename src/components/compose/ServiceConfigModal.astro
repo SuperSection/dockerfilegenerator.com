@@ -17,15 +17,12 @@
  * StackBuilder, so behavior stays consistent across the app.
  */
 import type { ServiceConfig } from "~/lib/compose/services";
-import { availableTags } from "~/registry";
-import type { VersionSelection } from "~/registry";
 
 interface Props {
   /** The set of services this modal can edit. */
   services: ReadonlyArray<ServiceConfig>;
 }
 
-const { services } = Astro.props;
 const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as const;
 ---
 
@@ -149,7 +146,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
    * not import the parent's state directly. That keeps the modal
    * decoupled and reusable across Compose + Stack Builder.
    */
-  import { availableTags, resolveVersion, validateTag } from "~/registry";
+  import { resolveVersion, validateTag } from "~/registry";
   import type { VersionSelection } from "~/registry";
   import { SERVICES, type ServiceConfig } from "~/lib/compose/services";
 

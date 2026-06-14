@@ -25,9 +25,7 @@ export interface DockerfileConfig {
   goVersion?: string;
 }
 
-const BLOCK = (s: string) => s.trim();
-
-const installNodeDeps = (pm: PackageManager, lockfile: string) => {
+const installNodeDeps = (pm: PackageManager) => {
   switch (pm) {
     case "yarn":
       return `COPY package.json yarn.lock ./\nRUN yarn install --frozen-lockfile`;
@@ -77,8 +75,6 @@ const alpineUserBlock = `RUN addgroup -g 1001 -S appuser && \\\n    adduser -u 1
 const generateNode = (config: DockerfileConfig): string => {
   const fw = getFramework(config.framework);
   const port = config.port;
-  const workdir = config.workdir;
-  const buildDir = fw.id === "nextjs" || fw.id === "nestjs" ? "dist" : "build";
 
   // Next.js with standalone output
   if (fw.id === "nextjs" && config.buildOptimizations.includes("standalone")) {
@@ -88,7 +84,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("# ---- Dependencies ----");
     lines.push(`FROM ${config.baseImage} AS deps`);
     lines.push("WORKDIR /app");
-    lines.push(installNodeDeps(config.packageManager, "package-lock.json"));
+    lines.push(installNodeDeps(config.packageManager));
     lines.push("");
     lines.push("# ---- Builder ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
@@ -155,7 +151,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("# ---- Dependencies ----");
     lines.push(`FROM ${config.baseImage} AS deps`);
     lines.push("WORKDIR /app");
-    lines.push(installNodeDeps(config.packageManager, "package-lock.json"));
+    lines.push(installNodeDeps(config.packageManager));
     lines.push("");
     lines.push("# ---- Build ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
@@ -206,7 +202,7 @@ const generateNode = (config: DockerfileConfig): string => {
   if (config.nonRootUser) {
     lines.push(config.baseImage.includes("alpine") ? alpineUserBlock : userBlock);
   }
-  lines.push(installNodeDeps(config.packageManager, "package-lock.json"));
+  lines.push(installNodeDeps(config.packageManager));
   lines.push("COPY . .");
   lines.push("EXPOSE " + port);
   if (config.healthCheck) {
@@ -417,7 +413,6 @@ const generateRust = (config: DockerfileConfig): string => {
  * PHP / Laravel — PHP-FPM
  * ─────────────────────────────────────────────────────── */
 const generatePhp = (config: DockerfileConfig): string => {
-  const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
   lines.push("# ---- Composer deps ----");
@@ -459,7 +454,6 @@ const generatePhp = (config: DockerfileConfig): string => {
  * Entry point
  * ─────────────────────────────────────────────────────── */
 export const generateDockerfile = (config: DockerfileConfig): string => {
-  const fw = getFramework(config.framework);
   const langGroup = ["node", "express", "nestjs", "nextjs", "react", "vue"];
   const pythonGroup = ["python", "django", "fastapi", "flask"];
   const javaGroup = ["java", "springboot"];

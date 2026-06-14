@@ -93,6 +93,21 @@ const isFloating = (tag) =>
   ["latest", "stable", "nightly", "lts", "edge"].includes(tag) ||
   /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.test(tag);
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Mapping from Docker image name → GitHub {owner}/{repo}.
+ * Only images whose GitHub repo differs from their Docker image name
+ * need an entry here. Images not listed are skipped by the GitHub
+ * provider (it can't resolve them).
+ */
+const GITHUB_REPO_MAP = {
+  "jaegertracing/all-in-one": "jaegertracing/jaeger",
+  "prom/prometheus": "prometheus/prometheus",
+  "grafana/promtail": "grafana/loki",
+  "otel/opentelemetry-collector-contrib": "open-telemetry/opentelemetry-collector-contrib",
+};
+
 // ── Load all seeds ─────────────────────────────────────────────
 
 const loadSeeds = async () => {
@@ -129,13 +144,30 @@ const buildRegistry = async (seeds) => {
       // we still aggregate in `providerResults` for the lock file.
       for (const provider of PROVIDERS) {
         if (provider.id === "static") continue;
+
+        // Skip GitHub provider for images that don't map to a GitHub repo
+        if (provider.id === "github") {
+          const ghRepo = GITHUB_REPO_MAP[seed.image];
+          if (!ghRepo) {
+            providerResults[provider.id] = { count: 0, ok: true, skipped: "no github repo mapping" };
+            await sleep(100);
+            continue;
+          }
+        }
+
         try {
-          const t = await provider.fetchTags(seed.image);
+          const fetchImage = provider.id === "github"
+            ? (GITHUB_REPO_MAP[seed.image] ?? seed.image)
+            : seed.image;
+          const t = await provider.fetchTags(fetchImage);
           providerResults[provider.id] = { count: t.length, ok: true };
           if (t.length && !tags.length) tags = [...t];
         } catch (e) {
           providerResults[provider.id] = { count: 0, ok: false, error: String(e?.message ?? e) };
         }
+
+        // Delay between providers to respect rate limits
+        await sleep(100);
       }
     }
 
@@ -186,6 +218,9 @@ const buildRegistry = async (seeds) => {
       recommended,
       latest: latestStable.tag,
     });
+
+    // Delay between seeds to stay within DockerHub rate limits
+    await sleep(150);
   }
 
   return { registry, lockEntries };

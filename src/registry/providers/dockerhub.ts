@@ -17,19 +17,48 @@ const isFloating = (tag: string): boolean =>
   ["latest", "stable", "nightly", "lts", "edge"].includes(tag) ||
   /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.test(tag);
 
-/** Paged GET against hub.docker.com. */
-async function* paginate(pathname: string, pageSize = 100): AsyncGenerator<unknown[]> {
-  let url: string | null = `${BASE}${pathname}?page_size=${pageSize}`;
-  while (url) {
-    const res: Response = await fetch(url, {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Fetch with automatic retry on 429 (rate-limit) using exponential backoff. */
+async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(url, {
       headers: { Accept: "application/json" },
     });
+    if (res.status === 429 && attempt < retries) {
+      const retryAfter = res.headers.get("retry-after");
+      const waitMs = retryAfter
+        ? parseInt(retryAfter, 10) * 1000
+        : Math.min(30_000, 2000 * 2 ** attempt);
+      console.warn(`[dockerhub] 429 rate-limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${retries})`);
+      await sleep(waitMs);
+      continue;
+    }
+    return res;
+  }
+  throw new Error("DockerHub: max retries exceeded");
+}
+
+/** Normalize Docker Hub image path. Official images need a `library/` prefix. */
+function resolveDockerHubPath(image: string): string {
+  if (image.includes("/")) return image;
+  return `library/${image}`;
+}
+
+/** Paged GET against hub.docker.com. Stops after maxPages to avoid rate-limit exhaustion. */
+async function* paginate(pathname: string, pageSize = 100, maxPages = 5): AsyncGenerator<unknown[]> {
+  let url: string | null = `${BASE}${pathname}?page_size=${pageSize}`;
+  let pageCount = 0;
+  while (url && pageCount < maxPages) {
+    const res = await fetchWithRetry(url);
     if (!res.ok) {
       throw new Error(`DockerHub ${res.status} for ${url}`);
     }
     const body = (await res.json()) as { results?: unknown[]; next?: string | null };
     if (body.results?.length) yield body.results;
     url = body.next ?? null;
+    pageCount++;
+    if (url) await sleep(100);
   }
 }
 
@@ -38,8 +67,9 @@ export const dockerHubProvider: ImageProvider = {
 
   async fetchTags(image: string): Promise<ReadonlyArray<TagInfo>> {
     const out: TagInfo[] = [];
+    const path = resolveDockerHubPath(image);
     try {
-      for await (const page of paginate(`/${image}/tags/`)) {
+      for await (const page of paginate(`/${path}/tags/`)) {
         for (const r of page as Array<Record<string, unknown>>) {
           const name = String(r.name ?? "");
           if (!name) continue;
@@ -83,10 +113,8 @@ export const dockerHubProvider: ImageProvider = {
 
   async verifyExists(image: string, tag: string): Promise<boolean> {
     try {
-      const res = await fetch(`${BASE}/${image}/tags/${tag}/`, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
+      const path = resolveDockerHubPath(image);
+      const res = await fetchWithRetry(`${BASE}/${path}/tags/${tag}/`);
       return res.ok;
     } catch {
       return false;

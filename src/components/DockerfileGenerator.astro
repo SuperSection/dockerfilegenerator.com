@@ -249,36 +249,6 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
 </div>
 
 <style>
-  .toggle {
-    appearance: none;
-    width: 36px;
-    height: 20px;
-    background: var(--color-hairline-strong);
-    border-radius: 9999px;
-    position: relative;
-    cursor: pointer;
-    transition: background 150ms ease;
-    flex-shrink: 0;
-  }
-  .toggle::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--color-canvas);
-    border-radius: 9999px;
-    transition: transform 150ms ease, background 150ms ease;
-  }
-  .toggle:checked {
-    background: var(--color-primary-cta);
-  }
-  .toggle:checked::after {
-    transform: translateX(16px);
-    background: var(--color-primary-cta-fg);
-  }
-
   .framework-btn[data-active="true"] {
     border-color: var(--color-primary-cta);
     background: var(--color-canvas-soft-2);
@@ -320,15 +290,6 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     #code-ignore {
       animation: none;
     }
-  }
-
-  /* Soft pulse on the Copy button after click */
-  @keyframes copyPulse {
-    0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
-    100% { background-color: var(--color-canvas); color: var(--color-ink); }
-  }
-  .copy-pulse {
-    animation: copyPulse 600ms ease-out;
   }
 </style>
 
@@ -433,7 +394,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     return {
       framework: state.framework,
       baseImage: state.baseImage.trim() || FRAMEWORKS[state.framework].defaultBaseImage,
-      port: parseInt(state.port, 10) || FRAMEWORKS[state.framework].defaultPort,
+      port: Math.max(1, Math.min(65535, parseInt(state.port, 10) || FRAMEWORKS[state.framework].defaultPort)),
       workdir: state.workdir.trim() || FRAMEWORKS[state.framework].defaultWorkdir,
       packageManager: state.packageManager,
       multiStage: state.multiStage,
@@ -785,11 +746,20 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     a.href = url;
     a.download = name;
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   function copyToClipboard(text: string) {
-    return navigator.clipboard.writeText(text);
+    return navigator.clipboard.writeText(text).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    });
   }
 
   // Wire up framework buttons

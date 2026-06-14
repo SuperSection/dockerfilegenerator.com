@@ -38,7 +38,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             Production-ready Dockerfiles, generated in seconds.
           </h1>
           <p class="t-body-lg mx-auto mt-6 max-w-2xl text-[var(--color-body)]">
-            Pick your stack, tweak the options, and ship a multi-stage, security-scanned Dockerfile. Built-in best practices for Next.js, Spring Boot, FastAPI, Go, and 13 more frameworks.
+            Pick your stack, tweak the options, and ship a multi-stage, security-scanned Dockerfile. Built-in best practices for Next.js, Spring Boot, FastAPI, Go, and 18 more frameworks.
           </p>
           <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button href="#generator" size="lg">
@@ -50,7 +50,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             </Button>
           </div>
           <div class="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 t-caption text-[var(--color-body)]">
-            <span class="inline-flex items-center gap-1.5"><Icon name="check-circle" size={12} class="text-[var(--color-success)]" /> 16 frameworks</span>
+            <span class="inline-flex items-center gap-1.5"><Icon name="check-circle" size={12} class="text-[var(--color-success)]" /> 23 frameworks</span>
             <span class="inline-flex items-center gap-1.5"><Icon name="check-circle" size={12} class="text-[var(--color-success)]" /> Multi-stage builds</span>
             <span class="inline-flex items-center gap-1.5"><Icon name="check-circle" size={12} class="text-[var(--color-success)]" /> Best-practice scanner</span>
             <span class="inline-flex items-center gap-1.5"><Icon name="check-circle" size={12} class="text-[var(--color-success)]" /> Free download</span>
@@ -153,13 +153,14 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
       <Container>
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">Frameworks</p>
-          <h2 class="t-display-lg text-[var(--color-ink)]">Built for 16+ frameworks.</h2>
+          <h2 class="t-display-lg text-[var(--color-ink)]">Built for 23+ frameworks.</h2>
         </div>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
           {[
             "Node.js", "Express", "NestJS", "Next.js", "React", "Vue",
             "Python", "Django", "FastAPI", "Flask",
-            "Java", "Spring Boot", "Go", "Rust", "PHP", "Laravel",
+            "Java", "Spring Boot", "Quarkus", "Go", "Rust", "Actix",
+            "PHP", "Laravel", "Ruby", "Rails", ".NET", "Phoenix", "Gin",
           ].map((f) => (
             <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-3 text-center t-body-sm text-[var(--color-ink)]">{f}</div>
           ))}
@@ -232,7 +233,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             { q: "Can I import an existing Dockerfile?", a: "The scanner panel lets you review any generated Dockerfile against best practices. We're adding direct import for existing files in the next release." },
             { q: "Do you store my configurations?", a: "No. Everything runs in your browser. We don't send your selections, code, or configurations to any server." },
             { q: "Can I use this for production?", a: "Absolutely. Generated Dockerfiles follow the same patterns used by Vercel, Railway, and other production platforms. Always test before deploying." },
-            { q: "Which frameworks are supported?", a: "Currently 16: Node.js, Express, NestJS, Next.js, React, Vue, Python, Django, FastAPI, Flask, Java, Spring Boot, Go, Rust, PHP, and Laravel. More are added regularly." },
+            { q: "Which frameworks are supported?", a: "Currently 23: Node.js, Express, NestJS, Next.js, React, Vue, Python, Django, FastAPI, Flask, Java, Spring Boot, Quarkus, Go, Rust, Actix, PHP, Laravel, Ruby, Rails, .NET, Phoenix, and Gin. More are added regularly." },
           ].map((item, i) => (
             <details class="group p-5" open={i === 0}>
               <summary class="flex cursor-pointer list-none items-center justify-between gap-4">

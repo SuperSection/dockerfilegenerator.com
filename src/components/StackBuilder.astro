@@ -327,36 +327,6 @@ const stackServices: ServiceConfig[] = [
 </div>
 
 <style>
-  .toggle {
-    appearance: none;
-    width: 36px;
-    height: 20px;
-    background: var(--color-hairline-strong);
-    border-radius: 9999px;
-    position: relative;
-    cursor: pointer;
-    transition: background 150ms ease;
-    flex-shrink: 0;
-  }
-  .toggle::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--color-canvas);
-    border-radius: 9999px;
-    transition: transform 150ms ease, background 150ms ease;
-  }
-  .toggle:checked {
-    background: var(--color-primary-cta);
-  }
-  .toggle:checked::after {
-    transform: translateX(16px);
-    background: var(--color-primary-cta-fg);
-  }
-
   .frontend-btn[data-active="true"],
   .backend-btn[data-active="true"],
   .database-btn[data-active="true"] {
@@ -379,12 +349,6 @@ const stackServices: ServiceConfig[] = [
 
   /* Output panels: no animation on re-render to prevent content shift. */
   [id$="-code"] { transition: opacity 120ms ease; }
-
-  @keyframes copyPulse {
-    0%   { background-color: var(--color-link-bg-soft); color: var(--color-link); }
-    100% { background-color: var(--color-canvas); color: var(--color-ink); }
-  }
-  .copy-pulse { animation: copyPulse 600ms ease-out; }
 </style>
 
 <script>
@@ -622,7 +586,18 @@ const stackServices: ServiceConfig[] = [
       if (btn.dataset.flash === "1") return;
       const codeEl = document.getElementById(`${btn.dataset.target}-code`);
       const text = codeEl?.textContent ?? "";
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
 
       btn.dataset.flash = "1";
       const orig = btn.textContent;
@@ -655,7 +630,7 @@ const stackServices: ServiceConfig[] = [
         a.href = url;
         a.download = name;
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       }, i * 200);
     });
   });

@@ -160,13 +160,19 @@ const renderService = (
   const isAppService = base.isApp === true;
   const tagResolution = isAppService
     ? { tag: override.tag ?? base.defaultTag, source: "recommended" as const }
-    : resolveVersion(
-        name,
-        override.tagSelection
-          ?? (override.tag
-            ? ({ kind: "pinned", tag: override.tag } as const)
-            : ({ kind: "recommended" } as const)),
-      );
+    : (() => {
+        try {
+          return resolveVersion(
+            name,
+            override.tagSelection
+              ?? (override.tag
+                ? ({ kind: "pinned", tag: override.tag } as const)
+                : ({ kind: "recommended" } as const)),
+          );
+        } catch {
+          return { tag: override.tag ?? base.defaultTag, source: "fallback" as const };
+        }
+      })();
   const tag = tagResolution.tag;
   const command = override.command ?? base.defaultCommand;
   const includeHealthcheck = override.healthCheck ?? base.hasHealthcheck;
@@ -353,7 +359,7 @@ export const validateCompose = (config: ComposeConfig): ValidationIssue[] => {
           level: "warning",
           service: name,
           title: "Default credentials",
-          message: `${name} uses a default password. Set a strong secret via .env before deploying.`,
+          message: `${name} is using the default password <code>changeme</code>. Replace it with a strong secret via the .env file before deploying to production.`,
         });
       }
     });
@@ -366,7 +372,7 @@ export const validateCompose = (config: ComposeConfig): ValidationIssue[] => {
         level: "info",
         service: name,
         title: "No restart policy",
-        message: `${name} will not restart on failure. Set restart: unless-stopped for production.`,
+        message: `${name} will not restart if it crashes. Add <code>restart: unless-stopped</code> for production use.`,
       });
     }
   });
@@ -381,8 +387,8 @@ export const validateCompose = (config: ComposeConfig): ValidationIssue[] => {
         issues.push({
           level: "warning",
           service: svc,
-          title: "Database has no volume",
-          message: `${svc} will lose data on container restart. Add a named volume.`,
+          title: "No persistent volume",
+          message: `${svc} has no volume mounted. All data will be lost when the container is recreated. Add a named volume to persist data.`,
         });
       }
     }

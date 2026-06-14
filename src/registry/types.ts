@@ -15,7 +15,10 @@ export type ServiceCategory =
   | "queue"
   | "proxy"
   | "storage"
-  | "monitoring";
+  | "monitoring"
+  | "observability"
+  | "auth"
+  | "ci-dev";
 
 export interface PortMapping {
   readonly host: number;
@@ -83,6 +86,9 @@ export interface ServiceDefinition {
   readonly latest: string;
   /** Sorted DESC by publishedAt, trimmed to top 30. */
   readonly availableTags: ReadonlyArray<TagInfo>;
+
+  /** How the recommended/latest tags were determined. */
+  readonly versionSource?: "sync" | "manual";
 
   readonly compose: ComposeDefaults;
 }
