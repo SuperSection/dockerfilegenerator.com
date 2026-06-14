@@ -33,13 +33,17 @@
   --color-link-bg-soft: #d3e5ff;
 
   /* Semantic */
-  --color-success: #0070f3;
+  --color-success: #0ea559;
   --color-error: #ee0000;
   --color-error-soft: #f7d4d6;
   --color-error-deep: #c50000;
   --color-warning: #f5a623;
   --color-warning-soft: #ffefcf;
   --color-warning-deep: #ab570a;
+
+  /* Primary CTA (light mode) */
+  --color-primary-cta: #171717;
+  --color-primary-cta-fg: #ffffff;
 
   /* Gradient stops (atmospheric) */
   --grad-develop-start: #007cf0;
@@ -96,9 +100,8 @@
   color-scheme: light;
 }
 
-/* Dark mode = DEFAULT per user requirement */
-html.dark,
-html {
+/* Dark mode — only applies when .dark class is present on <html> */
+html.dark {
   --color-canvas: #0a0a0a;
   --color-canvas-soft: #000000;
   --color-canvas-soft-2: #171717;
@@ -117,6 +120,7 @@ html {
   --color-link-deep: #0070f3;
   --color-link-bg-soft: #0d2949;
 
+  --color-success: #34d058;
   --color-error-soft: #2a0e10;
   --color-error-deep: #ff4d4d;
   --color-warning-soft: #2a1e08;
@@ -316,6 +320,23 @@ body {
     font-size: 20px;
     line-height: 28px;
     letter-spacing: -0.6px;
+  }
+}
+@media (max-width: 480px) {
+  .t-display-xl {
+    font-size: 28px;
+    line-height: 34px;
+    letter-spacing: -1.12px;
+  }
+  .t-display-lg {
+    font-size: 22px;
+    line-height: 28px;
+    letter-spacing: -0.88px;
+  }
+  .t-display-md {
+    font-size: 18px;
+    line-height: 24px;
+    letter-spacing: -0.54px;
   }
 }
 
@@ -523,35 +544,35 @@ html.dark {
 }
 
 /* Toggle checkbox — shared across all components */
-.toggle {
-  appearance: none;
-  width: 36px;
-  height: 20px;
-  background: var(--color-hairline-strong);
-  border-radius: 9999px;
-  position: relative;
-  cursor: pointer;
-  transition: background 150ms ease;
-  flex-shrink: 0;
-}
-.toggle::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  background: var(--color-canvas);
-  border-radius: 9999px;
-  transition: transform 150ms ease, background 150ms ease;
-}
-.toggle:checked {
-  background: var(--color-primary-cta);
-}
-.toggle:checked::after {
-  transform: translateX(16px);
-  background: var(--color-primary-cta-fg);
-}
+  .toggle {
+    appearance: none;
+    width: 44px;
+    height: 24px;
+    background: var(--color-hairline-strong);
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    transition: background 150ms ease;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: var(--color-canvas);
+    border-radius: 9999px;
+    transition: transform 150ms ease, background 150ms ease;
+  }
+  .toggle:checked {
+    background: var(--color-primary-cta);
+  }
+  .toggle:checked::after {
+    transform: translateX(20px);
+    background: var(--color-primary-cta-fg);
+  }
 
 /* Copy pulse animation — shared across all components */
 @keyframes copyPulse {

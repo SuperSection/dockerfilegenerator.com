@@ -13,42 +13,82 @@ import Icon from "./ui/Icon.astro";
   >
     <Logo />
 
+    <!-- Desktop nav -->
     <div class="hidden items-center gap-1 md:flex">
       <a
         href="/"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
         >Dockerfile</a
       >
       <a
         href="/compose"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
         >Compose</a
       >
       <a
         href="/stack-builder"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
         >Stack Builder</a
       >
       <a
         href="https://docs.docker.com/compose/intro/compose-application-model/"
         target="_blank"
-        rel="noopener"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]"
+        rel="noopener noreferrer"
+        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
         >Docs</a
       >
     </div>
 
     <div class="flex items-center gap-2">
       <a
-        href="https://github.com/SuperSection"
+        href="https://github.com/SuperSection/generatedocker.com"
         target="_blank"
-        rel="noopener"
+        rel="noopener noreferrer"
         class="hidden h-9 items-center gap-2 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 t-body-sm-strong text-[var(--color-ink)] transition-colors hover:bg-[var(--color-canvas-soft-2)] sm:inline-flex"
       >
         <Icon name="github" size={14} />
         <span>Star</span>
       </a>
       <ThemeToggle />
+      <!-- Mobile hamburger -->
+      <button
+        type="button"
+        id="mobile-menu-btn"
+        class="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] text-[var(--color-ink)] md:hidden"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
     </div>
   </nav>
+
+  <!-- Mobile menu -->
+  <div
+    id="mobile-menu"
+    class="hidden border-t border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-4 md:hidden"
+  >
+    <div class="flex flex-col gap-1">
+      <a href="/" class="rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">Dockerfile</a>
+      <a href="/compose" class="rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">Compose</a>
+      <a href="/stack-builder" class="rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">Stack Builder</a>
+      <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">Docs</a>
+      <a href="https://github.com/SuperSection/generatedocker.com" target="_blank" rel="noopener noreferrer" class="rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">GitHub</a>
+    </div>
+  </div>
 </header>
+
+<script is:inline>
+  document.getElementById("mobile-menu-btn")?.addEventListener("click", () => {
+    const menu = document.getElementById("mobile-menu");
+    const btn = document.getElementById("mobile-menu-btn");
+    if (!menu || !btn) return;
+    const isOpen = menu.classList.toggle("hidden") === false;
+    btn.setAttribute("aria-expanded", String(isOpen));
+  });
+</script>

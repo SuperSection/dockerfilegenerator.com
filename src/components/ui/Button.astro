@@ -49,7 +49,7 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-[13px] rounded-md",
+  sm: "h-10 px-3 text-[13px] rounded-md min-h-[44px]",
   md: "h-10 px-4 text-sm rounded-full",
   lg: "h-12 px-6 text-base rounded-full",
 };
@@ -62,8 +62,8 @@ const sizes: Record<Size, string> = {
   aria-label={ariaLabel}
   target={target}
   rel={rel}
-  disabled={disabled}
-  class:list={[base, variants[variant], sizes[size], className]}
+  {...!href && disabled ? { disabled: true } : {}}
+  class:list={[base, variants[variant], sizes[size], disabled && !href && "opacity-50 pointer-events-none", className]}
 >
   <slot />
 </Tag>

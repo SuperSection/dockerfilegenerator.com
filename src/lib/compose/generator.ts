@@ -208,7 +208,7 @@ const renderService = (
   // at startup, so an explicit `env_file: .env` directive would be redundant.
   if (envVars.length) parts.push(renderEnv(envVars, useEnvFile));
   if (base.dependsOn && base.dependsOn.length) parts.push(renderDependsOn(base.dependsOn));
-  if (includeHealthcheck) parts.push(renderHealthcheck(base));
+  if (includeHealthcheck) parts.push(renderHealthcheck(base, ports[0]?.container));
   if (command && command.length) {
     const cmdStr = command.map((c) => JSON.stringify(c)).join(", ");
     parts.push(`${indent(2)}command: [${cmdStr}]`);

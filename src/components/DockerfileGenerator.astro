@@ -23,7 +23,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
               id="framework-search"
               placeholder="Search framework…"
               aria-label="Search frameworks"
-              class="w-44 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] py-1.5 pl-7 pr-2 t-body-sm text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-ink)] focus:outline-none"
+              class="w-full max-w-[176px] rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] py-1.5 pl-7 pr-2 t-body-sm text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-ink)] focus:outline-none sm:w-44"
             />
           </div>
           <button
@@ -70,7 +70,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
             <p class="t-caption mt-1 text-[var(--color-mute)]" id="base-image-hint">Recommended: use a slim or alpine variant</p>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label for="port" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Port</label>
               <input
@@ -174,7 +174,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
       <!-- Output -->
       <div class="space-y-6 lg:sticky lg:top-6 lg:self-start">
         <!-- Stats row -->
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-3 gap-2 sm:gap-3">
           <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
             <p class="t-caption-mono mb-1 text-[var(--color-body)]">Est. Size</p>
             <p class="t-display-sm text-[var(--color-ink)]" id="stat-size">—</p>
@@ -190,7 +190,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
         </div>
 
         <!-- Tabs -->
-        <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit">
+        <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 overflow-x-auto">
           <button type="button" data-tab="dockerfile" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md bg-[var(--color-canvas)] text-[var(--color-ink)] shadow-[var(--shadow-level-1)]">Dockerfile</button>
           <button type="button" data-tab="dockerignore" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">.dockerignore</button>
           <button type="button" data-tab="explain" class="tab-btn px-3 py-1.5 t-body-sm-strong rounded-md text-[var(--color-body)] hover:text-[var(--color-ink)]">Explain</button>
@@ -209,11 +209,11 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
               <span class="t-code ml-2 text-[var(--color-body)]">Dockerfile</span>
             </div>
             <div class="flex items-center gap-2">
-              <button type="button" id="btn-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+              <button type="button" id="btn-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
                 Copy
               </button>
-              <button type="button" id="btn-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+              <button type="button" id="btn-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download
               </button>
@@ -262,6 +262,11 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
   }
   .env-row input {
     min-width: 0;
+  }
+  @media (max-width: 640px) {
+    .env-row {
+      grid-template-columns: 1fr auto;
+    }
   }
 
   /* ─────────────────────────────────────────────────────────

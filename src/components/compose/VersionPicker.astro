@@ -36,7 +36,7 @@ const isFloatingRecommended = /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.t
 ---
 
 <div class="version-picker" data-service={service.id} data-name={name}>
-  <div role="tablist" class="seg inline-flex rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 gap-1">
+  <div role="tablist" class="seg inline-flex rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 gap-1 overflow-x-auto max-w-full">
     <button
       type="button"
       role="tab"
@@ -82,53 +82,49 @@ const isFloatingRecommended = /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.t
   </div>
 
   <div class="panels mt-2.5 min-h-[2.25rem]">
-    {value.kind === "recommended" && (
+    <div data-panel="recommended" class:list={[value.kind !== "recommended" && "hidden"]}>
       <p class="t-caption text-[var(--color-body)]">
         Pinned to <code class="t-code text-[var(--color-ink)]">{service.recommended}</code>
         {isFloatingRecommended && <span class="ml-1.5 opacity-70">(floating — moves with the upstream line)</span>}
         — never bumps automatically. Safe for production.
       </p>
-    )}
-    {value.kind === "latest" && (
+    </div>
+    <div data-panel="latest" class:list={[value.kind !== "latest" && "hidden"]}>
       <p class="t-caption text-[var(--color-body)]">
         Highest stable as of last sync (<code class="t-code text-[var(--color-ink)]">{service.latest}</code>).
         Pinned in the generated output — only updates when the registry refreshes.
       </p>
-    )}
-    {value.kind === "pinned" && (
-      <div>
-        <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-pinned`}>
-          Choose from {tags.length} available tag{tags.length === 1 ? "" : "s"}:
-        </label>
-        <select
-          id={`vp-${name}-pinned`}
-          name={`${name}.tag`}
-          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
-        >
-          {recentTags.map((t) => (
-            <option value={t.tag} selected={t.tag === (value as { kind: "pinned"; tag: string }).tag}>
-              {t.tag}{t.publishedAt && ` — ${t.publishedAt.slice(0, 10)}`}{t.isFloating ? " (floating)" : ""}
-            </option>
-          ))}
-        </select>
-      </div>
-    )}
-    {value.kind === "custom" && (
-      <div>
-        <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-custom`}>
-          Type any Docker tag:
-        </label>
-        <input
-          type="text"
-          id={`vp-${name}-custom`}
-          name={`${name}.tag`}
-          pattern={TAG_PATTERN.source}
-          value={(value as { kind: "custom"; tag: string }).tag}
-          placeholder="e.g. 16.3-bookworm"
-          class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
-        />
-      </div>
-    )}
+    </div>
+    <div data-panel="pinned" class:list={[value.kind !== "pinned" && "hidden"]}>
+      <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-pinned`}>
+        Choose from {tags.length} available tag{tags.length === 1 ? "" : "s"}:
+      </label>
+      <select
+        id={`vp-${name}-pinned`}
+        name={`${name}.tag`}
+        class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+      >
+        {recentTags.map((t) => (
+          <option value={t.tag} selected={t.tag === (value as { kind: "pinned"; tag: string }).tag}>
+            {t.tag}{t.publishedAt && ` — ${t.publishedAt.slice(0, 10)}`}{t.isFloating ? " (floating)" : ""}
+          </option>
+        ))}
+      </select>
+    </div>
+    <div data-panel="custom" class:list={[value.kind !== "custom" && "hidden"]}>
+      <label class="t-caption text-[var(--color-body)] block mb-1" for={`vp-${name}-custom`}>
+        Type any Docker tag:
+      </label>
+      <input
+        type="text"
+        id={`vp-${name}-custom`}
+        name={`${name}.tag`}
+        pattern={TAG_PATTERN.source}
+        value={(value as { kind: "custom"; tag: string }).tag}
+        placeholder="e.g. 16.3-bookworm"
+        class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm text-[var(--color-ink)] focus:border-[var(--color-ink)] focus:outline-none"
+      />
+    </div>
   </div>
 
   <input type="hidden" name={`${name}.kind`} value={value.kind} />
@@ -168,6 +164,11 @@ const isFloatingRecommended = /-(alpine|slim|bookworm|bullseye|jammy|noble)$/i.t
         buttons.forEach((b) => b.setAttribute("aria-selected", "false"));
         btn.setAttribute("aria-selected", "true");
         kindField.value = kind;
+
+        // Toggle panel visibility
+        picker.querySelectorAll<HTMLElement>("[data-panel]").forEach((panel) => {
+          panel.classList.toggle("hidden", panel.dataset.panel !== kind);
+        });
 
         // Notify parent — they re-render the panel + their own output.
         const ev: PickerEvent = new CustomEvent("version-change", {

@@ -1,5 +1,6 @@
 ---
 import Logo from "./Logo.astro";
+const year = new Date().getFullYear();
 ---
 
 <footer class="border-t border-[var(--color-hairline)] bg-[var(--color-canvas-soft)]">
@@ -14,26 +15,26 @@ import Logo from "./Logo.astro";
 
       <div>
         <h3 class="t-caption-mono mb-4 text-[var(--color-body)]">Tools</h3>
-        <ul class="space-y-3">
-          <li><a href="/" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">Dockerfile</a></li>
-          <li><a href="/compose" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">Compose</a></li>
-          <li><a href="/stack-builder" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">Stack Builder</a></li>
+        <ul class="space-y-1">
+          <li><a href="/" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">Dockerfile</a></li>
+          <li><a href="/compose" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">Compose</a></li>
+          <li><a href="/stack-builder" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">Stack Builder</a></li>
         </ul>
       </div>
 
       <div>
         <h3 class="t-caption-mono mb-4 text-[var(--color-body)]">Resources</h3>
-        <ul class="space-y-3">
-          <li><a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">Docker Compose Docs</a></li>
-          <li><a href="https://docs.docker.com/build/building/best-practices/" target="_blank" rel="noopener" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">Dockerfile Best Practices</a></li>
-          <li><a href="https://github.com/SuperSection" target="_blank" rel="noopener" class="t-body-sm text-[var(--color-body)] hover:text-[var(--color-ink)]">GitHub</a></li>
+        <ul class="space-y-1">
+          <li><a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">Docker Compose Docs</a></li>
+          <li><a href="https://docs.docker.com/build/building/best-practices/" target="_blank" rel="noopener noreferrer" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">Dockerfile Best Practices</a></li>
+          <li><a href="https://github.com/SuperSection/generatedocker.com" target="_blank" rel="noopener noreferrer" class="inline-block t-body-sm text-[var(--color-body)] transition-colors hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2 rounded-sm py-1.5">GitHub</a></li>
         </ul>
       </div>
     </div>
 
     <div class="mt-16 flex flex-col items-start justify-between gap-4 border-t border-[var(--color-hairline)] pt-8 md:flex-row md:items-center">
       <p class="t-caption text-[var(--color-mute)]">
-        &copy; 2026 Dockerfile Generator. All rights reserved.
+        &copy; {year} Dockerfile Generator. All rights reserved.
       </p>
       <p class="t-caption text-[var(--color-mute)]">
         Made for developers who ship.

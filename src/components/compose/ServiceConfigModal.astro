@@ -119,6 +119,11 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
     align-items: center;
   }
   .cfg-row input { min-width: 0; width: 100%; }
+  @media (max-width: 640px) {
+    .cfg-row {
+      grid-template-columns: 1fr auto;
+    }
+  }
   .cfg-section-label {
     font-size: 11px;
     text-transform: uppercase;
@@ -329,14 +334,14 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Ports (host:container)</label>
-          <button type="button" data-cfg-action="add-port" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add port</button>
+          <button type="button" data-cfg-action="add-port" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-2 min-h-[44px] t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add port</button>
         </div>
         <div class="space-y-1.5" data-cfg-ports>
           ${ports.map((p, i) => `
             <div class="cfg-row">
               <input type="number" data-cfg-port-field="host" data-cfg-port-i="${i}" value="${p.host}" placeholder="host" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
               <input type="number" data-cfg-port-field="container" data-cfg-port-i="${i}" value="${p.container}" placeholder="container" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-              <button type="button" data-cfg-action="remove-port" data-cfg-port-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove port">
+              <button type="button" data-cfg-action="remove-port" data-cfg-port-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove port">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
@@ -347,14 +352,14 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Volumes (host:container[:ro])</label>
-          <button type="button" data-cfg-action="add-volume" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add volume</button>
+          <button type="button" data-cfg-action="add-volume" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-2 min-h-[44px] t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add volume</button>
         </div>
         <div class="space-y-1.5" data-cfg-volumes>
           ${volumes.map((v, i) => `
             <div class="cfg-row">
               <input type="text" data-cfg-vol-field="host" data-cfg-vol-i="${i}" value="${escapeHtml(v.host)}" placeholder="host path or volume name" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
               <input type="text" data-cfg-vol-field="container" data-cfg-vol-i="${i}" value="${escapeHtml(v.container)}" placeholder="container path" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-              <button type="button" data-cfg-action="remove-volume" data-cfg-vol-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove volume">
+              <button type="button" data-cfg-action="remove-volume" data-cfg-vol-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove volume">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
@@ -365,14 +370,14 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="cfg-section-label">Environment variables</label>
-          <button type="button" data-cfg-action="add-env" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-1 t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add env var</button>
+          <button type="button" data-cfg-action="add-env" class="inline-flex items-center gap-1 rounded-md border border-[var(--color-link)] bg-[var(--color-link-bg-soft)] px-2.5 py-2 min-h-[44px] t-body-sm text-[var(--color-link)] hover:bg-[var(--color-link)] hover:text-[var(--color-link-bg)] transition-colors">+ Add env var</button>
         </div>
         <div class="space-y-1.5" data-cfg-envs>
           ${envs.map((e, i) => `
             <div class="cfg-row">
               <input type="text" data-cfg-env-field="key" data-cfg-env-i="${i}" value="${escapeHtml(e.key)}" placeholder="KEY" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
               <input type="text" data-cfg-env-field="value" data-cfg-env-i="${i}" value="${escapeHtml(e.value)}" placeholder="value" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1.5 t-body-sm" />
-              <button type="button" data-cfg-action="remove-env" data-cfg-env-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove env">
+              <button type="button" data-cfg-action="remove-env" data-cfg-env-i="${i}" class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:text-[var(--color-error-deep)]" aria-label="Remove env">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
@@ -380,7 +385,7 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-3 items-end">
+      <div class="grid grid-cols-1 gap-3 items-end sm:grid-cols-3">
         <label class="flex items-center gap-2 t-body-sm text-[var(--color-ink)]">
           <input type="checkbox" data-cfg-field="healthCheck" ${healthCheck ? "checked" : ""} class="h-4 w-4 rounded border-[var(--color-hairline-strong)]" />
           Healthcheck
@@ -422,21 +427,21 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
       const container = parseInt((row.querySelector('[data-cfg-port-field="container"]') as HTMLInputElement).value, 10);
       if (!isNaN(host) && !isNaN(container)) ports.push({ host, container });
     });
-    if (ports.length) editing.ports = ports;
+    editing.ports = ports;
     const volumes: { host: string; container: string }[] = [];
     body.querySelectorAll<HTMLDivElement>("[data-cfg-volumes] > div").forEach((row) => {
       const host = (row.querySelector('[data-cfg-vol-field="host"]') as HTMLInputElement).value.trim();
       const container = (row.querySelector('[data-cfg-vol-field="container"]') as HTMLInputElement).value.trim();
       if (host && container) volumes.push({ host, container });
     });
-    if (volumes.length) editing.volumes = volumes;
+    editing.volumes = volumes;
     const envVars: { key: string; value: string }[] = [];
     body.querySelectorAll<HTMLDivElement>("[data-cfg-envs] > div").forEach((row) => {
       const key = (row.querySelector('[data-cfg-env-field="key"]') as HTMLInputElement).value.trim();
       const value = (row.querySelector('[data-cfg-env-field="value"]') as HTMLInputElement).value.trim();
       if (key) envVars.push({ key, value });
     });
-    if (envVars.length) editing.envVars = envVars;
+    editing.envVars = envVars;
   }
 
   function wireBody() {
@@ -541,26 +546,18 @@ const RESTART_OPTIONS = ["no", "always", "on-failure", "unless-stopped"] as cons
           ports.splice(i, 1);
           editing.ports = ports;
         } else if (action === "add-volume") {
-          const hasUserOverride = Array.isArray(editing.volumes);
-          const base = hasUserOverride ? (editing.volumes as any[]) : [...svc.defaultVolumes];
-          const empty = base.length === 0;
-          const next = empty && svc.defaultVolumes.length > 0
-            ? [...svc.defaultVolumes.map((v) => ({ ...v }))]
-            : [...base, { host: "./data", container: "/data" }];
-          editing.volumes = next;
+          const volumes = [...(editing.volumes ?? [...svc.defaultVolumes])];
+          volumes.push({ host: "./data", container: "/data" });
+          editing.volumes = volumes;
         } else if (action === "remove-volume") {
           const i = parseInt(btn.dataset.cfgVolI!, 10);
           const volumes = [...(editing.volumes ?? svc.defaultVolumes)];
           volumes.splice(i, 1);
           editing.volumes = volumes;
         } else if (action === "add-env") {
-          const hasUserOverride = Array.isArray(editing.envVars);
-          const base = hasUserOverride ? (editing.envVars as any[]) : [...svc.defaultEnv];
-          const empty = base.length === 0;
-          const next = empty && svc.defaultEnv.length > 0
-            ? [...svc.defaultEnv.map((e) => ({ ...e }))]
-            : [...base, { key: "", value: "" }];
-          editing.envVars = next;
+          const envVars = [...(editing.envVars ?? [...svc.defaultEnv])];
+          envVars.push({ key: "", value: "" });
+          editing.envVars = envVars;
         } else if (action === "remove-env") {
           const i = parseInt(btn.dataset.cfgEnvI!, 10);
           const envVars = [...(editing.envVars ?? svc.defaultEnv)];

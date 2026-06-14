@@ -8,18 +8,22 @@ interface Props {
   noindex?: boolean;
   canonical?: string;
   jsonLd?: object;
+  keywords?: string;
 }
 
 const {
-  title = "Dockerfile Generator — Production-ready Dockerfiles in seconds",
-  description = "Generate production-ready Dockerfiles and docker-compose.yml files for Node.js, Python, Go, Java, and more. Built-in best practices, multi-stage builds, and live YAML preview.",
+  title = "Dockerfile Generator — Free Online Dockerfile & Docker Compose Generator",
+  description = "Generate production-ready Dockerfiles and docker-compose.yml files online. Free Dockerfile generator with multi-stage builds, best-practice scanner, and support for 23+ frameworks including Node.js, Python, Go, and Java.",
   image = "/og.png",
   noindex = false,
   canonical,
   jsonLd,
+  keywords = "dockerfile generator, dockerfile, docker compose, dockerfile example, dockerfile generator gui, online dockerfile generator, dockerfile generator online, docker compose generator, docker compose generator online, docker compose generator gui, online docker compose generator, dockerfile best practices, dockerfile reference, dockerfile volume",
 } = Astro.props;
 
-const url = canonical ?? Astro.url.href;
+const siteUrl = "https://dockerfilegenerator.com";
+const url = canonical ?? (Astro.url.pathname === "/" ? siteUrl : siteUrl + Astro.url.pathname);
+const fullImage = image.startsWith("http") ? image : siteUrl + image;
 ---
 
 <!doctype html>
@@ -55,22 +59,29 @@ const url = canonical ?? Astro.url.href;
 
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
     <link rel="canonical" href={url} />
     {noindex && <meta name="robots" content="noindex,nofollow" />}
+    {!noindex && <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />}
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={url} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={image} />
+    <meta property="og:image" content={fullImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={title} />
     <meta property="og:site_name" content="Dockerfile Generator" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image" content={fullImage} />
+    <meta name="twitter:image:alt" content={title} />
 
     {jsonLd && (
       <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

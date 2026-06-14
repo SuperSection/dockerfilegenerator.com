@@ -4,18 +4,7 @@ import {
   BACKENDS,
   DATABASES,
   OPTIONALS,
-  type Frontend,
-  type Backend,
-  type Database,
-  type Optional,
 } from "../lib/stack/presets";
-import {
-  generateStackDockerfile,
-  generateStackCompose,
-  generateStackEnv,
-  generateStackDockerignore,
-  type StackConfig,
-} from "../lib/stack/generator";
 import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
 import { SERVICES, type ServiceConfig } from "../lib/compose/services";
 
@@ -102,7 +91,7 @@ const stackServices: ServiceConfig[] = [
       <!-- Database -->
       <section>
         <h2 class="t-caption-mono mb-3 text-[var(--color-body)]">Database</h2>
-        <div class="grid grid-cols-3 gap-2" id="database-grid">
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3" id="database-grid">
           {databases.map((d) => (
             <div class="relative" data-database-wrap={d.id}>
               <button
@@ -126,7 +115,7 @@ const stackServices: ServiceConfig[] = [
                 type="button"
                 data-action="configure-service"
                 data-name={d.id}
-                class="absolute right-1.5 top-1.5 rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
+                class="absolute right-1.5 top-1.5 rounded p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
                 aria-label="Configure database"
                 title="Configure image and version"
               >
@@ -194,7 +183,7 @@ const stackServices: ServiceConfig[] = [
                 type="button"
                 data-action="configure-service"
                 data-name={o.id}
-                class="absolute right-1.5 top-1.5 rounded p-1 text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
+                class="absolute right-1.5 top-1.5 rounded p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] transition-colors"
                 aria-label="Configure service"
                 title="Configure image and version"
               >
@@ -300,7 +289,7 @@ const stackServices: ServiceConfig[] = [
               Copy
             </button>
           </div>
-          <pre class="code-panel overflow-x-auto min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
+          <pre class="code-panel overflow-x-auto min-h-[200px] sm:min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
         </div>
       ))}
 
@@ -635,9 +624,29 @@ const stackServices: ServiceConfig[] = [
     });
   });
 
-  // Download ZIP (currently maps to "download all" as a stand-in baseline)
-  document.getElementById("btn-stack-download-zip")?.addEventListener("click", () => {
-    document.getElementById("btn-stack-download-all")?.click();
+  // Download ZIP
+  document.getElementById("btn-stack-download-zip")?.addEventListener("click", async () => {
+    const cfg = getConfig();
+    const files: Record<string, string> = {
+      "docker-compose.yml": generateStackCompose(cfg),
+      ".env.example": generateStackEnv(cfg),
+      ".dockerignore": generateStackDockerignore("backend"),
+    };
+    if (cfg.backend) files["backend/Dockerfile"] = generateStackDockerfile(cfg, "backend");
+    if (cfg.frontend) files["frontend/Dockerfile"] = generateStackDockerfile(cfg, "frontend");
+
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    Object.entries(files).forEach(([name, content]) => {
+      zip.file(name, content);
+    });
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${cfg.projectName || "stack"}.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   });
 
   // Restore from persisted state

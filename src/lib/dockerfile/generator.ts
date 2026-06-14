@@ -59,8 +59,10 @@ const envBlock = (vars: { key: string; value: string }[]) => {
 };
 
 const healthCheckCmd = (port: number, framework: FrameworkId) => {
+  // Go and Rust typically use distroless images without wget/curl.
+  // Use a simple /dev/tcp check or skip health check for distroless.
   if (framework === "go" || framework === "rust") {
-    return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD wget --no-verbose --tries=1 --spider http://localhost:${port}/ || exit 1`;
+    return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD ["/app/server", "--help"] > /dev/null 2>&1 || exit 1`;
   }
   return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD wget --no-verbose --tries=1 --spider http://localhost:${port}/ || exit 1`;
 };
@@ -96,7 +98,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("RUN " + (config.packageManager === "npm" ? "npm run build" : config.packageManager === "pnpm" ? "pnpm build" : config.packageManager === "yarn" ? "yarn build" : "bun run build"));
     lines.push("");
     lines.push("# ---- Runner ----");
-    const runnerImage = config.production && config.baseImage.includes("alpine") ? "node:20-alpine" : config.baseImage;
+    const runnerImage = config.baseImage.includes("alpine") ? config.baseImage.replace(/node:\d+/, "node:20") : config.baseImage;
     lines.push(`FROM ${runnerImage} AS runner`);
     lines.push("WORKDIR /app");
     lines.push("ENV NODE_ENV=production");
@@ -244,8 +246,11 @@ const generatePython = (config: DockerfileConfig): string => {
       lines.push("RUN useradd --create-home --shell /bin/bash --uid 1001 appuser");
       lines.push("USER appuser");
     }
-    lines.push("COPY --from=builder /usr/local/lib/python" + (config.baseImage.includes("3.12") ? "3.12" : "3.11") + "/site-packages /usr/local/lib/python" + (config.baseImage.includes("3.12") ? "3.12" : "3.11") + "/site-packages");
     lines.push("COPY --from=builder /app /app");
+    // Dynamically determine Python version from base image
+    const pyVersionMatch = config.baseImage.match(/python(\d+\.\d+)/);
+    const pyVersion = pyVersionMatch ? pyVersionMatch[1] : "3.12";
+    lines.push("COPY --from=builder /usr/local/lib/python" + pyVersion + "/site-packages /usr/local/lib/python" + pyVersion + "/site-packages");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
@@ -359,7 +364,9 @@ const generateGo = (config: DockerfileConfig): string => {
   lines.push("FROM gcr.io/distroless/static-debian12:nonroot");
   lines.push("WORKDIR /app");
   lines.push("COPY --from=builder /out/server /app/server");
-  lines.push("USER nonroot:nonroot");
+  if (config.nonRootUser) {
+    lines.push("USER nonroot:nonroot");
+  }
   lines.push("EXPOSE " + port);
   if (config.envVars.length) {
     lines.push(envBlock(config.envVars));
@@ -397,7 +404,9 @@ const generateRust = (config: DockerfileConfig): string => {
   lines.push("FROM gcr.io/distroless/cc-debian12:nonroot");
   lines.push("WORKDIR /app");
   lines.push("COPY --from=builder /app/target/release/server /app/server");
-  lines.push("USER nonroot:nonroot");
+  if (config.nonRootUser) {
+    lines.push("USER nonroot:nonroot");
+  }
   lines.push("EXPOSE " + port);
   if (config.envVars.length) {
     lines.push(envBlock(config.envVars));
@@ -428,7 +437,7 @@ const generatePhp = (config: DockerfileConfig): string => {
   lines.push("COPY . .");
   lines.push("RUN composer dump-autoload --optimize --no-dev");
   if (config.framework === "laravel") {
-    lines.push("RUN php artisan config:cache && php artisan route:cache");
+    lines.push("RUN php artisan config:cache && php artisan route:cache || true");
   }
   lines.push("");
   lines.push("# ---- Runtime ----");
@@ -442,7 +451,7 @@ const generatePhp = (config: DockerfileConfig): string => {
     lines.push("USER appuser");
   }
   lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "www-data:www-data") + " /app /var/www/html");
-  lines.push("EXPOSE 9000");
+  lines.push("EXPOSE " + config.port);
   if (config.healthCheck) {
     lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
   }
@@ -451,19 +460,217 @@ const generatePhp = (config: DockerfileConfig): string => {
 };
 
 /* ─────────────────────────────────────────────────────────
+ * Ruby / Rails — Bundler
+ * ─────────────────────────────────────────────────────── */
+const generateRuby = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
+  const port = config.port;
+  const lines: string[] = [];
+  lines.push("# syntax=docker/dockerfile:1.7");
+
+  if (config.multiStage) {
+    lines.push("# ---- Dependencies ----");
+    lines.push(`FROM ${config.baseImage} AS deps`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY Gemfile Gemfile.lock* ./");
+    lines.push("RUN bundle install --jobs 4 --retry 3");
+    lines.push("");
+    lines.push("# ---- Build ----");
+    lines.push(`FROM ${config.baseImage} AS builder`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY --from=deps /usr/local/bundle /usr/local/bundle");
+    lines.push("COPY . .");
+    if (fw.id === "rails") {
+      lines.push("RUN bundle exec rake assets:precompile || true");
+    }
+    lines.push("");
+    lines.push("# ---- Runtime ----");
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /app");
+    lines.push("ENV RAILS_ENV=production RACK_ENV=production");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN groupadd --system --gid 1001 appuser && useradd --system --uid 1001 --gid appuser appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /app /app");
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /usr/local/bundle /usr/local/bundle");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, fw.id));
+    }
+    const startCmd = config.customStartCommand || fw.startCommand || "bundle exec puma -C config/puma.rb";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
+  } else {
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /app");
+    lines.push("ENV RAILS_ENV=production RACK_ENV=production");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN groupadd --system --gid 1001 appuser && useradd --system --uid 1001 --gid appuser appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY Gemfile Gemfile.lock* ./");
+    lines.push("RUN bundle install --jobs 4 --retry 3");
+    lines.push("COPY . .");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, fw.id));
+    }
+    const startCmd = config.customStartCommand || fw.startCommand || "bundle exec puma -C config/puma.rb";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
+  }
+  return lines.join("\n");
+};
+
+/* ─────────────────────────────────────────────────────────
+ * .NET — dotnet CLI
+ * ─────────────────────────────────────────────────────── */
+const generateDotnet = (config: DockerfileConfig): string => {
+  const port = config.port;
+  const lines: string[] = [];
+  lines.push("# syntax=docker/dockerfile:1.7");
+
+  if (config.multiStage) {
+    lines.push("# ---- Build ----");
+    lines.push("FROM mcr.microsoft.com/dotnet/sdk:9.0 AS builder");
+    lines.push("WORKDIR /app");
+    lines.push("COPY *.csproj *.sln* ./");
+    lines.push("RUN dotnet restore");
+    lines.push("COPY . .");
+    lines.push("RUN dotnet publish -c Release -o /out");
+    lines.push("");
+    lines.push("# ---- Runtime ----");
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /app");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 --gid appuser appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /out .");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "dotnet"));
+    }
+    lines.push('ENTRYPOINT ["dotnet", "MyApp.dll"]');
+  } else {
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /app");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 --gid appuser appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY . .");
+    lines.push("RUN dotnet publish -c Release -o /app");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "dotnet"));
+    }
+    lines.push('ENTRYPOINT ["dotnet", "MyApp.dll"]');
+  }
+  return lines.join("\n");
+};
+
+/* ─────────────────────────────────────────────────────────
+ * Elixir / Phoenix — mix release
+ * ─────────────────────────────────────────────────────── */
+const generateElixir = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
+  const port = config.port;
+  const lines: string[] = [];
+  lines.push("# syntax=docker/dockerfile:1.7");
+
+  if (config.multiStage) {
+    lines.push("# ---- Build ----");
+    lines.push(`FROM ${config.baseImage} AS builder`);
+    lines.push("RUN apk add --no-cache build-base npm git");
+    lines.push("WORKDIR /app");
+    lines.push("COPY mix.exs mix.lock* ./");
+    lines.push("RUN mix deps.get --only prod");
+    lines.push("COPY . .");
+    lines.push("ENV MIX_ENV=prod");
+    lines.push("RUN mix deps.compile");
+    lines.push("RUN mix release");
+    lines.push("");
+    lines.push("# ---- Runtime ----");
+    lines.push("FROM alpine:3.20 AS runner");
+    lines.push("RUN apk add --no-cache libstdc++ openssl libncurses");
+    lines.push("WORKDIR /app");
+    lines.push("ENV MIX_ENV=prod");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /app/_build/prod/rel/. .");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, fw.id));
+    }
+    const appName = fw.id === "phoenix" ? "app" : "app";
+    lines.push(`CMD ["bin/${appName}", "start"]`);
+  } else {
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("RUN apk add --no-cache build-base npm git");
+    lines.push("WORKDIR /app");
+    lines.push("ENV MIX_ENV=prod");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY mix.exs mix.lock* ./");
+    lines.push("RUN mix deps.get --only prod && mix deps.compile");
+    lines.push("COPY . .");
+    lines.push("RUN mix release");
+    lines.push("EXPOSE " + port);
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, fw.id));
+    }
+    const appName = fw.id === "phoenix" ? "app" : "app";
+    lines.push(`CMD ["bin/${appName}", "start"]`);
+  }
+  return lines.join("\n");
+};
+
+/* ─────────────────────────────────────────────────────────
  * Entry point
  * ─────────────────────────────────────────────────────── */
 export const generateDockerfile = (config: DockerfileConfig): string => {
-  const langGroup = ["node", "express", "nestjs", "nextjs", "react", "vue"];
+  const langGroup = ["node", "express", "nestjs", "nextjs", "react", "vue", "fastify"];
   const pythonGroup = ["python", "django", "fastapi", "flask"];
-  const javaGroup = ["java", "springboot"];
+  const javaGroup = ["java", "springboot", "quarkus"];
+  const goGroup = ["go", "gin"];
+  const rustGroup = ["rust", "actix"];
+  const phpGroup = ["php", "laravel"];
+  const rubyGroup = ["rails"];
+  const dotnetGroup = ["dotnet"];
+  const elixirGroup = ["phoenix"];
 
   if (langGroup.includes(config.framework)) return generateNode(config);
   if (pythonGroup.includes(config.framework)) return generatePython(config);
   if (javaGroup.includes(config.framework)) return generateJava(config);
-  if (config.framework === "go") return generateGo(config);
-  if (config.framework === "rust") return generateRust(config);
-  if (config.framework === "php" || config.framework === "laravel") return generatePhp(config);
+  if (goGroup.includes(config.framework)) return generateGo(config);
+  if (rustGroup.includes(config.framework)) return generateRust(config);
+  if (phpGroup.includes(config.framework)) return generatePhp(config);
+  // Rails, .NET, and Phoenix get language-appropriate templates
+  if (rubyGroup.includes(config.framework)) return generateRuby(config);
+  if (dotnetGroup.includes(config.framework)) return generateDotnet(config);
+  if (elixirGroup.includes(config.framework)) return generateElixir(config);
 
   return generateNode(config);
 };
@@ -512,6 +719,18 @@ export const generateDockerignore = (framework: FrameworkId): string => {
   }
   if (["php", "laravel"].includes(framework)) {
     base.push("vendor", "storage/logs/*", "storage/framework/cache/data/*");
+  }
+  if (["java", "springboot", "quarkus"].includes(framework)) {
+    base.push("target", ".gradle", "build", "*.class", ".mvn/repository");
+  }
+  if (framework === "dotnet") {
+    base.push("bin", "obj", "*.user", "*.suo");
+  }
+  if (framework === "rails") {
+    base.push("vendor/bundle", "tmp", "log");
+  }
+  if (framework === "phoenix") {
+    base.push("_build", "deps", "*.ez", "node_modules");
   }
 
   return base.join("\n") + "\n";

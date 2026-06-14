@@ -387,7 +387,7 @@ export const generateStackCompose = (cfg: StackConfig): string => {
       ] : []),
       ...(deps.length ? [
         `  depends_on:`,
-        ...deps.map(d => `    ${d}:\n      condition: service_started`),
+        ...deps.map(d => `    ${d}:\n      condition: service_healthy`),
       ] : []),
       `  networks:`,
       `    - appnet`,

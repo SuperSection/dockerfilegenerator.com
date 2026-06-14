@@ -28,7 +28,7 @@ export type FrameworkId =
   | "dotnet"
   | "phoenix";
 
-export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "pip" | "poetry" | "uv" | "pipenv" | "maven" | "gradle" | "go" | "cargo" | "composer";
+export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "pip" | "poetry" | "uv" | "pipenv" | "maven" | "gradle" | "go" | "cargo" | "composer" | "bundler" | "dotnet" | "mix";
 
 export interface FrameworkMeta {
   id: FrameworkId;
@@ -207,7 +207,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     description: "Rails with puma and bundle install.",
     defaultPort: 3000,
     defaultWorkdir: "/app",
-    defaultPackageManager: "composer",
+    defaultPackageManager: "bundler",
     supportsMultiStage: true,
     supportsStandalone: false,
     defaultBaseImage: "ruby:3.3-slim",
@@ -222,7 +222,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     description: "ASP.NET / Minimal API with multi-stage build.",
     defaultPort: 8080,
     defaultWorkdir: "/app",
-    defaultPackageManager: "npm",
+    defaultPackageManager: "dotnet",
     supportsMultiStage: true,
     supportsStandalone: false,
     defaultBaseImage: "mcr.microsoft.com/dotnet/aspnet:9.0",
@@ -237,11 +237,11 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     description: "Phoenix with mix release.",
     defaultPort: 4000,
     defaultWorkdir: "/app",
-    defaultPackageManager: "npm",
+    defaultPackageManager: "mix",
     supportsMultiStage: true,
     supportsStandalone: false,
-    defaultBaseImage: "alpine:3.20",
-    recommendedBaseImage: "alpine:3.20",
+    defaultBaseImage: "elixir:1.16-alpine",
+    recommendedBaseImage: "elixir:1.16-alpine",
     startCommand: "bin/app start",
   },
   python: {

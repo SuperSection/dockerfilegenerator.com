@@ -48,7 +48,7 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
                     {top.map((svc) => (
                       <button
                         type="button"
-                        class="service-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2 py-1 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas)] min-w-0"
+                        class="service-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2 py-2 min-h-[44px] text-left transition-all hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas)] min-w-0"
                         data-service={svc.name}
                       >
                         <span class="text-xs shrink-0">{svc.emoji}</span>
@@ -100,7 +100,7 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
               type="button"
               data-picker-close
               aria-label="Close"
-              class="rounded-md p-1 text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
+              class="rounded-md p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-[var(--color-body)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
@@ -149,7 +149,7 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
         <section class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-4">
           <h2 class="t-caption-mono text-[var(--color-body)]">Project configuration</h2>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label for="compose-project-name" class="t-body-sm-strong mb-1.5 block text-[var(--color-ink)]">Project name</label>
               <input
@@ -208,13 +208,13 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
               </div>
               <span class="t-code ml-2 text-[var(--color-body)]">docker-compose.yml</span>
             </div>
-            <div class="flex items-center gap-2">
-              <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
-              <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
-              <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-1 text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+              <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
+              <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-2 min-h-[44px] text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
             </div>
           </div>
-          <pre class="code-panel overflow-x-auto min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services above to generate your docker-compose.yml</code></pre>
+          <pre class="code-panel overflow-x-auto min-h-[250px] sm:min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services above to generate your docker-compose.yml</code></pre>
         </div>
 
         <div id="env-output" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
