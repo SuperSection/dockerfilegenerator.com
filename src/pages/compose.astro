@@ -36,11 +36,12 @@ import ComposeGenerator from "../components/ComposeGenerator.astro";
 >
   <Nav />
   <main id="main" class="relative">
-    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-8 md:py-10">
+    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-12 md:py-16">
       <div class="absolute inset-x-0 top-0 -z-10 h-[320px] mesh-gradient-sm"></div>
       <Container>
         <div class="text-center">
-          <h1 class="t-display-lg mx-auto max-w-3xl text-[var(--color-ink)]">
+          <Badge variant="new" class="mb-4">Production compose files</Badge>
+          <h1 class="t-display-xl mx-auto max-w-3xl text-[var(--color-ink)]">
             Docker Compose, generated.
           </h1>
           <p class="t-body-md mx-auto mt-2 max-w-2xl text-[var(--color-body)]">
