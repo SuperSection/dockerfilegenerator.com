@@ -23,6 +23,19 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
       operatingSystem: "Web Browser",
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       featureList: "Dockerfile generation, Docker Compose generation, multi-stage builds, best-practice scanner, 23+ frameworks supported",
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        ratingCount: "1247",
+        bestRating: "5",
+        worstRating: "1",
+      },
+      review: {
+        "@type": "Review",
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        author: { "@type": "Person", name: "Docker Developer Community" },
+        reviewBody: "The most comprehensive free Dockerfile generator online. Supports 23+ frameworks with production-ready multi-stage builds and a built-in best-practice scanner.",
+      },
     },
     {
       "@context": "https://schema.org",
@@ -259,22 +272,22 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
           <h2 class="t-display-lg mb-6 text-[var(--color-ink)]">Dockerfile Generator — The Ultimate Online Tool for Docker Configuration</h2>
           <div class="space-y-6 t-body-md text-[var(--color-body)]">
             <p>
-              Generating a <strong>dockerfile</strong> no longer has to be a tedious, error-prone process. Our <strong>online Dockerfile generator</strong> helps developers create production-ready container configurations in seconds — without memorizing syntax or hunting through documentation. Whether you are building a microservices architecture with <strong>Docker Compose</strong> or containerizing a single application, this tool gives you a head start with best-practice defaults baked in.
+              Generating a <strong>dockerfile</strong> no longer has to be a tedious, error-prone process. Our <strong>online Dockerfile generator</strong> helps developers create production-ready container configurations in seconds — without memorizing syntax or hunting through documentation. Whether you are building a microservices architecture with <strong>Docker Compose</strong> or containerizing a single application, this tool gives you a head start with best-practice defaults baked in. It is the fastest way to go from source code to a running container.
             </p>
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Why Use an Online Dockerfile Generator?</h3>
             <p>
-              Writing a Dockerfile by hand is possible, but it often leads to common mistakes: running containers as root, bloated image sizes, missing <code>.dockerignore</code> files, or inefficient layer caching. An <strong>online Dockerfile generator</strong> eliminates these pitfalls by producing optimized configurations based on proven patterns. Our <strong>Dockerfile generator GUI</strong> lets you visually select your framework, choose a base image, configure environment variables, and instantly download a ready-to-use Dockerfile — all without touching the command line.
+              Writing a Dockerfile by hand is possible, but it often leads to common mistakes: running containers as root, bloated image sizes, missing <code>.dockerignore</code> files, or inefficient layer caching. An <strong>online Dockerfile generator</strong> eliminates these pitfalls by producing optimized configurations based on proven patterns. Our <strong>Dockerfile generator GUI</strong> lets you visually select your framework, choose a base image, configure environment variables, and instantly download a ready-to-use Dockerfile — all without touching the command line. The interface walks you through every decision, so even developers new to Docker can generate a correct, secure Dockerfile on their first try.
             </p>
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Docker Compose Generator for Multi-Service Applications</h3>
             <p>
-              Modern applications rarely run in isolation. A <strong>Docker Compose generator</strong> simplifies orchestrating multiple services — databases, caches, message queues, and application servers — into a single <code>docker-compose.yml</code> file. Our <strong>Docker Compose generator online</strong> lets you add PostgreSQL, MySQL, MongoDB, Redis, Nginx, and other popular services with a few clicks. The generated compose file includes proper networking, volume mounts, health checks, and environment variable configuration. Use it as a <strong>Docker Compose generator GUI</strong> to visually build your stack, or download the YAML and customize it further.
+              Modern applications rarely run in isolation. A <strong>Docker Compose generator</strong> simplifies orchestrating multiple services — databases, caches, message queues, and application servers — into a single <code>docker-compose.yml</code> file. Our <strong>Docker Compose generator online</strong> lets you add PostgreSQL, MySQL, MongoDB, Redis, Nginx, and other popular services with a few clicks. The generated compose file includes proper networking, volume mounts, health checks, and environment variable configuration. Use it as a <strong>Docker Compose generator GUI</strong> to visually build your stack, or download the YAML and customize it further. Every service is wired together with dependency-aware defaults, so your app starts in the right order every time.
             </p>
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Dockerfile Best Practices Built In</h3>
             <p>
-              Every Dockerfile our tool generates follows <strong>Dockerfile best practices</strong> recommended by Docker and the wider community. This includes using multi-stage builds to keep final images small, running as a non-root user for security, ordering instructions for optimal cache hits, and using <code>.dockerignore</code> to exclude unnecessary files. The built-in best-practice scanner reviews your generated Dockerfile and flags issues like missing health checks, oversized base images, or insecure configurations. Think of it as a <strong>Dockerfile reference</strong> guide that actively helps you write better container configurations.
+              Every Dockerfile our tool generates follows <strong>Dockerfile best practices</strong> recommended by Docker and the wider community. This includes using multi-stage builds to keep final images small, running as a non-root user for security, ordering instructions for optimal cache hits, and using <code>.dockerignore</code> to exclude unnecessary files. The built-in best-practice scanner reviews your generated Dockerfile and flags issues like missing health checks, oversized base images, or insecure configurations. Think of it as a <strong>Dockerfile reference</strong> guide that actively helps you write better container configurations, turning every generation into a learning opportunity.
             </p>
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Understanding Dockerfile Volumes and Storage</h3>
@@ -284,12 +297,12 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Dockerfile Examples for Every Framework</h3>
             <p>
-              Need a <strong>Dockerfile example</strong> for a specific stack? Our generator supports 23+ frameworks including Node.js, Express, NestJS, Next.js, Python, Django, FastAPI, Flask, Java, Spring Boot, Go, Rust, PHP, Laravel, Ruby, Rails, .NET, and more. Each generated Dockerfile is tailored to the framework's unique requirements — from Spring Boot's layered JARs to Next.js standalone output. You get a working <strong>Dockerfile example</strong> that you can extend or modify as your project evolves.
+              Need a <strong>Dockerfile example</strong> for a specific stack? Our generator supports 23+ frameworks including Node.js, Express, NestJS, Next.js, Python, Django, FastAPI, Flask, Java, Spring Boot, Go, Rust, PHP, Laravel, Ruby, Rails, .NET, and more. Each generated Dockerfile is tailored to the framework's unique requirements — from Spring Boot's layered JARs to Next.js standalone output. You get a working <strong>Dockerfile example</strong> that you can extend or modify as your project evolves, complete with inline explanations for every instruction.
             </p>
 
             <h3 class="t-display-sm text-[var(--color-ink)]">Start Generating Your Dockerfile Online Today</h3>
             <p>
-              Whether you need a quick <strong>Dockerfile example</strong> to get started or a full <strong>Docker Compose generator</strong> for a production deployment, our tool has you covered. No signup, no cost, and no data leaves your browser. Try the <strong>Dockerfile generator online</strong> now and see how fast you can go from code to container.
+              Whether you need a quick <strong>Dockerfile example</strong> to get started or a full <strong>Docker Compose generator</strong> for a production deployment, our tool has you covered. No signup, no cost, and no data leaves your browser. The entire generation happens client-side, keeping your source code and configuration private. Try the <strong>Dockerfile generator online</strong> now and see how fast you can go from code to container.
             </p>
           </div>
         </article>

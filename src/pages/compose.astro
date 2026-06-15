@@ -8,8 +8,29 @@ import ComposeGenerator from "../components/ComposeGenerator.astro";
 ---
 
 <Layout
-  title="Docker Compose Generator — Production-ready compose files"
-  description="Generate a production-ready docker-compose.yml with PostgreSQL, MySQL, MongoDB, Redis, Nginx, and more. Live preview, validation, dependency-aware defaults."
+  title="Docker Compose Generator — Free Online Docker Compose Generator GUI"
+  description="Generate a production-ready docker-compose.yml online. Free Docker Compose generator with PostgreSQL, MySQL, MongoDB, Redis, Nginx, and more. Health checks, named volumes, and dependency-aware defaults."
+  keywords="docker compose generator, docker compose generator online, docker compose generator gui, online docker compose generator, docker compose, dockerfile, docker compose example, docker compose best practices"
+  jsonLd={[
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "Docker Compose Generator",
+      url: "https://dockerfilegenerator.com/compose",
+      description: "Free online Docker Compose generator. Create production-ready docker-compose.yml files with PostgreSQL, MySQL, MongoDB, Redis, and more.",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web Browser",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://dockerfilegenerator.com" },
+        { "@type": "ListItem", position: 2, name: "Docker Compose Generator", item: "https://dockerfilegenerator.com/compose" },
+      ],
+    },
+  ]}
 >
   <Nav />
   <main id="main" class="relative">
