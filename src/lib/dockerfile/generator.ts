@@ -161,7 +161,8 @@ const generateNode = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(3000, fw.id));
     }
-    lines.push('CMD ["serve", "-s", "dist", "-l", "3000"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "serve -s dist -l 3000";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
     return lines.join("\n");
   }
 

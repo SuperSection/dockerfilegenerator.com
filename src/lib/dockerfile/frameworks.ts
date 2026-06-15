@@ -124,6 +124,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "node:20-alpine",
     recommendedBaseImage: "node:20-alpine",
+    startCommand: "serve -s dist -l 3000",
   },
   vue: {
     id: "vue",
@@ -138,6 +139,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "node:20-alpine",
     recommendedBaseImage: "node:20-alpine",
+    startCommand: "serve -s dist -l 3000",
   },
   fastify: {
     id: "fastify",
@@ -257,6 +259,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "python:3.12-slim",
     recommendedBaseImage: "python:3.12-slim",
+    startCommand: "python main.py",
   },
   django: {
     id: "django",
@@ -316,6 +319,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "eclipse-temurin:21-jre",
     recommendedBaseImage: "eclipse-temurin:21-jre",
+    startCommand: "java -jar app.jar",
   },
   springboot: {
     id: "springboot",
@@ -376,6 +380,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "php:8.3-fpm-alpine",
     recommendedBaseImage: "php:8.3-fpm-alpine",
+    startCommand: "php-fpm",
   },
   laravel: {
     id: "laravel",
@@ -390,6 +395,7 @@ export const FRAMEWORKS: Record<FrameworkId, FrameworkMeta> = {
     supportsStandalone: false,
     defaultBaseImage: "php:8.3-fpm-alpine",
     recommendedBaseImage: "php:8.3-fpm-alpine",
+    startCommand: "php-fpm",
   },
 };
 
