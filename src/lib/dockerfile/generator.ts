@@ -79,7 +79,7 @@ const generateNode = (config: DockerfileConfig): string => {
   const port = config.port;
 
   // Next.js with standalone output
-  if (fw.id === "nextjs" && config.buildOptimizations.includes("standalone")) {
+  if (fw.id === "nextjs" && config.buildOptimizations.includes("standalone") && config.multiStage) {
     const lines: string[] = [];
     lines.push("# syntax=docker/dockerfile:1.7");
     lines.push("");
@@ -122,7 +122,7 @@ const generateNode = (config: DockerfileConfig): string => {
   }
 
   // React / Vue (static)
-  if (fw.id === "react" || fw.id === "vue") {
+  if ((fw.id === "react" || fw.id === "vue") && config.multiStage) {
     const lines: string[] = [];
     lines.push("# syntax=docker/dockerfile:1.7");
     lines.push("");
@@ -142,6 +142,25 @@ const generateNode = (config: DockerfileConfig): string => {
       lines.push(healthCheckCmd(80, fw.id));
     }
     lines.push('CMD ["nginx", "-g", "daemon off;"]');
+    return lines.join("\n");
+  }
+
+  // React / Vue (static) — single-stage: build and serve with Node
+  if (fw.id === "react" || fw.id === "vue") {
+    const lines: string[] = [];
+    lines.push("# syntax=docker/dockerfile:1.7");
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY package.json package-lock.json* ./");
+    lines.push("RUN " + (config.packageManager === "npm" ? "npm ci" : config.packageManager === "pnpm" ? "pnpm install --frozen-lockfile" : config.packageManager === "yarn" ? "yarn install --frozen-lockfile" : "bun install --frozen-lockfile"));
+    lines.push("COPY . .");
+    lines.push("RUN " + (config.packageManager === "npm" ? "npm run build" : config.packageManager === "pnpm" ? "pnpm build" : config.packageManager === "yarn" ? "yarn build" : "bun run build"));
+    lines.push("RUN npm install -g serve");
+    lines.push("EXPOSE 3000");
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(3000, fw.id));
+    }
+    lines.push('CMD ["serve", "-s", "dist", "-l", "3000"]');
     return lines.join("\n");
   }
 
@@ -289,7 +308,7 @@ const generateJava = (config: DockerfileConfig): string => {
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
 
-  if (fw.id === "springboot" && config.buildOptimizations.includes("layered-jar")) {
+  if (fw.id === "springboot" && config.buildOptimizations.includes("layered-jar") && config.multiStage) {
     lines.push("# ---- Build ----");
     lines.push(`FROM eclipse-temurin:${config.javaVersion ?? "21"}-jdk AS builder`);
     lines.push("WORKDIR /app");
@@ -352,29 +371,51 @@ const generateGo = (config: DockerfileConfig): string => {
   const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
-  lines.push("# ---- Build ----");
-  lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine AS builder`);
-  lines.push("WORKDIR /app");
-  lines.push("COPY go.mod go.sum* ./");
-  lines.push("RUN go mod download");
-  lines.push("COPY . .");
-  lines.push(`RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /out/server .`);
-  lines.push("");
-  lines.push("# ---- Runtime (distroless) ----");
-  lines.push("FROM gcr.io/distroless/static-debian12:nonroot");
-  lines.push("WORKDIR /app");
-  lines.push("COPY --from=builder /out/server /app/server");
-  if (config.nonRootUser) {
-    lines.push("USER nonroot:nonroot");
+
+  if (config.multiStage) {
+    lines.push("# ---- Build ----");
+    lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine AS builder`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY go.mod go.sum* ./");
+    lines.push("RUN go mod download");
+    lines.push("COPY . .");
+    lines.push(`RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /out/server .`);
+    lines.push("");
+    lines.push("# ---- Runtime (distroless) ----");
+    lines.push("FROM gcr.io/distroless/static-debian12:nonroot");
+    lines.push("WORKDIR /app");
+    lines.push("COPY --from=builder /out/server /app/server");
+    if (config.nonRootUser) {
+      lines.push("USER nonroot:nonroot");
+    }
+    lines.push("EXPOSE " + port);
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "go"));
+    }
+    lines.push('CMD ["/app/server"]');
+  } else {
+    lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY go.mod go.sum* ./");
+    lines.push("RUN go mod download");
+    lines.push("COPY . .");
+    lines.push(`RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/server .`);
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup");
+      lines.push("USER appuser");
+    }
+    lines.push("EXPOSE " + port);
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "go"));
+    }
+    lines.push('CMD ["/app/server"]');
   }
-  lines.push("EXPOSE " + port);
-  if (config.envVars.length) {
-    lines.push(envBlock(config.envVars));
-  }
-  if (config.healthCheck) {
-    lines.push(healthCheckCmd(port, "go"));
-  }
-  lines.push('CMD ["/app/server"]');
   return lines.join("\n");
 };
 
@@ -385,36 +426,57 @@ const generateRust = (config: DockerfileConfig): string => {
   const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
-  lines.push("# ---- Build deps ----");
-  lines.push("FROM rust:1.78-alpine AS chef");
-  lines.push("RUN apk add --no-cache musl-dev && cargo install cargo-chef");
-  lines.push("WORKDIR /app");
-  lines.push("");
-  lines.push("FROM chef AS planner");
-  lines.push("COPY . .");
-  lines.push("RUN cargo chef prepare --recipe-path recipe.json");
-  lines.push("");
-  lines.push("FROM chef AS builder");
-  lines.push("COPY --from=planner /app/recipe.json recipe.json");
-  lines.push("RUN cargo chef cook --release --recipe-path recipe.json");
-  lines.push("COPY . .");
-  lines.push("RUN cargo build --release --bin server");
-  lines.push("");
-  lines.push("# ---- Runtime ----");
-  lines.push("FROM gcr.io/distroless/cc-debian12:nonroot");
-  lines.push("WORKDIR /app");
-  lines.push("COPY --from=builder /app/target/release/server /app/server");
-  if (config.nonRootUser) {
-    lines.push("USER nonroot:nonroot");
+
+  if (config.multiStage) {
+    lines.push("# ---- Build deps ----");
+    lines.push("FROM rust:1.78-alpine AS chef");
+    lines.push("RUN apk add --no-cache musl-dev && cargo install cargo-chef");
+    lines.push("WORKDIR /app");
+    lines.push("");
+    lines.push("FROM chef AS planner");
+    lines.push("COPY . .");
+    lines.push("RUN cargo chef prepare --recipe-path recipe.json");
+    lines.push("");
+    lines.push("FROM chef AS builder");
+    lines.push("COPY --from=planner /app/recipe.json recipe.json");
+    lines.push("RUN cargo chef cook --release --recipe-path recipe.json");
+    lines.push("COPY . .");
+    lines.push("RUN cargo build --release --bin server");
+    lines.push("");
+    lines.push("# ---- Runtime ----");
+    lines.push("FROM gcr.io/distroless/cc-debian12:nonroot");
+    lines.push("WORKDIR /app");
+    lines.push("COPY --from=builder /app/target/release/server /app/server");
+    if (config.nonRootUser) {
+      lines.push("USER nonroot:nonroot");
+    }
+    lines.push("EXPOSE " + port);
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "rust"));
+    }
+    lines.push('CMD ["/app/server"]');
+  } else {
+    lines.push(`FROM rust:1.78-alpine`);
+    lines.push("RUN apk add --no-cache musl-dev");
+    lines.push("WORKDIR /app");
+    lines.push("COPY . .");
+    lines.push("RUN cargo build --release --bin server");
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup");
+      lines.push("USER appuser");
+    }
+    lines.push("EXPOSE " + port);
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.healthCheck) {
+      lines.push(healthCheckCmd(port, "rust"));
+    }
+    lines.push('CMD ["./target/release/server"]');
   }
-  lines.push("EXPOSE " + port);
-  if (config.envVars.length) {
-    lines.push(envBlock(config.envVars));
-  }
-  if (config.healthCheck) {
-    lines.push(healthCheckCmd(port, "rust"));
-  }
-  lines.push('CMD ["/app/server"]');
   return lines.join("\n");
 };
 
@@ -424,38 +486,62 @@ const generateRust = (config: DockerfileConfig): string => {
 const generatePhp = (config: DockerfileConfig): string => {
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
-  lines.push("# ---- Composer deps ----");
-  lines.push(`FROM ${config.baseImage} AS vendor`);
-  lines.push("WORKDIR /app");
-  lines.push("COPY composer.json composer.lock* ./");
-  lines.push("RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist");
-  lines.push("");
-  lines.push("# ---- Build ----");
-  lines.push(`FROM ${config.baseImage} AS builder`);
-  lines.push("WORKDIR /app");
-  lines.push("COPY --from=vendor /app/vendor ./vendor");
-  lines.push("COPY . .");
-  lines.push("RUN composer dump-autoload --optimize --no-dev");
-  if (config.framework === "laravel") {
-    lines.push("RUN php artisan config:cache && php artisan route:cache || true");
+
+  if (config.multiStage) {
+    lines.push("# ---- Composer deps ----");
+    lines.push(`FROM ${config.baseImage} AS vendor`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY composer.json composer.lock* ./");
+    lines.push("RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist");
+    lines.push("");
+    lines.push("# ---- Build ----");
+    lines.push(`FROM ${config.baseImage} AS builder`);
+    lines.push("WORKDIR /app");
+    lines.push("COPY --from=vendor /app/vendor ./vendor");
+    lines.push("COPY . .");
+    lines.push("RUN composer dump-autoload --optimize --no-dev");
+    if (config.framework === "laravel") {
+      lines.push("RUN php artisan config:cache && php artisan route:cache || true");
+    }
+    lines.push("");
+    lines.push("# ---- Runtime ----");
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /var/www/html");
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser /var/www/html");
+      lines.push("USER appuser");
+    }
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "www-data:www-data") + " /app /var/www/html");
+    lines.push("EXPOSE " + config.port);
+    if (config.healthCheck) {
+      lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
+    }
+    lines.push('CMD ["php-fpm"]');
+  } else {
+    lines.push(`FROM ${config.baseImage}`);
+    lines.push("WORKDIR /var/www/html");
+    lines.push("COPY composer.json composer.lock* ./");
+    lines.push("RUN composer install --no-dev --prefer-dist");
+    if (config.framework === "laravel") {
+      lines.push("RUN php artisan config:cache && php artisan route:cache || true");
+    }
+    lines.push("COPY . .");
+    if (config.nonRootUser) {
+      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser /var/www/html");
+      lines.push("USER appuser");
+    }
+    if (config.envVars.length) {
+      lines.push(envBlock(config.envVars));
+    }
+    lines.push("EXPOSE " + config.port);
+    if (config.healthCheck) {
+      lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
+    }
+    lines.push('CMD ["php-fpm"]');
   }
-  lines.push("");
-  lines.push("# ---- Runtime ----");
-  lines.push(`FROM ${config.baseImage}`);
-  lines.push("WORKDIR /var/www/html");
-  if (config.envVars.length) {
-    lines.push(envBlock(config.envVars));
-  }
-  if (config.nonRootUser) {
-    lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser /var/www/html");
-    lines.push("USER appuser");
-  }
-  lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "www-data:www-data") + " /app /var/www/html");
-  lines.push("EXPOSE " + config.port);
-  if (config.healthCheck) {
-    lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
-  }
-  lines.push('CMD ["php-fpm"]');
   return lines.join("\n");
 };
 
