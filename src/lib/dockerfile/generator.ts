@@ -117,7 +117,8 @@ const generateNode = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    lines.push('CMD ["node", "server.js"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "node server.js";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
     return lines.join("\n");
   }
 
@@ -274,7 +275,7 @@ const generatePython = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    const startCmd = config.customStartCommand || fw.startCommand || "python main.py";
+    const startCmd = config.customStartCommand || (fw.startCommand ? fw.startCommand.replace(/:\d+\b/, `:${port}`).replace(/--port \d+/, `--port ${port}`) : "python main.py");
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
@@ -293,7 +294,7 @@ const generatePython = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    const startCmd = config.customStartCommand || fw.startCommand || "python main.py";
+    const startCmd = config.customStartCommand || (fw.startCommand ? fw.startCommand.replace(/:\d+\b/, `:${port}`).replace(/--port \d+/, `--port ${port}`) : "python main.py");
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
@@ -343,7 +344,8 @@ const generateJava = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    lines.push('ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "java -jar app.jar";
+    lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
     lines.push("WORKDIR /app");
@@ -359,7 +361,8 @@ const generateJava = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    lines.push('CMD ["java", "-jar", "app.jar"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "java -jar app.jar";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
@@ -368,6 +371,7 @@ const generateJava = (config: DockerfileConfig): string => {
  * Go — distroless, static binary
  * ─────────────────────────────────────────────────────── */
 const generateGo = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
   const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
@@ -395,7 +399,8 @@ const generateGo = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "go"));
     }
-    lines.push('CMD ["/app/server"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "/app/server";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine`);
     lines.push("WORKDIR /app");
@@ -414,7 +419,8 @@ const generateGo = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "go"));
     }
-    lines.push('CMD ["/app/server"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "./server";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
@@ -423,6 +429,7 @@ const generateGo = (config: DockerfileConfig): string => {
  * Rust — static musl binary
  * ─────────────────────────────────────────────────────── */
 const generateRust = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
   const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
@@ -457,7 +464,8 @@ const generateRust = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "rust"));
     }
-    lines.push('CMD ["/app/server"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "/app/server";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM rust:1.78-alpine`);
     lines.push("RUN apk add --no-cache musl-dev");
@@ -475,7 +483,8 @@ const generateRust = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "rust"));
     }
-    lines.push('CMD ["./target/release/server"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "./target/release/server";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
@@ -484,6 +493,7 @@ const generateRust = (config: DockerfileConfig): string => {
  * PHP / Laravel — PHP-FPM
  * ─────────────────────────────────────────────────────── */
 const generatePhp = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
 
@@ -519,7 +529,8 @@ const generatePhp = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
     }
-    lines.push('CMD ["php-fpm"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "php-fpm";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
     lines.push("WORKDIR /var/www/html");
@@ -540,7 +551,8 @@ const generatePhp = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
     }
-    lines.push('CMD ["php-fpm"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "php-fpm";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
@@ -617,6 +629,7 @@ const generateRuby = (config: DockerfileConfig): string => {
  * .NET — dotnet CLI
  * ─────────────────────────────────────────────────────── */
 const generateDotnet = (config: DockerfileConfig): string => {
+  const fw = getFramework(config.framework);
   const port = config.port;
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
@@ -645,7 +658,8 @@ const generateDotnet = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "dotnet"));
     }
-    lines.push('ENTRYPOINT ["dotnet", "MyApp.dll"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "dotnet MyApp.dll";
+    lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
     lines.push("WORKDIR /app");
@@ -662,7 +676,8 @@ const generateDotnet = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, "dotnet"));
     }
-    lines.push('ENTRYPOINT ["dotnet", "MyApp.dll"]');
+    const startCmd = config.customStartCommand || fw.startCommand || "dotnet MyApp.dll";
+    lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
@@ -705,8 +720,8 @@ const generateElixir = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    const appName = fw.id === "phoenix" ? "app" : "app";
-    lines.push(`CMD ["bin/${appName}", "start"]`);
+    const startCmd = config.customStartCommand || fw.startCommand || "bin/app start";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
     lines.push("RUN apk add --no-cache build-base npm git");
@@ -727,8 +742,8 @@ const generateElixir = (config: DockerfileConfig): string => {
     if (config.healthCheck) {
       lines.push(healthCheckCmd(port, fw.id));
     }
-    const appName = fw.id === "phoenix" ? "app" : "app";
-    lines.push(`CMD ["bin/${appName}", "start"]`);
+    const startCmd = config.customStartCommand || fw.startCommand || "bin/app start";
+    lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   }
   return lines.join("\n");
 };
