@@ -2,58 +2,57 @@
 ---
 
 <div id="microservice-builder" class="space-y-6">
-  <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 space-y-3">
-    <h2 class="t-caption-mono text-[var(--color-body)]">Architecture builder</h2>
-    <p class="t-caption text-[var(--color-body)]">
-      Build a complete Docker setup for your application. Each service gets its own Dockerfile.
-      Standard Docker Compose output, ready for any deployment.
-    </p>
-  </div>
-
   <!-- Architecture selection -->
   <div id="phase-select">
-    <h3 class="t-caption-mono mb-3 text-[var(--color-body)]">What are you building?</h3>
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold tracking-tight text-[var(--color-ink)] mb-2">Architecture Builder</h2>
+      <p class="text-[15px] text-[var(--color-body)] leading-relaxed">
+        Build a complete Docker setup for your application. Each service gets its own Dockerfile. Standard Docker Compose output, ready for any deployment.
+      </p>
+    </div>
+    <h3 class="text-xs font-semibold uppercase tracking-widest text-[var(--color-mute)] mb-4">What are you building?</h3>
     <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" id="arch-grid">
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="monolith">
-        <div class="text-2xl mb-2">🧱</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Monolith</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">Single application + database + cache. Simple and fast to deploy.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="monolith">
+        <div class="text-3xl mb-3">🧱</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Monolith</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">Single application + database + cache. Simple and fast to deploy.</p>
       </button>
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="frontendApi">
-        <div class="text-2xl mb-2">🧩</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Frontend + API</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">Two-tier: frontend service and backend API sharing a database.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="frontendApi">
+        <div class="text-3xl mb-3">🧩</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Frontend + API</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">Two-tier: frontend service and backend API sharing a database.</p>
       </button>
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="threeTier">
-        <div class="text-2xl mb-2">🏗️</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Three-tier</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">Frontend + API + dedicated business logic service + database.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="threeTier">
+        <div class="text-3xl mb-3">🏗️</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Three-tier</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">Frontend + API + dedicated business logic service + database.</p>
       </button>
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="microservices">
-        <div class="text-2xl mb-2">🕸️</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Microservices</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">Gateway + auth + core service, backed by Postgres and Redis.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="microservices">
+        <div class="text-3xl mb-3">🕸️</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Microservices</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">Gateway + auth + core service, backed by Postgres and Redis.</p>
       </button>
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="eventDriven">
-        <div class="text-2xl mb-2">📨</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Event-driven</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">API + multiple workers consuming from a message queue.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="eventDriven">
+        <div class="text-3xl mb-3">📨</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Event-driven</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">API + multiple workers consuming from a message queue.</p>
       </button>
-      <button type="button" class="arch-card rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5 text-left transition-all hover:border-[var(--color-hairline-strong)] hover:shadow-[var(--shadow-level-2)]" data-arch="blank">
-        <div class="text-2xl mb-2">✨</div>
-        <span class="t-body-sm-strong text-[var(--color-ink)] block">Custom</span>
-        <p class="t-caption mt-1 text-[var(--color-body)]">Start from scratch. Add your own services.</p>
+      <button type="button" class="arch-card rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-left transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas-soft-2)]" data-arch="blank">
+        <div class="text-3xl mb-3">✨</div>
+        <span class="text-base font-semibold text-[var(--color-ink)] block mb-1.5">Custom</span>
+        <p class="text-sm leading-relaxed text-[var(--color-body)]">Start from scratch. Add your own services.</p>
       </button>
     </div>
   </div>
 
   <!-- Service configuration -->
   <div id="phase-config" class="hidden">
-    <div class="mb-4">
-      <button type="button" id="ms-back-btn" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3 py-1.5 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-        Back to architecture
+    <div class="mb-6 flex items-center gap-3">
+      <button type="button" id="ms-back-btn" class="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--color-body)] transition-colors duration-150 hover:border-[var(--color-hairline-strong)] hover:text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Back
       </button>
+      <div id="ms-arch-label" class="text-sm text-[var(--color-body)]"></div>
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[440px_1fr]">
@@ -199,10 +198,16 @@
 </div>
 
 <style>
-  .arch-card[data-active="true"] { border-color: var(--color-primary-cta); background: var(--color-primary-cta); color: var(--color-primary-cta-fg); }
-  .service-card { transition: border-color 150ms ease; cursor: pointer; }
-  .service-card:hover { border-color: var(--color-hairline-strong); }
-  .df-tab { transition: background 150ms ease, color 150ms ease; }
+  .arch-card[data-active="true"] {
+    border-color: var(--color-primary-cta);
+    background: color-mix(in srgb, var(--color-primary-cta) 12%, var(--color-canvas));
+    box-shadow: 0 0 0 1px var(--color-primary-cta), 0 4px 16px -4px rgba(0,0,0,0.2);
+  }
+  .arch-card[data-active="true"]:hover {
+    transform: none;
+  }
+  .service-card { transition: border-color 150ms ease, background 150ms ease; cursor: pointer; }
+  .service-card:hover { border-color: var(--color-hairline-strong); background: var(--color-canvas-soft-2); }
 
   /* Desktop: bump text sizes for readability */
   @media (min-width: 1024px) {
@@ -228,6 +233,20 @@
     #microservice-builder .code-panel {
       font-size: 14px;
       line-height: 22px;
+    }
+    #arch-grid .arch-card span {
+      font-size: 16px;
+    }
+    #arch-grid .arch-card p {
+      font-size: 14px;
+    }
+    #microservice-builder h2 {
+      font-size: 28px;
+      line-height: 1.2;
+    }
+    #microservice-builder .mb-8 p {
+      font-size: 16px;
+      line-height: 24px;
     }
   }
 </style>
@@ -533,6 +552,15 @@
   }
 
   // ── Architecture selection ───────────────────────────────
+  const ARCH_LABELS: Record<string, string> = {
+    monolith: "Monolith",
+    frontendApi: "Frontend + API",
+    threeTier: "Three-tier",
+    microservices: "Microservices",
+    eventDriven: "Event-driven",
+    blank: "Custom",
+  };
+
   function selectArchitecture(archId: string) {
     if (archId === "blank") { state.services = {}; }
     else {
@@ -544,11 +572,15 @@
     save(); render();
     document.getElementById("phase-select")!.classList.add("hidden");
     document.getElementById("phase-config")!.classList.remove("hidden");
+    const label = document.getElementById("ms-arch-label");
+    if (label) label.textContent = ARCH_LABELS[archId] ?? archId;
   }
 
   function goBack() {
     document.getElementById("phase-select")!.classList.remove("hidden");
     document.getElementById("phase-config")!.classList.add("hidden");
+    const label = document.getElementById("ms-arch-label");
+    if (label) label.textContent = "";
   }
 
   // ── Modal ────────────────────────────────────────────────
@@ -902,6 +934,10 @@
     if (Object.keys(state.services).length > 0) {
       document.getElementById("phase-select")!.classList.add("hidden");
       document.getElementById("phase-config")!.classList.remove("hidden");
+      if (state.currentArch) {
+        const label = document.getElementById("ms-arch-label");
+        if (label) label.textContent = ARCH_LABELS[state.currentArch] ?? state.currentArch;
+      }
     }
     render();
   })();
