@@ -3,6 +3,8 @@ import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import Container from "../components/ui/Container.astro";
+import Button from "../components/ui/Button.astro";
+import Icon from "../components/ui/Icon.astro";
 import Badge from "../components/ui/Badge.astro";
 import ComposeGenerator from "../components/ComposeGenerator.astro";
 ---
@@ -34,42 +36,61 @@ import ComposeGenerator from "../components/ComposeGenerator.astro";
 >
   <Nav />
   <main id="main" class="relative">
-    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-12 md:py-16">
+    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-8 md:py-10">
       <div class="absolute inset-x-0 top-0 -z-10 h-[320px] mesh-gradient-sm"></div>
       <Container>
         <div class="text-center">
-          <Badge variant="new" class="mb-4">Production compose files</Badge>
-          <h1 class="t-display-xl mx-auto max-w-3xl text-[var(--color-ink)]">
+          <h1 class="t-display-lg mx-auto max-w-3xl text-[var(--color-ink)]">
             Docker Compose, generated.
           </h1>
-          <p class="t-body-lg mx-auto mt-4 max-w-2xl text-[var(--color-body)]">
-            Pick your services, tweak the configuration, and get a docker-compose.yml that's actually production-ready — with health checks, depends_on conditions, and named volumes.
+          <p class="t-body-md mx-auto mt-2 max-w-2xl text-[var(--color-body)]">
+            Pick your services, tweak the configuration, and get a production-ready docker-compose.yml.
           </p>
         </div>
       </Container>
     </section>
 
-    <section class="py-12 md:py-20">
+    <section class="py-8 md:py-12">
       <Container>
         <ComposeGenerator />
       </Container>
     </section>
 
-    <section class="border-t border-[var(--color-hairline)] py-16">
-      <Container size="md">
-        <h2 class="t-display-md mb-6 text-[var(--color-ink)]">What you get</h2>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {[
-            { t: "Live validation", d: "Catch port conflicts, default passwords, and missing volumes before you ship." },
-            { t: "Dependency-aware", d: "depends_on with service_healthy conditions. Apps wait for databases to be ready." },
-            { t: "Health checks", d: "Pre-configured healthchecks for every service — works with Docker, Swarm, and Kubernetes." },
-            { t: "Named volumes", d: "Data persists across container restarts. Easy to back up and migrate." },
-          ].map(f => (
-            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
-              <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{f.t}</h3>
-              <p class="t-body-md text-[var(--color-body)]">{f.d}</p>
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="ambient-glow relative py-16">
+      <Container>
+        <div class="relative z-10">
+          <h2 class="t-display-lg mb-6"><span class="gradient-text">What you get</span></h2>
+          <div data-reveal-children class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {[
+              { t: "Live validation", d: "Catch port conflicts, default passwords, and missing volumes before you ship." },
+              { t: "Dependency-aware", d: "depends_on with service_healthy conditions. Apps wait for databases to be ready." },
+              { t: "Health checks", d: "Pre-configured healthchecks for every service — works with Docker, Swarm, and Kubernetes." },
+              { t: "Named volumes", d: "Data persists across container restarts. Easy to back up and migrate." },
+            ].map(f => (
+              <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{f.t}</h3>
+                <p class="t-body-md text-[var(--color-body)]">{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Container>
+    </section>
+
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="py-16">
+      <Container>
+        <div class="cta-glow relative overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-center shadow-[var(--shadow-level-4)] sm:p-10 md:p-14">
+          <div class="relative z-10">
+            <h2 class="t-display-lg"><span class="gradient-text">Also need a Dockerfile?</span></h2>
+            <p class="t-body-md mx-auto mt-3 max-w-xl text-[var(--color-body)]">
+              Generate a multi-stage, best-practice Dockerfile alongside your compose file.
+            </p>
+            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button href="/#generator" size="lg">Dockerfile Generator <Icon name="arrow-right" size={16} /></Button>
             </div>
-          ))}
+          </div>
         </div>
       </Container>
     </section>

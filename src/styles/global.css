@@ -511,6 +511,185 @@ html.dark {
   --tok-env-value: #79c08a;
 }
 
+/* ─────────────────────────────────────────────────────────────
+ * Scroll-reveal animation
+ * ──────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children reveal */
+[data-reveal-children] > * {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-reveal-children].revealed > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+[data-reveal-children].revealed > *:nth-child(1) { transition-delay: 0ms; }
+[data-reveal-children].revealed > *:nth-child(2) { transition-delay: 60ms; }
+[data-reveal-children].revealed > *:nth-child(3) { transition-delay: 120ms; }
+[data-reveal-children].revealed > *:nth-child(4) { transition-delay: 180ms; }
+[data-reveal-children].revealed > *:nth-child(5) { transition-delay: 240ms; }
+[data-reveal-children].revealed > *:nth-child(6) { transition-delay: 300ms; }
+
+/* ─────────────────────────────────────────────────────────────
+ * Gradient divider — replaces hard border-t
+ * ──────────────────────────────────────────────────────────── */
+.gradient-divider {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--color-hairline) 20%,
+    var(--color-hairline-strong) 50%,
+    var(--color-hairline) 80%,
+    transparent 100%
+  );
+}
+html.dark .gradient-divider {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    var(--color-hairline) 15%,
+    var(--color-hairline-strong) 50%,
+    var(--color-hairline) 85%,
+    transparent 100%
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Gradient text — for accent headings
+ * ──────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, var(--grad-develop-start), var(--grad-preview-start), var(--grad-preview-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html.dark .gradient-text {
+  background: linear-gradient(135deg, var(--grad-develop-end), var(--grad-preview-start), var(--grad-preview-end));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Card hover glow — subtle lift + border highlight
+ * ──────────────────────────────────────────────────────────── */
+.card-hover {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 0 0 1px var(--color-hairline-strong),
+              0 4px 24px -4px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-hairline-strong);
+  transform: translateY(-2px);
+}
+html.dark .card-hover:hover {
+  box-shadow: 0 0 0 1px var(--color-hairline-strong),
+              0 4px 24px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Ambient gradient wash — subtle colored background glow
+ * ──────────────────────────────────────────────────────────── */
+.ambient-glow {
+  position: relative;
+}
+.ambient-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0, 124, 240, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 100%, rgba(121, 40, 202, 0.04) 0%, transparent 60%);
+  z-index: 0;
+}
+html.dark .ambient-glow::before {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(0, 124, 240, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 100%, rgba(235, 54, 127, 0.05) 0%, transparent 60%);
+}
+
+/* CTA section glow */
+.cta-glow {
+  position: relative;
+}
+.cta-glow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120%;
+  height: 200%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0, 124, 240, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 30% 60%, rgba(121, 40, 202, 0.03) 0%, transparent 50%);
+  z-index: 0;
+}
+html.dark .cta-glow::before {
+  background:
+    radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0, 124, 240, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 50% at 30% 60%, rgba(235, 54, 127, 0.04) 0%, transparent 50%);
+}
+
+/* ─────────────────────────────────────────────────────────────
+ * Framework badge shimmer — subtle shine on hover
+ * ──────────────────────────────────────────────────────────── */
+.fw-badge {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.fw-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.04) 45%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 55%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.5s ease;
+  pointer-events: none;
+}
+.fw-badge:hover::after {
+  transform: translateX(100%);
+}
+.fw-badge:hover {
+  border-color: var(--color-hairline-strong);
+  box-shadow: 0 0 0 1px var(--color-hairline-strong);
+}
+
 /* Reduce motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -518,6 +697,14 @@ html.dark {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+  [data-reveal-children] > * {
+    opacity: 1;
+    transform: none;
   }
 }
 

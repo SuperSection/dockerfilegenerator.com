@@ -113,7 +113,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- Features grid -->
-    <section class="border-t border-[var(--color-hairline)] bg-[var(--color-canvas)] py-20 md:py-24">
+    <section data-reveal class="border-t border-[var(--color-hairline)] bg-[var(--color-canvas)] py-20 md:py-24">
       <Container>
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">Features</p>
@@ -122,7 +122,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             Every Dockerfile is generated with security, performance, and Dockerfile best practices in mind.
           </p>
         </div>
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div data-reveal-children class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[
             { icon: "layers", title: "Multi-stage builds", desc: "Smaller final images with build dependencies isolated to a builder stage." },
             { icon: "shield", title: "Security first", desc: "Non-root users, distroless base images, and CVE-respecting versions out of the box." },
@@ -131,7 +131,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             { icon: "info", title: "Learn as you go", desc: "Every instruction is explained inline. Understand what your Dockerfile actually does." },
             { icon: "package", title: "Export everything", desc: "Dockerfile, .dockerignore, .env.example, and zip packages. Ready to commit." },
           ].map((f) => (
-            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-[var(--shadow-level-2)]">
+            <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-[var(--shadow-level-2)]">
               <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-md bg-[var(--color-canvas-soft-2)] text-[var(--color-ink)]">
                 <Icon name={f.icon} size={18} />
               </div>
@@ -144,12 +144,13 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- Best practices scanner — emphasized band -->
-    <section class="border-t border-[var(--color-hairline)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="ambient-glow relative py-20 md:py-24">
       <Container>
-        <div class="grid gap-12 lg:grid-cols-2 lg:items-center">
+        <div class="relative z-10 grid gap-12 lg:grid-cols-2 lg:items-center">
           <div>
             <p class="t-caption-mono mb-3 text-[var(--color-body)]">Scanner</p>
-            <h2 class="t-display-lg mb-4 text-[var(--color-ink)]">A built-in Dockerfile best-practice auditor.</h2>
+            <h2 class="t-display-lg mb-4"><span class="gradient-text">A built-in Dockerfile best-practice auditor.</span></h2>
             <p class="t-body-lg mb-6 text-[var(--color-body)]">
               Every generated Dockerfile is scanned against Docker security and performance best practices. You'll see warnings for running as root, missing health checks, oversized base images, and more — ensuring your Dockerfile example is production-ready.
             </p>
@@ -169,7 +170,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
               ))}
             </ul>
           </div>
-          <div class="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-[var(--shadow-level-4)]">
+          <div class="card-hover relative z-10 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 shadow-[var(--shadow-level-4)]">
             <div class="mb-4 flex items-center justify-between">
               <span class="t-code text-[var(--color-body)]">scanner-report.json</span>
               <Badge variant="warning">3 issues</Badge>
@@ -195,27 +196,29 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- Frameworks -->
-    <section class="border-t border-[var(--color-hairline)] bg-[var(--color-canvas)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="bg-[var(--color-canvas)] py-20 md:py-24">
       <Container>
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">Frameworks</p>
           <h2 class="t-display-lg text-[var(--color-ink)]">Dockerfile generator for 23+ frameworks.</h2>
         </div>
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
+        <div data-reveal-children class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
           {[
             "Node.js", "Express", "NestJS", "Next.js", "React", "Vue",
             "Python", "Django", "FastAPI", "Flask",
             "Java", "Spring Boot", "Quarkus", "Go", "Rust", "Actix",
             "PHP", "Laravel", "Ruby", "Rails", ".NET", "Phoenix", "Gin",
           ].map((f) => (
-            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-3 text-center t-body-sm text-[var(--color-ink)]">{f}</div>
+            <div class="fw-badge rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-3 text-center t-body-sm text-[var(--color-ink)]">{f}</div>
           ))}
         </div>
       </Container>
     </section>
 
     <!-- Education -->
-    <section class="border-y border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="border-y border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] py-20 md:py-24">
       <Container>
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">Education</p>
@@ -224,7 +227,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             Every instruction in your generated Dockerfile is explained in plain English. Understand Dockerfile volume mounts, layer caching, and more.
           </p>
         </div>
-        <div class="mx-auto grid max-w-3xl grid-cols-1 gap-3 md:grid-cols-2">
+        <div data-reveal-children class="mx-auto grid max-w-3xl grid-cols-1 gap-3 md:grid-cols-2">
           {[
             { ins: "FROM node:20-alpine", desc: "Lightweight Node.js base image with Alpine Linux (~50MB)." },
             { ins: "WORKDIR /app", desc: "Sets the working directory for subsequent instructions." },
@@ -233,7 +236,7 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             { ins: "HEALTHCHECK", desc: "Tells Docker how to test if the container is healthy." },
             { ins: "EXPOSE 3000", desc: "Documents the port the container listens on at runtime." },
           ].map((e) => (
-            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+            <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
               <code class="t-code block text-[var(--color-ink)]">$ {e.ins}</code>
               <p class="t-body-sm mt-2 text-[var(--color-body)]">{e.desc}</p>
             </div>
@@ -243,20 +246,21 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- Use cases -->
-    <section class="py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="py-20 md:py-24">
       <Container>
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">Use cases</p>
           <h2 class="t-display-lg text-[var(--color-ink)]">Dockerfile generator for every use case.</h2>
         </div>
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div data-reveal-children class="grid grid-cols-1 gap-6 md:grid-cols-2">
           {[
             { title: "Bootstrapping a new project", desc: "Skip the boilerplate. Get a working, optimized Dockerfile in 30 seconds and focus on your application code." },
             { title: "Migrating to a slimmer image", desc: "Switch from a 1.2GB node image to a 50MB alpine image. Or jump to distroless for a 2MB Go binary." },
             { title: "Onboarding new engineers", desc: "New to Docker? Use the inline explanations to learn what each instruction does while you generate." },
             { title: "Reviewing an existing Dockerfile", desc: "Drop in your current Dockerfile and the scanner surfaces security, performance, and best-practice issues." },
           ].map((u) => (
-            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
+            <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
               <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{u.title}</h3>
               <p class="t-body-md text-[var(--color-body)]">{u.desc}</p>
             </div>
@@ -266,7 +270,8 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- SEO Content Section -->
-    <section class="border-t border-[var(--color-hairline)] bg-[var(--color-canvas)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="bg-[var(--color-canvas)] py-20 md:py-24">
       <Container>
         <article class="mx-auto max-w-3xl">
           <h2 class="t-display-lg mb-6 text-[var(--color-ink)]">Dockerfile Generator — The Ultimate Online Tool for Docker Configuration</h2>
@@ -310,7 +315,8 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- FAQ -->
-    <section class="border-t border-[var(--color-hairline)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="py-20 md:py-24">
       <Container size="md">
         <div class="mb-12 text-center">
           <p class="t-caption-mono mb-3 text-[var(--color-body)]">FAQ</p>
@@ -340,16 +346,19 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
     </section>
 
     <!-- Final CTA -->
-    <section class="border-t border-[var(--color-hairline)] py-20 md:py-24">
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="py-20 md:py-24">
       <Container>
-        <div class="rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-center shadow-[var(--shadow-level-4)] sm:p-10 md:p-16">
-          <h2 class="t-display-lg text-[var(--color-ink)]">Generate your first Dockerfile online.</h2>
-          <p class="t-body-md mx-auto mt-3 max-w-xl text-[var(--color-body)]">
-            Use our free Dockerfile generator or Docker Compose generator. Pick a framework, configure, and download in under a minute.
-          </p>
-          <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button href="#generator" size="lg">Start generating <Icon name="arrow-right" size={16} /></Button>
-            <Button href="/compose" variant="secondary" size="lg">Generate Compose</Button>
+        <div class="cta-glow relative overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-center shadow-[var(--shadow-level-4)] sm:p-10 md:p-16">
+          <div class="relative z-10">
+            <h2 class="t-display-lg"><span class="gradient-text">Generate your first Dockerfile online.</span></h2>
+            <p class="t-body-md mx-auto mt-3 max-w-xl text-[var(--color-body)]">
+              Use our free Dockerfile generator or Docker Compose generator. Pick a framework, configure, and download in under a minute.
+            </p>
+            <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Button href="#generator" size="lg">Start generating <Icon name="arrow-right" size={16} /></Button>
+              <Button href="/compose" variant="secondary" size="lg">Generate Compose</Button>
+            </div>
           </div>
         </div>
       </Container>
