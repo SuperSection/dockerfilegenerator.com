@@ -214,13 +214,13 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
       </Container>
     </section>
 
-    <!-- Dark band: explanation -->
-    <section class="border-y border-[var(--color-hairline)] bg-[var(--color-primary-cta)] py-20 md:py-24" style="color: var(--color-primary-cta-fg);">
+    <!-- Education -->
+    <section class="border-y border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] py-20 md:py-24">
       <Container>
         <div class="mb-12 text-center">
-          <p class="t-caption-mono mb-3" style="color: var(--color-primary-cta-fg); opacity: 0.7;">Education</p>
-          <h2 class="t-display-lg" style="color: var(--color-primary-cta-fg);">Learn Docker as you generate — your Dockerfile reference guide.</h2>
-          <p class="t-body-md mx-auto mt-3 max-w-2xl" style="color: var(--color-primary-cta-fg); opacity: 0.7;">
+          <p class="t-caption-mono mb-3 text-[var(--color-body)]">Education</p>
+          <h2 class="t-display-lg text-[var(--color-ink)]">Learn Docker as you generate — your Dockerfile reference guide.</h2>
+          <p class="t-body-md mx-auto mt-3 max-w-2xl text-[var(--color-body)]">
             Every instruction in your generated Dockerfile is explained in plain English. Understand Dockerfile volume mounts, layer caching, and more.
           </p>
         </div>
@@ -233,9 +233,9 @@ import DockerfileGenerator from "../components/DockerfileGenerator.astro";
             { ins: "HEALTHCHECK", desc: "Tells Docker how to test if the container is healthy." },
             { ins: "EXPOSE 3000", desc: "Documents the port the container listens on at runtime." },
           ].map((e) => (
-            <div class="rounded-md border border-white/10 bg-white/5 p-4 backdrop-blur">
-              <code class="t-code block" style="color: var(--color-primary-cta-fg);">$ {e.ins}</code>
-              <p class="t-body-sm mt-2" style="color: var(--color-primary-cta-fg); opacity: 0.7;">{e.desc}</p>
+            <div class="rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4">
+              <code class="t-code block text-[var(--color-ink)]">$ {e.ins}</code>
+              <p class="t-body-sm mt-2 text-[var(--color-body)]">{e.desc}</p>
             </div>
           ))}
         </div>
