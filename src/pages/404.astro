@@ -1,0 +1,61 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import Container from "../components/ui/Container.astro";
+import Icon from "../components/ui/Icon.astro";
+import Button from "../components/ui/Button.astro";
+---
+
+<Layout
+  title="404 — Page Not Found — Dockerfile Generator"
+  description="The page you're looking for doesn't exist or has been moved."
+>
+  <Nav />
+  <main id="main">
+    <section class="flex min-h-[60vh] items-center py-16 md:py-24">
+      <Container size="md">
+        <div class="flex flex-col items-center text-center">
+          <div class="mb-6 inline-flex h-20 items-center justify-center rounded-2xl bg-[var(--color-error-soft)] px-8">
+            <span class="t-display-xl text-[var(--color-error)]">404</span>
+          </div>
+
+          <h1 class="t-display-lg mb-4 text-[var(--color-ink)]">Page Not Found</h1>
+
+          <p class="t-body-lg mb-8 max-w-md text-[var(--color-body)]">
+            The page you're looking for doesn't exist or has been moved to a different location.
+          </p>
+
+          <div class="flex flex-wrap items-center justify-center gap-3">
+            <Button href="/" variant="primary" size="lg">
+              <Icon name="home" size={18} /> Back to Home
+            </Button>
+            <Button href="javascript:history.back()" variant="secondary" size="lg">
+              <Icon name="arrow-left" size={18} /> Go Back
+            </Button>
+          </div>
+
+          <div class="mt-14 w-full max-w-lg">
+            <div class="mb-5 flex items-center gap-3">
+              <div class="h-px flex-1 bg-[var(--color-hairline)]"></div>
+              <span class="t-body-sm whitespace-nowrap text-[var(--color-muted)]">or explore a tool</span>
+              <div class="h-px flex-1 bg-[var(--color-hairline)]"></div>
+            </div>
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <a href="/" class="inline-flex items-center gap-2.5 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-5 py-3 t-body-md text-[var(--color-body)] transition-all hover:border-[var(--color-mute)] hover:text-[var(--color-ink)] hover:shadow-sm">
+                <Icon name="package" size={18} /> Dockerfile Generator
+              </a>
+              <a href="/compose" class="inline-flex items-center gap-2.5 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-5 py-3 t-body-md text-[var(--color-body)] transition-all hover:border-[var(--color-mute)] hover:text-[var(--color-ink)] hover:shadow-sm">
+                <Icon name="layers" size={18} /> Compose Generator
+              </a>
+              <a href="/stack-builder" class="inline-flex items-center gap-2.5 rounded-xl border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-5 py-3 t-body-md text-[var(--color-body)] transition-all hover:border-[var(--color-mute)] hover:text-[var(--color-ink)] hover:shadow-sm">
+                <Icon name="box" size={18} /> Stack Builder
+              </a>
+            </div>
+          </div>
+        </div>
+      </Container>
+    </section>
+  </main>
+  <Footer />
+</Layout>
