@@ -31,21 +31,17 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
           </button>
         </div>
 
-        <!-- Quick picks: compact horizontal rows per category -->
+        <!-- Quick picks: responsive category rows -->
         <div id="service-quickpicks" class="mt-3 flex flex-wrap gap-x-5 gap-y-2">
           {(() => {
-            const quickCategories = CATEGORY_ORDER.filter(cat => {
+            return CATEGORY_ORDER.map((cat, rank) => {
               const items = SERVICE_LIST.filter((s) => s.category === cat);
-              return items.length > 0;
-            });
-            return quickCategories.map((cat) => {
-              const items = SERVICE_LIST.filter((s) => s.category === cat);
-              const top = items.slice(0, 4);
+              if (!items.length) return null;
               return (
-                <div class="service-category flex items-center gap-1.5 min-w-0" data-category={cat}>
+                <div class="service-category qp-rank flex items-center gap-1.5 min-w-0" data-category={cat} data-rank={rank}>
                   <span class="t-caption text-[var(--color-mute)] shrink-0">{CATEGORY_LABELS[cat]}</span>
                   <div class="flex items-center gap-1 flex-wrap">
-                    {top.map((svc) => (
+                    {items.slice(0, 4).map((svc) => (
                       <button
                         type="button"
                         class="service-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-2 py-2 min-h-[44px] text-left transition-all hover:border-[var(--color-hairline-strong)] hover:bg-[var(--color-canvas)] min-w-0"
@@ -58,14 +54,14 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
                         </span>
                       </button>
                     ))}
-                    {items.length > top.length && (
+                    {items.length > 4 && (
                       <button
                         type="button"
                         data-action="open-picker"
                         data-category={cat}
                         class="t-caption text-[var(--color-link)] hover:underline shrink-0"
                       >
-                        +{items.length - top.length}
+                        +{items.length - 4}
                       </button>
                     )}
                   </div>
@@ -73,6 +69,14 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
               );
             });
           })()}
+          <button
+            type="button"
+            id="btn-show-more-cats"
+            class="inline-flex items-center gap-1 t-caption text-[var(--color-link)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            <span id="show-more-label">Show more</span>
+            <svg id="show-more-chevron" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
         </div>
       </div>
 
@@ -249,6 +253,21 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   .service-btn {
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   }
+
+  /* Quick picks: hide extra categories by default, reveal on "show more" */
+  /* Mobile: show 2 categories */
+  #service-quickpicks .qp-rank[data-rank] { display: none; }
+  #service-quickpicks .qp-rank[data-rank="0"],
+  #service-quickpicks .qp-rank[data-rank="1"] { display: flex; }
+  /* Desktop (lg+): show 4 categories */
+  @media (min-width: 1024px) {
+    #service-quickpicks .qp-rank[data-rank="2"],
+    #service-quickpicks .qp-rank[data-rank="3"] { display: flex; }
+  }
+  /* "Show more" expanded state: reveal all */
+  #service-quickpicks.show-more .qp-rank[data-rank] { display: flex; }
+  #show-more-chevron { transition: transform 200ms ease; }
+
   #compose-code, #env-code {
     transition: opacity 120ms ease;
   }
@@ -602,9 +621,8 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     btn.addEventListener("click", () => toggleService(btn.dataset.service!));
   });
 
-  // The inline sidebar search filters the quick-pick catalog AND opens the
-  // picker if the user is typing. If the field is empty, only the quick
-  // picks are shown — the full list lives behind the picker.
+  // The inline search filters the quick-pick catalog AND opens the
+  // picker if the user is typing.
   function filterQuickPicks(q: string) {
     const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, "");
     const nq = normalize(q);
@@ -673,8 +691,6 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
   inlineSearch?.addEventListener("input", (e) => {
     const v = (e.target as HTMLInputElement).value;
     filterQuickPicks(v);
-    // Typing into the inline search also opens the picker with the
-    // full catalog, so the user has a single keystroke → see everything.
     if (v.length > 0 && picker.classList.contains("hidden")) {
       openPicker();
     }
@@ -764,6 +780,13 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     state.useEnvFile = (e.target as HTMLInputElement).checked;
     saveState();
     renderOutput();
+  });
+
+  document.getElementById("btn-show-more-cats")?.addEventListener("click", () => {
+    const qp = document.getElementById("service-quickpicks")!;
+    const expanded = qp.classList.toggle("show-more");
+    document.getElementById("show-more-label")!.textContent = expanded ? "Show less" : "Show more";
+    document.getElementById("show-more-chevron")!.style.transform = expanded ? "rotate(180deg)" : "";
   });
 
   const copy = async (text: string) => {
