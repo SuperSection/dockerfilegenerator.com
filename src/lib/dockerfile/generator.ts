@@ -58,11 +58,11 @@ const envBlock = (vars: { key: string; value: string }[]) => {
   return "ENV " + vars.map((v) => `${v.key}=${v.value}`).join(" \\\n    ");
 };
 
-const healthCheckCmd = (port: number, framework: FrameworkId) => {
+const healthCheckCmd = (port: number, framework: FrameworkId, workdir = "/app") => {
   // Go and Rust typically use distroless images without wget/curl.
   // Use a simple /dev/tcp check or skip health check for distroless.
   if (framework === "go" || framework === "rust") {
-    return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD ["/app/server", "--help"] > /dev/null 2>&1 || exit 1`;
+    return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD ["${workdir}/server", "--help"] > /dev/null 2>&1 || exit 1`;
   }
   return `HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD wget --no-verbose --tries=1 --spider http://localhost:${port}/ || exit 1`;
 };
@@ -85,12 +85,12 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Dependencies ----");
     lines.push(`FROM ${config.baseImage} AS deps`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push(installNodeDeps(config.packageManager));
     lines.push("");
     lines.push("# ---- Builder ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV NEXT_TELEMETRY_DISABLED=1");
     lines.push("ENV NODE_ENV=production");
     lines.push("COPY --from=deps /app/node_modules ./node_modules");
@@ -100,7 +100,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("# ---- Runner ----");
     const runnerImage = config.baseImage.includes("alpine") ? config.baseImage.replace(/node:\d+/, "node:20") : config.baseImage;
     lines.push(`FROM ${runnerImage} AS runner`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV NODE_ENV=production");
     lines.push("ENV NEXT_TELEMETRY_DISABLED=1");
     lines.push("RUN addgroup --system --gid 1001 nodejs \\");
@@ -115,7 +115,7 @@ const generateNode = (config: DockerfileConfig): string => {
       lines.push(envBlock(config.envVars));
     }
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "node server.js";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -129,7 +129,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Build stage ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY package.json package-lock.json* ./");
     lines.push("RUN " + (config.packageManager === "npm" ? "npm ci" : config.packageManager === "pnpm" ? "pnpm install --frozen-lockfile" : config.packageManager === "yarn" ? "yarn install --frozen-lockfile" : "bun install --frozen-lockfile"));
     lines.push("COPY . .");
@@ -151,7 +151,7 @@ const generateNode = (config: DockerfileConfig): string => {
     const lines: string[] = [];
     lines.push("# syntax=docker/dockerfile:1.7");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY package.json package-lock.json* ./");
     lines.push("RUN " + (config.packageManager === "npm" ? "npm ci" : config.packageManager === "pnpm" ? "pnpm install --frozen-lockfile" : config.packageManager === "yarn" ? "yarn install --frozen-lockfile" : "bun install --frozen-lockfile"));
     lines.push("COPY . .");
@@ -173,12 +173,12 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Dependencies ----");
     lines.push(`FROM ${config.baseImage} AS deps`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push(installNodeDeps(config.packageManager));
     lines.push("");
     lines.push("# ---- Build ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY --from=deps /app/node_modules ./node_modules");
     lines.push("COPY . .");
     if (fw.id === "nestjs" || fw.id === "nextjs") {
@@ -189,7 +189,7 @@ const generateNode = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage} AS runner`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV NODE_ENV=" + (config.production ? "production" : "development"));
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -206,7 +206,7 @@ const generateNode = (config: DockerfileConfig): string => {
     }
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "node server.js";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -217,7 +217,7 @@ const generateNode = (config: DockerfileConfig): string => {
   const lines: string[] = [];
   lines.push("# syntax=docker/dockerfile:1.7");
   lines.push(`FROM ${config.baseImage}`);
-  lines.push("WORKDIR /app");
+  lines.push(`WORKDIR ${config.workdir}`);
   lines.push("ENV NODE_ENV=" + (config.production ? "production" : "development"));
   if (config.envVars.length) {
     lines.push(envBlock(config.envVars));
@@ -229,7 +229,7 @@ const generateNode = (config: DockerfileConfig): string => {
   lines.push("COPY . .");
   lines.push("EXPOSE " + port);
   if (config.healthCheck) {
-    lines.push(healthCheckCmd(port, fw.id));
+    lines.push(healthCheckCmd(port, fw.id, config.workdir));
   }
   const startCmd = config.customStartCommand || fw.startCommand || "node server.js";
   lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -248,7 +248,7 @@ const generatePython = (config: DockerfileConfig): string => {
   if (config.multiStage) {
     lines.push("# ---- Builder ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1");
     lines.push(installPythonDeps(config.packageManager));
     lines.push("COPY . .");
@@ -258,7 +258,7 @@ const generatePython = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -274,13 +274,13 @@ const generatePython = (config: DockerfileConfig): string => {
     lines.push("COPY --from=builder /usr/local/lib/python" + pyVersion + "/site-packages /usr/local/lib/python" + pyVersion + "/site-packages");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || (fw.startCommand ? fw.startCommand.replace(/:\d+\b/, `:${port}`).replace(/--port \d+/, `--port ${port}`) : "python main.py");
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -293,7 +293,7 @@ const generatePython = (config: DockerfileConfig): string => {
     lines.push("COPY . .");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || (fw.startCommand ? fw.startCommand.replace(/:\d+\b/, `:${port}`).replace(/--port \d+/, `--port ${port}`) : "python main.py");
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -313,7 +313,7 @@ const generateJava = (config: DockerfileConfig): string => {
   if (fw.id === "springboot" && config.buildOptimizations.includes("layered-jar") && config.multiStage) {
     lines.push("# ---- Build ----");
     lines.push(`FROM eclipse-temurin:${config.javaVersion ?? "21"}-jdk AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.packageManager === "gradle") {
       lines.push("COPY gradlew settings.gradle* build.gradle* gradle/ ./");
       lines.push("RUN chmod +x gradlew && ./gradlew dependencies --no-daemon > /dev/null 2>&1 || true");
@@ -329,7 +329,7 @@ const generateJava = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
     }
@@ -343,13 +343,13 @@ const generateJava = (config: DockerfileConfig): string => {
     lines.push("COPY --from=builder app/application/ ./");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "java -jar app.jar";
     lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
     }
@@ -360,7 +360,7 @@ const generateJava = (config: DockerfileConfig): string => {
     lines.push("COPY --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " target/*.jar app.jar");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "java -jar app.jar";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -380,7 +380,7 @@ const generateGo = (config: DockerfileConfig): string => {
   if (config.multiStage) {
     lines.push("# ---- Build ----");
     lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY go.mod go.sum* ./");
     lines.push("RUN go mod download");
     lines.push("COPY . .");
@@ -388,8 +388,8 @@ const generateGo = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime (distroless) ----");
     lines.push("FROM gcr.io/distroless/static-debian12:nonroot");
-    lines.push("WORKDIR /app");
-    lines.push("COPY --from=builder /out/server /app/server");
+    lines.push(`WORKDIR ${config.workdir}`);
+    lines.push(`COPY --from=builder /out/server ${config.workdir}/server`);
     if (config.nonRootUser) {
       lines.push("USER nonroot:nonroot");
     }
@@ -398,17 +398,17 @@ const generateGo = (config: DockerfileConfig): string => {
       lines.push(envBlock(config.envVars));
     }
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "go"));
+      lines.push(healthCheckCmd(port, "go", config.workdir));
     }
-    const startCmd = config.customStartCommand || fw.startCommand || "/app/server";
+    const startCmd = config.customStartCommand || fw.startCommand || `${config.workdir}/server`;
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM golang:${config.goVersion ?? "1.22"}-alpine`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY go.mod go.sum* ./");
     lines.push("RUN go mod download");
     lines.push("COPY . .");
-    lines.push(`RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/server .`);
+    lines.push(`RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o ${config.workdir}/server .`);
     if (config.nonRootUser) {
       lines.push("RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup");
       lines.push("USER appuser");
@@ -418,7 +418,7 @@ const generateGo = (config: DockerfileConfig): string => {
       lines.push(envBlock(config.envVars));
     }
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "go"));
+      lines.push(healthCheckCmd(port, "go", config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "./server";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -439,7 +439,7 @@ const generateRust = (config: DockerfileConfig): string => {
     lines.push("# ---- Build deps ----");
     lines.push("FROM rust:1.78-alpine AS chef");
     lines.push("RUN apk add --no-cache musl-dev && cargo install cargo-chef");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("");
     lines.push("FROM chef AS planner");
     lines.push("COPY . .");
@@ -453,8 +453,8 @@ const generateRust = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push("FROM gcr.io/distroless/cc-debian12:nonroot");
-    lines.push("WORKDIR /app");
-    lines.push("COPY --from=builder /app/target/release/server /app/server");
+    lines.push(`WORKDIR ${config.workdir}`);
+    lines.push(`COPY --from=builder /app/target/release/server ${config.workdir}/server`);
     if (config.nonRootUser) {
       lines.push("USER nonroot:nonroot");
     }
@@ -463,14 +463,14 @@ const generateRust = (config: DockerfileConfig): string => {
       lines.push(envBlock(config.envVars));
     }
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "rust"));
+      lines.push(healthCheckCmd(port, "rust", config.workdir));
     }
-    const startCmd = config.customStartCommand || fw.startCommand || "/app/server";
+    const startCmd = config.customStartCommand || fw.startCommand || `${config.workdir}/server`;
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM rust:1.78-alpine`);
     lines.push("RUN apk add --no-cache musl-dev");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY . .");
     lines.push("RUN cargo build --release --bin server");
     if (config.nonRootUser) {
@@ -482,7 +482,7 @@ const generateRust = (config: DockerfileConfig): string => {
       lines.push(envBlock(config.envVars));
     }
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "rust"));
+      lines.push(healthCheckCmd(port, "rust", config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "./target/release/server";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -501,13 +501,13 @@ const generatePhp = (config: DockerfileConfig): string => {
   if (config.multiStage) {
     lines.push("# ---- Composer deps ----");
     lines.push(`FROM ${config.baseImage} AS vendor`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY composer.json composer.lock* ./");
     lines.push("RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist");
     lines.push("");
     lines.push("# ---- Build ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY --from=vendor /app/vendor ./vendor");
     lines.push("COPY . .");
     lines.push("RUN composer dump-autoload --optimize --no-dev");
@@ -517,15 +517,15 @@ const generatePhp = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /var/www/html");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
     }
     if (config.nonRootUser) {
-      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser /var/www/html");
+      lines.push(`RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser ${config.workdir}`);
       lines.push("USER appuser");
     }
-    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "www-data:www-data") + " /app /var/www/html");
+    lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "www-data:www-data") + ` /app ${config.workdir}`);
     lines.push("EXPOSE " + config.port);
     if (config.healthCheck) {
       lines.push('HEALTHCHECK --interval=30s --timeout=3s CMD php-fpm-healthcheck || exit 1');
@@ -534,7 +534,7 @@ const generatePhp = (config: DockerfileConfig): string => {
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /var/www/html");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY composer.json composer.lock* ./");
     lines.push("RUN composer install --no-dev --prefer-dist");
     if (config.framework === "laravel") {
@@ -542,7 +542,7 @@ const generatePhp = (config: DockerfileConfig): string => {
     }
     lines.push("COPY . .");
     if (config.nonRootUser) {
-      lines.push("RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser /var/www/html");
+      lines.push(`RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser && chown -R appuser:appuser ${config.workdir}`);
       lines.push("USER appuser");
     }
     if (config.envVars.length) {
@@ -570,13 +570,13 @@ const generateRuby = (config: DockerfileConfig): string => {
   if (config.multiStage) {
     lines.push("# ---- Dependencies ----");
     lines.push(`FROM ${config.baseImage} AS deps`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY Gemfile Gemfile.lock* ./");
     lines.push("RUN bundle install --jobs 4 --retry 3");
     lines.push("");
     lines.push("# ---- Build ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY --from=deps /usr/local/bundle /usr/local/bundle");
     lines.push("COPY . .");
     if (fw.id === "rails") {
@@ -585,7 +585,7 @@ const generateRuby = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV RAILS_ENV=production RACK_ENV=production");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -598,13 +598,13 @@ const generateRuby = (config: DockerfileConfig): string => {
     lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /usr/local/bundle /usr/local/bundle");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "bundle exec puma -C config/puma.rb";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV RAILS_ENV=production RACK_ENV=production");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -618,7 +618,7 @@ const generateRuby = (config: DockerfileConfig): string => {
     lines.push("COPY . .");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "bundle exec puma -C config/puma.rb";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -638,7 +638,7 @@ const generateDotnet = (config: DockerfileConfig): string => {
   if (config.multiStage) {
     lines.push("# ---- Build ----");
     lines.push("FROM mcr.microsoft.com/dotnet/sdk:9.0 AS builder");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY *.csproj *.sln* ./");
     lines.push("RUN dotnet restore");
     lines.push("COPY . .");
@@ -646,7 +646,7 @@ const generateDotnet = (config: DockerfileConfig): string => {
     lines.push("");
     lines.push("# ---- Runtime ----");
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
     }
@@ -657,13 +657,13 @@ const generateDotnet = (config: DockerfileConfig): string => {
     lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /out .");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "dotnet"));
+      lines.push(healthCheckCmd(port, "dotnet", config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "dotnet MyApp.dll";
     lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
     }
@@ -675,7 +675,7 @@ const generateDotnet = (config: DockerfileConfig): string => {
     lines.push("RUN dotnet publish -c Release -o /app");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, "dotnet"));
+      lines.push(healthCheckCmd(port, "dotnet", config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "dotnet MyApp.dll";
     lines.push(`ENTRYPOINT ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
@@ -696,7 +696,7 @@ const generateElixir = (config: DockerfileConfig): string => {
     lines.push("# ---- Build ----");
     lines.push(`FROM ${config.baseImage} AS builder`);
     lines.push("RUN apk add --no-cache build-base npm git");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("COPY mix.exs mix.lock* ./");
     lines.push("RUN mix deps.get --only prod");
     lines.push("COPY . .");
@@ -707,7 +707,7 @@ const generateElixir = (config: DockerfileConfig): string => {
     lines.push("# ---- Runtime ----");
     lines.push("FROM alpine:3.20 AS runner");
     lines.push("RUN apk add --no-cache libstdc++ openssl libncurses");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV MIX_ENV=prod");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -719,14 +719,14 @@ const generateElixir = (config: DockerfileConfig): string => {
     lines.push("COPY --from=builder --chown=" + (config.nonRootUser ? "appuser:appuser" : "root:root") + " /app/_build/prod/rel/. .");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "bin/app start";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
   } else {
     lines.push(`FROM ${config.baseImage}`);
     lines.push("RUN apk add --no-cache build-base npm git");
-    lines.push("WORKDIR /app");
+    lines.push(`WORKDIR ${config.workdir}`);
     lines.push("ENV MIX_ENV=prod");
     if (config.envVars.length) {
       lines.push(envBlock(config.envVars));
@@ -741,7 +741,7 @@ const generateElixir = (config: DockerfileConfig): string => {
     lines.push("RUN mix release");
     lines.push("EXPOSE " + port);
     if (config.healthCheck) {
-      lines.push(healthCheckCmd(port, fw.id));
+      lines.push(healthCheckCmd(port, fw.id, config.workdir));
     }
     const startCmd = config.customStartCommand || fw.startCommand || "bin/app start";
     lines.push(`CMD ${JSON.stringify(startCmd.split(/\s+/))}`.replace(/\\\\\"/g, '"'));
