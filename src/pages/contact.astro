@@ -1,0 +1,139 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import Container from "../components/ui/Container.astro";
+import Icon from "../components/ui/Icon.astro";
+---
+
+<Layout
+  title="Contact Us — Dockerfile Generator"
+  description="Get in touch with the Dockerfile Generator team. Send us feedback, report bugs, or request features for our free online Dockerfile and Docker Compose generator."
+  keywords="contact dockerfile generator, support, feedback, bug report"
+  canonical="https://dockerfilegenerator.com/contact"
+>
+  <Nav />
+  <main id="main">
+    <section class="py-16 md:py-24">
+      <Container size="md">
+        <h1 class="t-display-xl mb-8 text-[var(--color-ink)]">Contact Us</h1>
+        <p class="t-body-lg mb-12 text-[var(--color-body)]">
+          Have questions, feedback, or want to report an issue? We'd love to hear from you.
+        </p>
+
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div class="space-y-6">
+            <div>
+              <h2 class="t-display-sm mb-3 text-[var(--color-ink)]">Get In Touch</h2>
+              <p class="t-body-md text-[var(--color-body)]">
+                Whether you have a question, need support, or want to suggest a feature, feel free to reach out. We aim to respond within 48 hours.
+              </p>
+            </div>
+
+            <div class="space-y-4">
+              <a
+                href="https://github.com/SuperSection/dockerfilegenerator.com/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="card-hover flex items-center gap-4 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"
+              >
+                <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--color-canvas-soft-2)] text-[var(--color-ink)]">
+                  <Icon name="bug" size={18} />
+                </div>
+                <div>
+                  <p class="t-body-md-strong text-[var(--color-ink)]">Report a Bug</p>
+                  <p class="t-body-sm text-[var(--color-body)]">Found an issue? Let us know on GitHub</p>
+                </div>
+              </a>
+
+              <a
+                href="mailto:soumosarkar.official@gmail.com"
+                class="card-hover flex items-center gap-4 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"
+              >
+                <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--color-canvas-soft-2)] text-[var(--color-ink)]">
+                  <Icon name="mail" size={18} />
+                </div>
+                <div>
+                  <p class="t-body-md-strong text-[var(--color-ink)]">Email</p>
+                  <p class="t-body-sm text-[var(--color-body)]">hello@dockerfilegenerator.com</p>
+                </div>
+              </a>
+
+              <a
+                href="https://github.com/SuperSection/dockerfilegenerator.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="card-hover flex items-center gap-4 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"
+              >
+                <div class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--color-canvas-soft-2)] text-[var(--color-ink)]">
+                  <Icon name="github" size={18} />
+                </div>
+                <div>
+                  <p class="t-body-md-strong text-[var(--color-ink)]">GitHub</p>
+                  <p class="t-body-sm text-[var(--color-body)]">Contribute to the open-source project</p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="t-display-sm mb-3 text-[var(--color-ink)]">Send a Message</h2>
+            <form action="mailto:hello@dockerfilegenerator.com" method="post" class="space-y-4">
+              <div>
+                <label for="name" class="t-body-sm-strong mb-1 block text-[var(--color-ink)]">Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-3 t-body-md text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-link)] focus:outline-none focus:ring-1 focus:ring-[var(--color-link)]"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label for="email" class="t-body-sm-strong mb-1 block text-[var(--color-ink)]">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-3 t-body-md text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-link)] focus:outline-none focus:ring-1 focus:ring-[var(--color-link)]"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label for="subject" class="t-body-sm-strong mb-1 block text-[var(--color-ink)]">Subject</label>
+                <input
+                  type="text"
+                  id="subject"
+                  name="subject"
+                  required
+                  class="w-full rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-3 t-body-md text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-link)] focus:outline-none focus:ring-1 focus:ring-[var(--color-link)]"
+                  placeholder="How can we help?"
+                />
+              </div>
+              <div>
+                <label for="message" class="t-body-sm-strong mb-1 block text-[var(--color-ink)]">Message</label>
+                <textarea
+                  id="message"
+                  name="message"
+                  rows="5"
+                  required
+                  class="w-full resize-none rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-3 t-body-md text-[var(--color-ink)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-link)] focus:outline-none focus:ring-1 focus:ring-[var(--color-link)]"
+                  placeholder="Your message..."
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                class="w-full rounded-md bg-[var(--color-ink)] px-6 py-3 t-button-md text-[var(--color-canvas)] transition-colors hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--color-link)] focus:ring-offset-2"
+              >
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </Container>
+    </section>
+  </main>
+  <Footer />
+</Layout>

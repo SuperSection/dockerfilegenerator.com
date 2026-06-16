@@ -40,8 +40,8 @@ import Icon from "./ui/Icon.astro";
     opacity: 1;
     border-top-width: 1px;
     border-top-color: var(--color-hairline);
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
   #mobile-menu > div {
     min-height: 0;
@@ -51,21 +51,60 @@ import Icon from "./ui/Icon.astro";
   #mobile-menu.is-open .mobile-nav-link {
     animation: mobileLinkIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  #mobile-menu.is-open .mobile-nav-link:nth-child(1) { animation-delay: 40ms; }
-  #mobile-menu.is-open .mobile-nav-link:nth-child(2) { animation-delay: 80ms; }
-  #mobile-menu.is-open .mobile-nav-link:nth-child(3) { animation-delay: 120ms; }
-  #mobile-menu.is-open .mobile-nav-link:nth-child(4) { animation-delay: 160ms; }
-  #mobile-menu.is-open .mobile-nav-link:nth-child(5) { animation-delay: 200ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(1) { animation-delay: 20ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(2) { animation-delay: 40ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(3) { animation-delay: 60ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(4) { animation-delay: 80ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(5) { animation-delay: 100ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(6) { animation-delay: 120ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(7) { animation-delay: 140ms; }
+  #mobile-menu.is-open .mobile-nav-link:nth-child(8) { animation-delay: 160ms; }
 
   @keyframes mobileLinkIn {
     from { opacity: 0; transform: translateX(-8px); }
     to   { opacity: 1; transform: translateX(0); }
   }
 
-  /* Active press feedback on links */
   .mobile-nav-link:active {
     transform: scale(0.97);
     transition: transform 80ms ease;
+  }
+
+  /* Desktop "More" dropdown — wrapper hover */
+  .more-group {
+    position: relative;
+  }
+  .more-group .more-panel {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+    pointer-events: none;
+  }
+  .more-group:hover .more-panel,
+  .more-group:focus-within .more-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* Responsive: hide info links + sep on md/lg, show More btn; reverse on xl */
+  .nav-link-info,
+  .nav-sep {
+    display: none;
+  }
+  .nav-more-btn {
+    display: flex;
+  }
+  @media (min-width: 1280px) {
+    .nav-link-info,
+    .nav-sep {
+      display: flex;
+    }
+    .nav-more-btn {
+      display: none;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -74,6 +113,9 @@ import Icon from "./ui/Icon.astro";
     #mobile-menu .mobile-nav-link {
       transition: none !important;
       animation: none !important;
+    }
+    .more-group .more-panel {
+      transition: none !important;
     }
   }
 </style>
@@ -87,30 +129,48 @@ import Icon from "./ui/Icon.astro";
   >
     <Logo />
 
-    <!-- Desktop nav -->
-    <div class="hidden items-center gap-1 md:flex">
-      <a
-        href="/"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
-        >Dockerfile</a
-      >
-      <a
-        href="/compose"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
-        >Compose</a
-      >
-      <a
-        href="/stack-builder"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
-        >Stack Builder</a
-      >
-      <a
-        href="https://docs.docker.com/compose/intro/compose-application-model/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="rounded-full px-3 py-1.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
-        >Docs</a
-      >
+    <!-- Desktop nav — all links flat on xl, collapse info links on md/lg -->
+    <div class="hidden items-center md:flex">
+      <!-- Tool links — always visible on desktop -->
+      <a href="/" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Dockerfile</a>
+      <a href="/compose" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Compose</a>
+      <a href="/stack-builder" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Stack Builder</a>
+      <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Docs</a>
+
+      <!-- Separator between tools and info -->
+      <span class="nav-sep mx-2 h-5 w-px bg-[var(--color-hairline)]" aria-hidden="true"></span>
+
+      <!-- Info links — flat on xl only -->
+      <a href="/about" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">About</a>
+      <a href="/contact" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Contact</a>
+      <a href="/privacy-policy" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Privacy</a>
+      <a href="/terms" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Terms</a>
+
+      <!-- More dropdown — visible on md/lg, hidden on xl -->
+      <div class="more-group xl:hidden">
+        <button
+          type="button"
+          class="nav-more-btn flex items-center gap-1.5 rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
+        >
+          More
+          <Icon name="chevron-down" size={14} />
+        </button>
+        <div class="more-panel absolute right-0 top-full mt-1 w-52 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-1.5 shadow-[var(--shadow-level-4)]">
+          <a href="/about" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+            <Icon name="info" size={14} /> About Us
+          </a>
+          <a href="/contact" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+            <Icon name="mail" size={14} /> Contact Us
+          </a>
+          <div class="my-1 h-px bg-[var(--color-hairline)]"></div>
+          <a href="/privacy-policy" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+            <Icon name="shield" size={14} /> Privacy Policy
+          </a>
+          <a href="/terms" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+            <Icon name="file" size={14} /> Terms & Conditions
+          </a>
+        </div>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
@@ -147,12 +207,27 @@ import Icon from "./ui/Icon.astro";
     id="mobile-menu"
     class="bg-[var(--color-canvas)] px-4 md:hidden"
   >
-    <div class="flex flex-col gap-1">
+    <div class="flex flex-col">
       <a href="/" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Dockerfile</a>
       <a href="/compose" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Compose</a>
       <a href="/stack-builder" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Stack Builder</a>
       <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Docs</a>
       <a href="https://github.com/SuperSection/dockerfilegenerator.com" target="_blank" rel="noopener noreferrer" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">GitHub</a>
+
+      <div class="my-2 h-px bg-[var(--color-hairline)]"></div>
+
+      <a href="/about" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+        <Icon name="info" size={14} class="mr-2" /> About Us
+      </a>
+      <a href="/contact" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+        <Icon name="mail" size={14} class="mr-2" /> Contact Us
+      </a>
+      <a href="/privacy-policy" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+        <Icon name="shield" size={14} class="mr-2" /> Privacy Policy
+      </a>
+      <a href="/terms" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+        <Icon name="file" size={14} class="mr-2" /> Terms & Conditions
+      </a>
     </div>
   </div>
 </header>
