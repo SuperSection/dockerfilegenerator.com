@@ -705,7 +705,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     document.getElementById(map[tab])?.classList.remove("hidden");
   }
 
-  function addEnvRow(key = "", value = "") {
+  function addEnvRow(key = "", value = "", isRestore = false) {
     const list = document.getElementById("env-list")!;
     const row = document.createElement("div");
     row.className = "env-row";
@@ -718,8 +718,10 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     `;
     list.appendChild(row);
     const inputs = row.querySelectorAll<HTMLInputElement>("input");
-    const idx = state.envVars.length;
-    state.envVars.push({ key, value });
+    const idx = isRestore ? state.envVars.findIndex((v) => v.key === key && v.value === value) : state.envVars.length;
+    if (!isRestore) {
+      state.envVars.push({ key, value });
+    }
     saveState();
 
     const sync = () => {
@@ -730,8 +732,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     inputs.forEach((i) => i.addEventListener("input", sync));
 
     row.querySelector(".env-remove")?.addEventListener("click", () => {
-      state.envVars.splice(idx, 1);
-      // Re-sync from current DOM to keep indices stable for siblings
+      row.remove();
       const fresh: { key: string; value: string }[] = [];
       list.querySelectorAll<HTMLDivElement>(".env-row").forEach((r) => {
         const ins = r.querySelectorAll<HTMLInputElement>("input");
@@ -739,7 +740,6 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
       });
       state.envVars = fresh;
       saveState();
-      row.remove();
       render();
     });
   }
@@ -947,7 +947,7 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     // The render at the bottom of this block will pick up the right
     // state and emit the correct Dockerfile.
     // Restore env rows from state
-    state.envVars.forEach((v) => addEnvRow(v.key, v.value));
+    state.envVars.forEach((v) => addEnvRow(v.key, v.value, true));
     // Restore active tab
     if (state.activeTab !== "dockerfile") setTab(state.activeTab);
     else render();
