@@ -3,6 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
 import Container from "../components/ui/Container.astro";
+import Icon from "../components/ui/Icon.astro";
 ---
 
 <Layout
@@ -15,8 +16,11 @@ import Container from "../components/ui/Container.astro";
   <main id="main">
     <section class="py-16 md:py-24">
       <Container size="md">
-        <h1 class="t-display-xl mb-8 text-[var(--color-ink)]">Terms & Conditions</h1>
-        <p class="t-body-sm mb-8 text-[var(--color-mute)]">Last updated: January 1, 2026</p>
+        <a href="/" class="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2 t-body-sm text-[var(--color-body)] transition-colors hover:border-[var(--color-mute)] hover:text-[var(--color-ink)]">
+          <Icon name="arrow-left" size={16} /> Back to Home
+        </a>
+        <h1 class="t-display-xl mb-4 text-[var(--color-ink)]">Terms & Conditions</h1>
+        <p class="mb-8 inline-block rounded-full bg-[var(--color-canvas-soft-2)] px-3 py-1 t-caption text-[var(--color-body)]">Last updated on June 16, 2026</p>
 
         <div class="space-y-8 t-body-md text-[var(--color-body)]">
           <p>
