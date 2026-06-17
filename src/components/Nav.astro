@@ -188,7 +188,7 @@ import Icon from "./ui/Icon.astro";
       <button
         type="button"
         id="mobile-menu-btn"
-        class="inline-flex h-11 w-11 items-center justify-center rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] text-[var(--color-ink)] md:hidden"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] text-[var(--color-ink)] md:hidden"
         aria-label="Open menu"
         aria-expanded="false"
         aria-controls="mobile-menu"
@@ -240,5 +240,29 @@ import Icon from "./ui/Icon.astro";
     const isOpen = menu.classList.toggle("is-open");
     btn.setAttribute("aria-expanded", String(isOpen));
     btn.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+  });
+
+  document.addEventListener("click", (e) => {
+    const menu = document.getElementById("mobile-menu");
+    const btn = document.getElementById("mobile-menu-btn");
+    if (!menu || !btn || !menu.classList.contains("is-open")) return;
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+      menu.classList.remove("is-open");
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-label", "Open menu");
+    }
+  });
+
+  const mdBreakpoint = window.matchMedia("(min-width: 768px)");
+  mdBreakpoint.addEventListener("change", (e) => {
+    if (e.matches) {
+      const menu = document.getElementById("mobile-menu");
+      const btn = document.getElementById("mobile-menu-btn");
+      if (menu && btn) {
+        menu.classList.remove("is-open");
+        btn.setAttribute("aria-expanded", "false");
+        btn.setAttribute("aria-label", "Open menu");
+      }
+    }
   });
 </script>
