@@ -254,21 +254,6 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     background: var(--color-canvas-soft-2);
     box-shadow: var(--shadow-level-2);
   }
-  .env-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr auto;
-    gap: 12px; /* a touch more breathing room between key and value */
-    align-items: center;
-  }
-  .env-row input {
-    min-width: 0;
-  }
-  @media (max-width: 640px) {
-    .env-row {
-      grid-template-columns: 1fr auto;
-    }
-  }
-
   /* ─────────────────────────────────────────────────────────
    * Framework grid: collapsed by default (6 most popular), with
    * a Show-all toggle. Search filters down to a subset.
@@ -958,3 +943,19 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     else render();
   })();
 </script>
+
+<style is:global>
+  .env-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .env-row input {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+  .env-row .env-remove {
+    flex: 0 0 auto;
+  }
+</style>
