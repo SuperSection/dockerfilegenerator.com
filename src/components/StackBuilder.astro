@@ -211,7 +211,7 @@ const stackServices: ServiceConfig[] = [
     </aside>
 
     <!-- Right: Output tabs -->
-    <div class="space-y-6">
+    <div class="min-w-0 space-y-6">
       <ServiceConfigModal services={stackServices} />
 
       <!-- Project name + .env toggle -->
@@ -241,7 +241,7 @@ const stackServices: ServiceConfig[] = [
       </div>
 
       <!-- Tabs -->
-      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-fit overflow-x-auto">
+      <div class="flex items-center gap-1 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] p-1 w-full overflow-x-auto">
         <button
           type="button"
           data-tab="compose"
