@@ -5,7 +5,7 @@ import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://dockerfilegenerator.com',
+  site: 'https://dockerfilegenerator.soumosarkar.online',
   adapter: cloudflare(),
   vite: {
     plugins: [tailwindcss()],

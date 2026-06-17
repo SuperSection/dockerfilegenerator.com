@@ -17,7 +17,7 @@ const pages: PageEntry[] = [
 ];
 
 export const GET: APIRoute = ({ site }) => {
-  const base = (site?.toString() ?? "https://dockerfilegenerator.com").replace(/\/$/, "");
+  const base = (site?.toString() ?? "https://dockerfilegenerator.soumosarkar.online").replace(/\/$/, "");
   const lastmod = new Date().toISOString().split("T")[0];
 
   const urls = pages
