@@ -279,9 +279,39 @@
   };
 
   // ── Persistence ──────────────────────────────────────────
-  // No persistence — page refresh always resets to defaults
-  function save() {}
-  function load() {}
+  const STORAGE_KEY = "ms-builder-state-v1";
+
+  function save() {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        projectName: state.projectName,
+        description: state.description,
+        useEnvFile: state.useEnvFile,
+        pinAllTags: state.pinAllTags,
+        includeReadme: state.includeReadme,
+        services: state.services,
+        activeTab: state.activeTab,
+        currentArch: state.currentArch,
+      }));
+    } catch {}
+  }
+
+  function load() {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (data.projectName !== undefined) state.projectName = data.projectName;
+      if (data.description !== undefined) state.description = data.description;
+      if (data.useEnvFile !== undefined) state.useEnvFile = data.useEnvFile;
+      if (data.pinAllTags !== undefined) state.pinAllTags = data.pinAllTags;
+      if (data.includeReadme !== undefined) state.includeReadme = data.includeReadme;
+      if (data.services !== undefined) state.services = data.services;
+      if (data.activeTab !== undefined) state.activeTab = data.activeTab;
+      if (data.currentArch !== undefined) state.currentArch = data.currentArch;
+      return true;
+    } catch { return false; }
+  }
 
   // ── Helpers ──────────────────────────────────────────────
   function esc(s: string) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
@@ -560,26 +590,44 @@
     blank: "Custom",
   };
 
-  function selectArchitecture(archId: string) {
-    if (archId === "blank") { state.services = {}; }
-    else {
-      const preset = ARCHITECTURE_PRESETS[archId];
-      if (preset) state.services = preset.services();
+  function showPhase(phase: "select" | "config") {
+    document.getElementById("phase-select")!.classList.toggle("hidden", phase !== "select");
+    document.getElementById("phase-config")!.classList.toggle("hidden", phase !== "config");
+  }
+
+  function selectArchitecture(archId: string, skipPush = false) {
+    // Only load preset if switching to a different architecture or no services exist yet
+    if (state.currentArch !== archId || Object.keys(state.services).length === 0) {
+      if (archId === "blank") { state.services = {}; }
+      else {
+        const preset = ARCHITECTURE_PRESETS[archId];
+        if (preset) state.services = preset.services();
+      }
     }
     state.currentArch = archId;
     state.activeTab = "compose";
     save(); render();
-    document.getElementById("phase-select")!.classList.add("hidden");
-    document.getElementById("phase-config")!.classList.remove("hidden");
+    showPhase("config");
     const label = document.getElementById("ms-arch-label");
     if (label) label.textContent = ARCH_LABELS[archId] ?? archId;
+    if (!skipPush) {
+      history.pushState({ arch: archId }, "", `/stack-builder/${archId}`);
+    }
+    // Scroll to the top of the config section (Back button area)
+    const configEl = document.getElementById("phase-config");
+    if (configEl) {
+      const y = configEl.getBoundingClientRect().top + window.scrollY - 16;
+      window.scrollTo({ top: y, behavior: "instant" });
+    }
   }
 
-  function goBack() {
-    document.getElementById("phase-select")!.classList.remove("hidden");
-    document.getElementById("phase-config")!.classList.add("hidden");
+  function goBack(skipPush = false) {
+    showPhase("select");
     const label = document.getElementById("ms-arch-label");
     if (label) label.textContent = "";
+    if (!skipPush) {
+      history.pushState({}, "", "/stack-builder");
+    }
   }
 
   // ── Modal ────────────────────────────────────────────────
@@ -720,10 +768,8 @@
   }
 
   // ── Wire up ──────────────────────────────────────────────
-  load();
-
   document.querySelectorAll<HTMLButtonElement>("[data-arch]").forEach((b) => b.addEventListener("click", () => selectArchitecture(b.dataset.arch!)));
-  document.getElementById("ms-back-btn")!.addEventListener("click", goBack);
+  document.getElementById("ms-back-btn")!.addEventListener("click", () => goBack());
   document.getElementById("ms-include-readme")?.addEventListener("change", (e) => {
     state.includeReadme = (e.target as HTMLInputElement).checked;
     if (!state.includeReadme && state.activeTab === "readme") state.activeTab = "compose";
@@ -920,8 +966,26 @@
     }
   });
 
+  // ── URL routing ─────────────────────────────────────────
+  function getArchFromUrl(): string | null {
+    const m = window.location.pathname.match(/^\/stack-builder\/([a-zA-Z0-9_-]+)$/);
+    return m ? m[1] : null;
+  }
+
+  function handlePopState() {
+    const arch = getArchFromUrl();
+    if (arch && (ARCHITECTURE_PRESETS[arch] || arch === "blank")) {
+      selectArchitecture(arch, true);
+    } else {
+      goBack(true);
+    }
+  }
+
+  window.addEventListener("popstate", handlePopState);
+
   // Restore state
   (function restore() {
+    const hadSavedState = load();
     const pn = document.getElementById("ms-project-name") as HTMLInputElement | null;
     if (pn) pn.value = state.projectName;
     const desc = document.getElementById("ms-description") as HTMLInputElement | null;
@@ -930,13 +994,16 @@
     if (useEnv) useEnv.checked = state.useEnvFile;
     const pinTags = document.getElementById("ms-pin-tags") as HTMLInputElement | null;
     if (pinTags) pinTags.checked = state.pinAllTags;
-    if (Object.keys(state.services).length > 0) {
-      document.getElementById("phase-select")!.classList.add("hidden");
-      document.getElementById("phase-config")!.classList.remove("hidden");
-      if (state.currentArch) {
-        const label = document.getElementById("ms-arch-label");
-        if (label) label.textContent = ARCH_LABELS[state.currentArch] ?? state.currentArch;
-      }
+
+    const urlArch = getArchFromUrl();
+    if (!hadSavedState && urlArch && (ARCHITECTURE_PRESETS[urlArch] || urlArch === "blank")) {
+      // Fresh load with URL arch — initialize from preset
+      selectArchitecture(urlArch, true);
+    } else if (Object.keys(state.services).length > 0 && state.currentArch) {
+      // Have saved state — restore config phase without overwriting services
+      showPhase("config");
+      const label = document.getElementById("ms-arch-label");
+      if (label) label.textContent = ARCH_LABELS[state.currentArch] ?? state.currentArch;
     }
     render();
   })();

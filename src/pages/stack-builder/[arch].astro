@@ -1,0 +1,104 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Nav from "../../components/Nav.astro";
+import Footer from "../../components/Footer.astro";
+import Container from "../../components/ui/Container.astro";
+import Button from "../../components/ui/Button.astro";
+import Icon from "../../components/ui/Icon.astro";
+import Badge from "../../components/ui/Badge.astro";
+import MicroserviceBuilder from "../../components/MicroserviceBuilder.astro";
+
+export function getStaticPaths() {
+  return [
+    { params: { arch: "monolith" } },
+    { params: { arch: "frontendApi" } },
+    { params: { arch: "threeTier" } },
+    { params: { arch: "microservices" } },
+    { params: { arch: "eventDriven" } },
+    { params: { arch: "blank" } },
+  ];
+}
+
+// arch param used by getStaticPaths; client-side JS reads URL for state restoration
+---
+
+<Layout
+  title="Architecture Builder — Docker for any stack"
+  description="Generate Docker setup for monolithic, two-tier, three-tier, or microservice architectures. Pick your architecture, configure services, and get production-ready Dockerfiles + docker-compose.yml."
+>
+  <Nav />
+  <main id="main" class="relative">
+    <section class="relative overflow-hidden border-b border-[var(--color-hairline)] py-12 md:py-16">
+      <div class="absolute inset-x-0 top-0 -z-10 h-[320px] mesh-gradient-sm"></div>
+      <Container>
+        <div class="text-center">
+          <Badge variant="new" class="mb-4">Architecture generator</Badge>
+          <h1 class="t-display-xl mx-auto max-w-3xl text-[var(--color-ink)]">
+            Docker for any architecture.
+          </h1>
+          <p class="t-body-lg mx-auto mt-4 max-w-2xl text-[var(--color-body)]">
+            Choose your architecture. Configure services. Get production-ready Dockerfiles and docker-compose.yml.
+          </p>
+        </div>
+      </Container>
+    </section>
+
+    <section class="py-12 md:py-20">
+      <Container>
+        <MicroserviceBuilder />
+      </Container>
+    </section>
+
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="ambient-glow relative py-16">
+      <Container>
+        <div class="relative z-10">
+          <h2 class="t-display-lg mb-6"><span class="gradient-text">Why use an architecture builder?</span></h2>
+          <div data-reveal-children class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { t: "Monolithic", d: "Single container, single process. Perfect for small apps and prototypes." },
+              { t: "Two-tier", d: "App + database. The most common pattern for web applications." },
+              { t: "Three-tier", d: "Frontend, backend, and database. Clean separation of concerns." },
+            ].map(f => (
+              <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{f.t}</h3>
+                <p class="t-body-md text-[var(--color-body)]">{f.d}</p>
+              </div>
+            ))}
+          </div>
+          <div data-reveal-children class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { t: "Microservices", d: "Independent services communicating over a network. Scales horizontally." },
+              { t: "Event-driven", d: "Message queues and async processing. Decoupled, resilient pipelines." },
+              { t: "Custom", d: "Mix and match any services. Full control over your stack topology." },
+            ].map(f => (
+              <div class="card-hover rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-5">
+                <h3 class="t-display-sm mb-2 text-[var(--color-ink)]">{f.t}</h3>
+                <p class="t-body-md text-[var(--color-body)]">{f.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Container>
+    </section>
+
+    <div class="gradient-divider mx-auto max-w-5xl"></div>
+    <section data-reveal class="py-16">
+      <Container>
+        <div class="cta-glow relative overflow-hidden rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6 text-center shadow-[var(--shadow-level-4)] sm:p-10 md:p-14">
+          <div class="relative z-10">
+            <h2 class="t-display-lg"><span class="gradient-text">Need just a single Dockerfile?</span></h2>
+            <p class="t-body-md mx-auto mt-3 max-w-xl text-[var(--color-body)]">
+              Use our Dockerfile generator for a standalone, production-ready Dockerfile.
+            </p>
+            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button href="/#generator" size="lg">Dockerfile Generator <Icon name="arrow-right" size={16} /></Button>
+              <Button href="/compose" variant="secondary" size="lg">Compose Generator</Button>
+            </div>
+          </div>
+        </div>
+      </Container>
+    </section>
+  </main>
+  <Footer />
+</Layout>
