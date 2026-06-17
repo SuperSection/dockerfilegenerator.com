@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "astro build && wrangler pages deploy dist",
     "astro": "astro",
     "sync:registry": "node --experimental-strip-types --no-warnings scripts/sync-registry.mjs"
   },
