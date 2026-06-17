@@ -212,10 +212,16 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
               </div>
               <span class="t-code ml-2 text-[var(--color-body)]">docker-compose.yml</span>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-              <button type="button" id="btn-compose-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
-              <button type="button" id="btn-compose-download" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-2 min-h-[44px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Download</button>
-              <button type="button" id="btn-compose-zip" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-2 min-h-[44px] text-[var(--color-primary-cta-fg)] hover:opacity-90">Export ZIP</button>
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <button type="button" id="btn-compose-copy" class="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 py-1.5 min-h-[36px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] sm:px-2.5 sm:py-2 sm:min-h-[44px]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span class="hidden sm:inline t-caption t-body-sm-strong">Copy</span>
+              </button>
+              <button type="button" id="btn-compose-download" class="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 py-1.5 min-h-[36px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] sm:px-2.5 sm:py-2 sm:min-h-[44px]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="hidden sm:inline t-caption t-body-sm-strong">Download</span>
+              </button>
+              <button type="button" id="btn-compose-zip" class="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-2.5 py-2 min-h-[44px] text-[var(--color-primary-cta-fg)] hover:opacity-90 t-caption t-body-sm-strong">Export ZIP</button>
             </div>
           </div>
           <pre class="code-panel overflow-x-auto min-h-[250px] sm:min-h-[400px] max-h-[700px]" id="compose-code"><code>Select services above to generate your docker-compose.yml</code></pre>
@@ -224,10 +230,19 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
         <div id="env-output" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] overflow-hidden">
           <div class="flex items-center justify-between border-b border-[var(--color-hairline)] bg-[var(--color-canvas-soft-2)] px-4 py-2">
             <span class="t-code text-[var(--color-body)]">.env.example</span>
-            <button type="button" id="btn-env-copy" class="t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">Copy</button>
+            <button type="button" id="btn-env-copy" class="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 py-1.5 min-h-[36px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] sm:px-2.5 sm:py-2 sm:min-h-[44px]">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              <span class="hidden sm:inline t-caption t-body-sm-strong">Copy</span>
+            </button>
           </div>
           <pre class="code-panel overflow-x-auto min-h-[200px] max-h-[500px]" id="env-code"></pre>
         </div>
+
+        <!-- Mobile Export ZIP (below code outputs, above validation) -->
+        <button type="button" id="btn-compose-zip-mobile" class="sm:hidden w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2.5 min-h-[44px] text-[var(--color-primary-cta-fg)] hover:opacity-90 t-caption t-body-sm-strong">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export ZIP
+        </button>
 
         <!-- Validation (below output) -->
         <div id="validation-panel" class="hidden rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-4"></div>
@@ -825,18 +840,38 @@ import ServiceConfigModal from "./compose/ServiceConfigModal.astro";
     const btn = document.getElementById(id);
     if (!btn) return;
     if (btn.dataset.flash === "1") return;
-    const orig = btn.textContent;
+    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    const label = btn.querySelector("span");
+    const origLabel = label?.textContent ?? "";
+    const origHTML = btn.innerHTML;
     btn.dataset.flash = "1";
-    btn.textContent = "\u2713 Copied";
+    if (isMobile) {
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    } else {
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="hidden sm:inline t-caption t-body-sm-strong">Copied</span>';
+    }
     btn.classList.add("copy-pulse");
     setTimeout(() => {
-      btn.textContent = orig;
+      btn.innerHTML = origHTML;
       btn.classList.remove("copy-pulse");
       btn.dataset.flash = "";
     }, 1500);
   }
   document.getElementById("btn-compose-download")?.addEventListener("click", () => download("docker-compose.yml", generateCompose(getConfig())));
   document.getElementById("btn-compose-zip")?.addEventListener("click", async () => {
+    const zip = new JSZip();
+    zip.file("docker-compose.yml", generateCompose(getConfig()));
+    const envContent = generateEnvExample(getConfig());
+    if (envContent.trim()) zip.file(".env.example", envContent);
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "docker-compose.zip";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById("btn-compose-zip-mobile")?.addEventListener("click", async () => {
     const zip = new JSZip();
     zip.file("docker-compose.yml", generateCompose(getConfig()));
     const envContent = generateEnvExample(getConfig());

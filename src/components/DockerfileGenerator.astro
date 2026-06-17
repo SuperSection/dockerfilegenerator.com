@@ -902,7 +902,12 @@ import { FRAMEWORK_LIST } from "../lib/dockerfile/frameworks";
     await copyToClipboard(dockerfile);
     const btn = document.getElementById("btn-copy")!;
     const orig = btn.innerHTML;
-    btn.innerHTML = "✓ Copied";
+    const isMobile = window.matchMedia("(max-width: 639px)").matches;
+    if (isMobile) {
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    } else {
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="hidden sm:inline t-caption t-body-sm-strong">Copied</span>';
+    }
     btn.classList.add("copy-pulse");
     setTimeout(() => {
       btn.innerHTML = orig;

@@ -281,23 +281,49 @@ const stackServices: ServiceConfig[] = [
               </div>
               <span class="t-code ml-2 text-[var(--color-body)]">{p.label}</span>
             </div>
-            <button
-              type="button"
-              class="copy-btn t-caption t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2.5 py-1 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]"
-              data-target={p.id}
-            >
-              Copy
-            </button>
+            <div class="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                class="copy-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 py-1.5 min-h-[36px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] sm:px-2.5 sm:py-2 sm:min-h-[44px]"
+                data-target={p.id}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span class="hidden sm:inline t-caption t-body-sm-strong">Copy</span>
+              </button>
+              <button
+                type="button"
+                class="download-btn inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-2 py-1.5 min-h-[36px] text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)] sm:px-2.5 sm:py-2 sm:min-h-[44px]"
+                data-file={p.id}
+                data-label={p.label}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span class="hidden sm:inline t-caption t-body-sm-strong">Download</span>
+              </button>
+            </div>
           </div>
           <pre class="code-panel overflow-x-auto min-h-[200px] sm:min-h-[300px] max-h-[600px]" id={`${p.id}-code`}><code>Pick your stack to generate files</code></pre>
         </div>
       ))}
 
+      <!-- Mobile Export ZIP (below file outputs, above download buttons) -->
+      <button
+        type="button"
+        id="btn-stack-download-zip-mobile"
+        class="sm:hidden w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2.5 min-h-[44px] text-[var(--color-primary-cta-fg)] hover:opacity-90 t-body-sm-strong"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export ZIP
+      </button>
+
       <div class="flex flex-wrap items-center gap-2">
         <button
           type="button"
           id="btn-stack-download-zip"
-          class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90"
+          class="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-[var(--color-primary-cta)] bg-[var(--color-primary-cta)] px-4 py-2 text-[var(--color-primary-cta-fg)] hover:opacity-90 t-body-sm-strong"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -305,10 +331,6 @@ const stackServices: ServiceConfig[] = [
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           Download ZIP
-        </button>
-
-        <button type="button" id="btn-stack-download-all" class="t-body-sm-strong inline-flex items-center gap-1.5 rounded-md border border-[var(--color-hairline)] bg-[var(--color-canvas)] px-4 py-2 text-[var(--color-ink)] hover:bg-[var(--color-canvas-soft-2)]">
-          Download all files
         </button>
       </div>
     </div>
@@ -588,20 +610,44 @@ const stackServices: ServiceConfig[] = [
         document.body.removeChild(ta);
       }
 
+      const isMobile = window.matchMedia("(max-width: 639px)").matches;
+      const label = btn.querySelector("span");
+      const origLabel = label?.textContent ?? "Copy";
+      const origHTML = btn.innerHTML;
       btn.dataset.flash = "1";
-      const orig = btn.textContent;
-      btn.textContent = "\u2713 Copied";
+      if (isMobile) {
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      } else {
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="hidden sm:inline t-caption t-body-sm-strong">Copied</span>';
+      }
       btn.classList.add("copy-pulse");
       setTimeout(() => {
-        btn.textContent = orig;
+        btn.innerHTML = origHTML;
         btn.classList.remove("copy-pulse");
         btn.dataset.flash = "";
       }, 1500);
     });
   });
 
-  // Download all files (sequential)
-  document.getElementById("btn-stack-download-all")?.addEventListener("click", () => {
+  // Download individual files
+  document.querySelectorAll<HTMLButtonElement>(".download-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const file = btn.dataset.file!;
+      const label = btn.dataset.label!;
+      const codeEl = document.getElementById(`${file}-code`);
+      const text = codeEl?.textContent ?? "";
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = label;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  });
+
+  // Download ZIP
+  document.getElementById("btn-stack-download-zip")?.addEventListener("click", async () => {
     const cfg = getConfig();
     const files: Record<string, string> = {
       "docker-compose.yml": generateStackCompose(cfg),
@@ -611,21 +657,22 @@ const stackServices: ServiceConfig[] = [
     if (cfg.backend) files["backend/Dockerfile"] = generateStackDockerfile(cfg, "backend");
     if (cfg.frontend) files["frontend/Dockerfile"] = generateStackDockerfile(cfg, "frontend");
 
-    Object.entries(files).forEach(([name, content], i) => {
-      setTimeout(() => {
-        const blob = new Blob([content], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, i * 200);
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    Object.entries(files).forEach(([name, content]) => {
+      zip.file(name, content);
     });
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${cfg.projectName || "stack"}.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   });
 
-  // Download ZIP
-  document.getElementById("btn-stack-download-zip")?.addEventListener("click", async () => {
+  // Mobile Download ZIP
+  document.getElementById("btn-stack-download-zip-mobile")?.addEventListener("click", async () => {
     const cfg = getConfig();
     const files: Record<string, string> = {
       "docker-compose.yml": generateStackCompose(cfg),
