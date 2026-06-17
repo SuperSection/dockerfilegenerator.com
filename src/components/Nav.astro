@@ -2,6 +2,12 @@
 import Logo from "./Logo.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 import Icon from "./ui/Icon.astro";
+
+const pathname = Astro.url.pathname.replace(/\/$/, "") || "/";
+const isActive = (href: string) => {
+  const path = href.replace(/\/$/, "") || "/";
+  return path === pathname;
+};
 ---
 
 <style>
@@ -70,6 +76,48 @@ import Icon from "./ui/Icon.astro";
     transition: transform 80ms ease;
   }
 
+  /* Desktop nav links — smooth transitions */
+  .nav-link {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  /* Active page indicator — desktop */
+  .nav-link-active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-ink);
+  }
+  html.dark .nav-link-active {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  html:not(.dark) .nav-link-active {
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+
+  /* Active page indicator — mobile */
+  .mobile-nav-active {
+    background-color: var(--color-canvas-soft-2);
+    color: var(--color-ink);
+    font-weight: 600;
+    position: relative;
+  }
+  .mobile-nav-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 25%;
+    bottom: 25%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background-color: var(--color-link);
+  }
+
+  /* Active page indicator — More dropdown */
+  .more-link-active {
+    background-color: var(--color-canvas-soft-2);
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
   /* Desktop "More" dropdown — wrapper hover */
   .more-group {
     position: relative;
@@ -132,41 +180,41 @@ import Icon from "./ui/Icon.astro";
     <!-- Desktop nav — all links flat on xl, collapse info links on md/lg -->
     <div class="hidden items-center md:flex">
       <!-- Tool links — always visible on desktop -->
-      <a href="/" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Dockerfile</a>
-      <a href="/compose" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Compose</a>
-      <a href="/stack-builder" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Stack Builder</a>
-      <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Docs</a>
+      <a href="/" class:list={["nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/") && "nav-link-active"]} aria-current={isActive("/") ? "page" : undefined}>Dockerfile</a>
+      <a href="/compose" class:list={["nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/compose") && "nav-link-active"]} aria-current={isActive("/compose") ? "page" : undefined}>Compose</a>
+      <a href="/stack-builder" class:list={["nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", pathname.startsWith("/stack-builder") && "nav-link-active"]} aria-current={pathname.startsWith("/stack-builder") ? "page" : undefined}>Stack Builder</a>
+      <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="nav-link rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2">Docs</a>
 
       <!-- Separator between tools and info -->
       <span class="nav-sep mx-2 h-5 w-px bg-[var(--color-hairline)]" aria-hidden="true"></span>
 
       <!-- Info links — flat on xl only -->
-      <a href="/about" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">About</a>
-      <a href="/contact" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Contact</a>
-      <a href="/privacy-policy" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Privacy</a>
-      <a href="/terms" class="nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2">Terms</a>
+      <a href="/about" class:list={["nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/about") && "nav-link-active"]} aria-current={isActive("/about") ? "page" : undefined}>About</a>
+      <a href="/contact" class:list={["nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/contact") && "nav-link-active"]} aria-current={isActive("/contact") ? "page" : undefined}>Contact</a>
+      <a href="/privacy-policy" class:list={["nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/privacy-policy") && "nav-link-active"]} aria-current={isActive("/privacy-policy") ? "page" : undefined}>Privacy</a>
+      <a href="/terms" class:list={["nav-link-info rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2", isActive("/terms") && "nav-link-active"]} aria-current={isActive("/terms") ? "page" : undefined}>Terms</a>
 
       <!-- More dropdown — visible on md/lg, hidden on xl -->
       <div class="more-group xl:hidden">
         <button
           type="button"
-          class="nav-more-btn flex items-center gap-1.5 rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus:outline focus:outline-2 focus:outline-[var(--color-link)] focus:outline-offset-2"
+          class="nav-more-btn flex items-center gap-1.5 rounded-full px-3.5 py-2 t-body-md text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-link)] focus-visible:outline-offset-2"
         >
           More
           <Icon name="chevron-down" size={14} />
         </button>
         <div class="more-panel absolute right-0 top-full mt-1 w-52 rounded-lg border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-1.5 shadow-[var(--shadow-level-4)]">
-          <a href="/about" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+          <a href="/about" class:list={["flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]", isActive("/about") && "more-link-active"]}>
             <Icon name="info" size={14} /> About Us
           </a>
-          <a href="/contact" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+          <a href="/contact" class:list={["flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]", isActive("/contact") && "more-link-active"]}>
             <Icon name="mail" size={14} /> Contact Us
           </a>
           <div class="my-1 h-px bg-[var(--color-hairline)]"></div>
-          <a href="/privacy-policy" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+          <a href="/privacy-policy" class:list={["flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]", isActive("/privacy-policy") && "more-link-active"]}>
             <Icon name="shield" size={14} /> Privacy Policy
           </a>
-          <a href="/terms" class="flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]">
+          <a href="/terms" class:list={["flex items-center gap-2.5 rounded-md px-3 py-2.5 t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)]", isActive("/terms") && "more-link-active"]}>
             <Icon name="file" size={14} /> Terms & Conditions
           </a>
         </div>
@@ -208,24 +256,24 @@ import Icon from "./ui/Icon.astro";
     class="bg-[var(--color-canvas)] px-4 md:hidden"
   >
     <div class="flex flex-col">
-      <a href="/" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Dockerfile</a>
-      <a href="/compose" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Compose</a>
-      <a href="/stack-builder" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Stack Builder</a>
+      <a href="/" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/") && "mobile-nav-active"]} aria-current={isActive("/") ? "page" : undefined}>Dockerfile</a>
+      <a href="/compose" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/compose") && "mobile-nav-active"]} aria-current={isActive("/compose") ? "page" : undefined}>Compose</a>
+      <a href="/stack-builder" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", pathname.startsWith("/stack-builder") && "mobile-nav-active"]} aria-current={pathname.startsWith("/stack-builder") ? "page" : undefined}>Stack Builder</a>
       <a href="https://docs.docker.com/compose/intro/compose-application-model/" target="_blank" rel="noopener noreferrer" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">Docs</a>
       <a href="https://github.com/SuperSection/dockerfilegenerator.com" target="_blank" rel="noopener noreferrer" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">GitHub</a>
 
       <div class="my-2 h-px bg-[var(--color-hairline)]"></div>
 
-      <a href="/about" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+      <a href="/about" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/about") && "mobile-nav-active"]} aria-current={isActive("/about") ? "page" : undefined}>
         <Icon name="info" size={14} class="mr-2" /> About Us
       </a>
-      <a href="/contact" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+      <a href="/contact" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/contact") && "mobile-nav-active"]} aria-current={isActive("/contact") ? "page" : undefined}>
         <Icon name="mail" size={14} class="mr-2" /> Contact Us
       </a>
-      <a href="/privacy-policy" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+      <a href="/privacy-policy" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/privacy-policy") && "mobile-nav-active"]} aria-current={isActive("/privacy-policy") ? "page" : undefined}>
         <Icon name="shield" size={14} class="mr-2" /> Privacy Policy
       </a>
-      <a href="/terms" class="mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]">
+      <a href="/terms" class:list={["mobile-nav-link rounded-md px-3 py-3 min-h-[44px] flex items-center t-body-sm text-[var(--color-body)] transition-colors hover:bg-[var(--color-canvas-soft-2)] hover:text-[var(--color-ink)] active:bg-[var(--color-canvas-soft-3)]", isActive("/terms") && "mobile-nav-active"]} aria-current={isActive("/terms") ? "page" : undefined}>
         <Icon name="file" size={14} class="mr-2" /> Terms & Conditions
       </a>
     </div>
