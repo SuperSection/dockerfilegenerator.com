@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastSync": "2026-06-11T18:53:05.094Z",
+  "lastSync": "2026-06-22T11:52:10.702Z",
   "entryCount": 26,
   "entries": [
     {
@@ -63,7 +63,7 @@
       },
       "tagCount": 30,
       "recommended": "v1.31-alpine",
-      "latest": "v1.38.2"
+      "latest": "v1.31-alpine"
     },
     {
       "id": "grafana",
@@ -150,7 +150,7 @@
       "image": "kong",
       "providerResults": {
         "dockerhub": {
-          "count": 473,
+          "count": 475,
           "ok": true
         },
         "github": {
@@ -161,7 +161,7 @@
       },
       "tagCount": 30,
       "recommended": "3.8-alpine",
-      "latest": "3.9.2"
+      "latest": "3.9.3"
     },
     {
       "id": "loki",
@@ -269,14 +269,14 @@
       },
       "tagCount": 30,
       "recommended": "8",
-      "latest": "8.3.3"
+      "latest": "8.3.4"
     },
     {
       "id": "mysql",
       "image": "mysql",
       "providerResults": {
         "dockerhub": {
-          "count": 363,
+          "count": 369,
           "ok": true
         },
         "github": {
@@ -287,7 +287,7 @@
       },
       "tagCount": 30,
       "recommended": "8.4",
-      "latest": "9.7"
+      "latest": "9.7.1"
     },
     {
       "id": "nats",
@@ -323,7 +323,7 @@
       },
       "tagCount": 30,
       "recommended": "1.27-alpine",
-      "latest": "1.31.1-alpine-otel"
+      "latest": "1.31.2-alpine-otel"
     },
     {
       "id": "otel-collector",
@@ -358,14 +358,14 @@
       },
       "tagCount": 30,
       "recommended": "17-alpine",
-      "latest": "18.4-alpine"
+      "latest": "18.4-alpine3.22"
     },
     {
       "id": "prometheus",
       "image": "prom/prometheus",
       "providerResults": {
         "dockerhub": {
-          "count": 382,
+          "count": 383,
           "ok": true
         },
         "github": {
@@ -410,7 +410,7 @@
       },
       "tagCount": 30,
       "recommended": "4.0-management-alpine",
-      "latest": "4.3.1"
+      "latest": "4.3.2-alpine"
     },
     {
       "id": "redis",
