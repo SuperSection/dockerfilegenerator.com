@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "lastSync": "2026-06-11T18:53:05.094Z",
+  "lastSync": "2026-10-05T13:38:36.187Z",
   "entryCount": 26,
   "entries": [
     {
@@ -8,7 +8,7 @@
       "image": "adminer",
       "providerResults": {
         "dockerhub": {
-          "count": 123,
+          "count": 141,
           "ok": true
         },
         "github": {
@@ -19,7 +19,7 @@
       },
       "tagCount": 30,
       "recommended": "4.8.1",
-      "latest": "5.4.2"
+      "latest": "6.1.1"
     },
     {
       "id": "caddy",
@@ -37,7 +37,7 @@
       },
       "tagCount": 30,
       "recommended": "2-alpine",
-      "latest": "2.11.4-alpine"
+      "latest": "2.11.6-nanoserver"
     },
     {
       "id": "elasticsearch",
@@ -63,7 +63,7 @@
       },
       "tagCount": 30,
       "recommended": "v1.31-alpine",
-      "latest": "v1.38.2"
+      "latest": "v1.39.2"
     },
     {
       "id": "grafana",
@@ -81,7 +81,7 @@
       },
       "tagCount": 30,
       "recommended": "11.2.0",
-      "latest": "13.1.0-24220292042"
+      "latest": "13.2.3-ubuntu-slim"
     },
     {
       "id": "haproxy",
@@ -99,7 +99,7 @@
       },
       "tagCount": 30,
       "recommended": "3.0-alpine",
-      "latest": "3.4-alpine3.23"
+      "latest": "3.4.6"
     },
     {
       "id": "jaeger",
@@ -110,8 +110,9 @@
           "ok": true
         },
         "github": {
-          "count": 100,
-          "ok": true
+          "count": 0,
+          "ok": false,
+          "error": "GitHub 403 for jaegertracing/jaeger"
         }
       },
       "tagCount": 30,
@@ -150,7 +151,7 @@
       "image": "kong",
       "providerResults": {
         "dockerhub": {
-          "count": 473,
+          "count": 475,
           "ok": true
         },
         "github": {
@@ -161,7 +162,7 @@
       },
       "tagCount": 30,
       "recommended": "3.8-alpine",
-      "latest": "3.9.2"
+      "latest": "3.9.3"
     },
     {
       "id": "loki",
@@ -179,7 +180,7 @@
       },
       "tagCount": 30,
       "recommended": "3.3.0",
-      "latest": "3.7.2-amd64"
+      "latest": "3.7.8-amd64"
     },
     {
       "id": "mailhog",
@@ -215,15 +216,16 @@
       },
       "tagCount": 30,
       "recommended": "11.4",
-      "latest": "12.3.2"
+      "latest": "13.0.2-ubi"
     },
     {
       "id": "minio",
       "image": "minio/minio",
       "providerResults": {
         "dockerhub": {
-          "count": 500,
-          "ok": true
+          "count": 0,
+          "ok": false,
+          "error": "DockerHub 404 for https://hub.docker.com/v2/repositories/minio/minio/tags/?page_size=100"
         },
         "github": {
           "count": 0,
@@ -231,7 +233,7 @@
           "skipped": "no github repo mapping"
         }
       },
-      "tagCount": 30,
+      "tagCount": 1,
       "recommended": "RELEASE.2024-10-13T13-34-11Z",
       "latest": "RELEASE.2024-10-13T13-34-11Z"
     },
@@ -269,14 +271,14 @@
       },
       "tagCount": 30,
       "recommended": "8",
-      "latest": "8.3.3"
+      "latest": "9.0.2-nanoserver"
     },
     {
       "id": "mysql",
       "image": "mysql",
       "providerResults": {
         "dockerhub": {
-          "count": 363,
+          "count": 384,
           "ok": true
         },
         "github": {
@@ -287,7 +289,7 @@
       },
       "tagCount": 30,
       "recommended": "8.4",
-      "latest": "9.7"
+      "latest": "26.7"
     },
     {
       "id": "nats",
@@ -305,7 +307,7 @@
       },
       "tagCount": 30,
       "recommended": "2.10-alpine",
-      "latest": "2.14.2-alpine"
+      "latest": "2.15-nanoserver"
     },
     {
       "id": "nginx",
@@ -323,7 +325,7 @@
       },
       "tagCount": 30,
       "recommended": "1.27-alpine",
-      "latest": "1.31.1-alpine-otel"
+      "latest": "1.31.6"
     },
     {
       "id": "otel-collector",
@@ -340,7 +342,7 @@
       },
       "tagCount": 30,
       "recommended": "0.110.0",
-      "latest": "0.154.0-armv7"
+      "latest": "0.162.0-armv7"
     },
     {
       "id": "postgres",
@@ -358,14 +360,14 @@
       },
       "tagCount": 30,
       "recommended": "17-alpine",
-      "latest": "18.4-alpine"
+      "latest": "18.6-bookworm"
     },
     {
       "id": "prometheus",
       "image": "prom/prometheus",
       "providerResults": {
         "dockerhub": {
-          "count": 382,
+          "count": 417,
           "ok": true
         },
         "github": {
@@ -375,7 +377,7 @@
       },
       "tagCount": 30,
       "recommended": "v2.54.1",
-      "latest": "v3.12.0-busybox"
+      "latest": "v3.15.0-busybox"
     },
     {
       "id": "promtail",
@@ -410,7 +412,7 @@
       },
       "tagCount": 30,
       "recommended": "4.0-management-alpine",
-      "latest": "4.3.1"
+      "latest": "4.3.6-management"
     },
     {
       "id": "redis",
@@ -428,7 +430,7 @@
       },
       "tagCount": 30,
       "recommended": "7.4-alpine",
-      "latest": "8.8-m03-alpine"
+      "latest": "8.10.2-alpine"
     },
     {
       "id": "traefik",
